@@ -1,0 +1,10 @@
+include(../cmake/vulkan.cmake)
+
+add_executable(niagara main.cpp)
+target_include_directories(niagara PRIVATE ../extern/glfw/include)
+target_compile_options(niagara PRIVATE "-Wall;-Werror")
+target_include_directories(niagara PRIVATE ../extern/vulkan/include)
+target_link_directories(niagara PRIVATE ${Vulkan_LIBRARIES_DIR})
+message(STATUS ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(niagara PRIVATE vulkan-1)
+target_link_libraries(niagara PRIVATE glfw)
