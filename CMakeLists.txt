@@ -1,7 +1,16 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.12)
 project(GameEngine)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
+include_directories(../extern/vulkan)
+#get_filename_component(ABSOLUTE_PATH ${CMAKE_CURRENT_LIST_DIR} ABSOLUTE)
+#set(Vulkan_LIBRARIES ${ABSOLUTE_PATH}/ )
+set(Vulkan_LIB_PATH ${CMAKE_CURRENT_LIST_DIR}/extern/vulkan/lib)
+message(STATUS ${Vulkan_LIB})
+#message(STATUS ${ABSOLUTE_PATH} )
 
 if(CMAKE_HOST_WIN32)
     message(STATUS "This is Windows Platform")
@@ -12,32 +21,7 @@ elseif(CMAKE_HOST_APPLE)
     message(STATUS "This is Apple Platform")
 endif()
 
-function(PRINT_ARGN)
-    foreach(arg IN LISTS ARGN)
-
-        message(STATUS “arg =${arg}”)
-    endforeach()
-#    if(GTEST_FOUND)
-#        _target_link_libraries(${ARGN})
-#    endif()
-endfunction()
-
-# in case Git is not available, we default to "unknown"
-set(GIT_HASH "unknown")
-# find Git and if available set GIT_HASH variable
-find_package(Git QUIET)
-if(GIT_FOUND)
-    execute_process(
-            COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:%h
-            OUTPUT_VARIABLE GIT_HASH
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_QUIET
-            WORKING_DIRECTORY
-            ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-endif()
-
-message(STATUS "Git hash is ${GIT_HASH}")
-
 add_subdirectory(extern/glfw)
+add_subdirectory(extern/glm)
+add_subdirectory(extern/assimp)
 add_subdirectory(src)

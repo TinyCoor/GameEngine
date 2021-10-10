@@ -1,10 +1,22 @@
-include(../cmake/vulkan.cmake)
+cmake_minimum_required(VERSION 3.12)
+#include(../cmake/vulkan.cmake)
+#find_package(Vulkan)
+# Vulkan_INCLUDE_DIRS
+#Vulkan_LIBRARIES
+#if (Vulkan_FOUND)
+#    message(STATUS "Found Vulkan Including and Linking")
+#else()
+#    message(STATUS "Not Found Vulkan")
+#endif ()
 
-add_executable(niagara main.cpp)
+aux_source_directory(./ SRC)
+add_executable(niagara ${SRC} app/pbrRender.cpp)
 target_include_directories(niagara PRIVATE ../extern/glfw/include)
 target_compile_options(niagara PRIVATE "-Wall;-Werror")
 target_include_directories(niagara PRIVATE ../extern/vulkan/include)
-target_link_directories(niagara PRIVATE ${Vulkan_LIBRARIES_DIR})
-message(STATUS ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(niagara PRIVATE ../extern/glm)
+target_link_directories(niagara PRIVATE ${Vulkan_LIB_PATH})
 target_link_libraries(niagara PRIVATE vulkan-1)
 target_link_libraries(niagara PRIVATE glfw)
+target_link_libraries(niagara PRIVATE opengl32)
+
