@@ -1,6 +1,7 @@
 //
 // Created by y123456 on 2021/10/10.
 //
+#include "Render.h"
 #include <vulkan.h>
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
@@ -16,7 +17,7 @@
 
 #define VK_CHECK(call,msg)                              \
     do {                                                \
-        VkResult res  =call;                            \
+        VkResult res  =(call);                            \
         if(res != VK_SUCCESS ){                          \
              throw std::runtime_error(msg);               \
         }                                                 \
@@ -29,14 +30,12 @@
     }while(0)
 
 
-
 #define CERR_MSG(condition,msg) \
     do{                               \
     if((condition))                  \
        std::cout << msg ;       \
        return false;             \
     }while(0)
-
 
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -49,21 +48,15 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     return VK_FALSE;
 }
 
-struct QueueFamilyIndices{
-    std::pair<bool,uint32_t> graphicsFamily;
-    std::pair<bool,uint32_t> presentFamily{std::make_pair(false,0)};
 
-    bool isComplete()const{
-        return graphicsFamily.first && presentFamily.first;
-    }
-};
 
 struct SwapchainSupportedDetails {
     VkSurfaceCapabilitiesKHR capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
-
 };
+
+
 
 struct SwapchainSettings{
     VkSurfaceFormatKHR format;
@@ -117,7 +110,7 @@ namespace {
     }
 
     std::vector<VkDeviceQueueCreateInfo> createDeviceQueueCreateInfo(QueueFamilyIndices& indices){
-        float* queuePriority = new float(1.0);
+        static float queuePriority = 1.0;
         std::vector<VkDeviceQueueCreateInfo> queuesInfo;
        // VkDeviceQueueCreateInfo queueCreateInfo ={};
         std::set<uint32_t > uniqueQueueFamilies={ indices.graphicsFamily.second,indices.presentFamily.second};
@@ -127,7 +120,7 @@ namespace {
             info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
             info.queueFamilyIndex = queueFamilyIndex;
             info.queueCount = 1;
-            info.pQueuePriorities = queuePriority;
+            info.pQueuePriorities = &queuePriority;
             queuesInfo.push_back(info);
         }
         return queuesInfo;
@@ -171,6 +164,7 @@ const int Height = 600;
 
 class Application{
 public:
+
     void run();
 
 private:
@@ -189,11 +183,16 @@ private:
     void initVulkanExtensions();
     void shutdownVulkan();
     void mainLoop();
+    void RenderFrame();
     void shutdownWindow();
+
+    void initRender();
+    void shutdownRender();
 
 private:
     GLFWwindow* window{nullptr};
 
+    Render* render{nullptr};
 
     VkInstance instance{VK_NULL_HANDLE};
     VkPhysicalDevice physicalDevice{VK_NULL_HANDLE};
@@ -204,6 +203,14 @@ private:
     VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
     VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
 
+    std::vector<VkImage> swapChainImages;
+    std::vector<VkImageView> swapChainImageViews;
+
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
+
+    VkSemaphore imageAvailableSemaphore;
+    VkSemaphore renderFinishedSemaphore;
 
     static std::vector<const char*> requiredPhysicalDeviceExtensions;
     static std::vector<const char*> requiredValidationLayers;
@@ -232,8 +239,10 @@ void Application::initWindow() {
 void Application::run(){
     initWindow();
     initVulkan();
+    initRender();
     mainLoop();
     shutdownWindow();
+    shutdownRender();
     shutdownVulkan();
 }
 
@@ -290,6 +299,7 @@ bool Application::checkValidationLayers(std::vector<const char *> &layers) {
         }
         if(!supported)
             return false;
+        std::cout << "Have:" << requiredLayer << "\n";
         layers.push_back(requiredLayer);
     }
     return true;
@@ -320,7 +330,6 @@ bool Application::checkRequiredPhysicalDeviceExtensions(VkPhysicalDevice physica
     }
     return true;
 }
-
 //TODO fix
 bool Application::checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurfaceKHR& v_surface) {
 
@@ -365,7 +374,7 @@ void Application::initVulkan() {
     auto debugMessengerInfo = createDebugMessengerCreateInfo(appInfo);
     instance = createInstance(extensions,layers,appInfo,debugMessengerInfo);
 //
-   initVulkanExtensions();
+    initVulkanExtensions();
 
     VK_CHECK( vkCreateDebugMessenger(instance, &debugMessengerInfo, nullptr, &debugMessenger)," CreateDebugUtilsMessengerEXT  Failed\n");
     //create Vulkan Surface TODO cross platform support
@@ -439,20 +448,116 @@ void Application::initVulkan() {
     VK_CHECK(vkCreateSwapchainKHR(device,&swapChainInfo, nullptr,&swapchain),
              "failed to created swapchain\n");
 
+    uint32_t  swapChainImageCount =0;
+    vkGetSwapchainImagesKHR(device,swapchain,&swapChainImageCount, nullptr);
+    assert(swapChainImageCount > 0 );
+
+    swapChainImages.resize(swapChainImageCount);
+    vkGetSwapchainImagesKHR(device,swapchain,&swapChainImageCount, swapChainImages.data());
+
+    swapChainImageFormat = settings.format.format;
+    swapChainExtent = settings.extent;
+
+    swapChainImageViews.resize(swapChainImageCount);
+    for (int i = 0; i <swapChainImageViews.size() ; ++i) {
+        VkImageViewCreateInfo imageViewInfo ={};
+        imageViewInfo.sType =VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        imageViewInfo.image = swapChainImages[i];
+        imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        imageViewInfo.format = swapChainImageFormat;
+
+        imageViewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        imageViewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageViewInfo.subresourceRange.baseMipLevel = 0;
+        imageViewInfo.subresourceRange.levelCount = 1;
+        imageViewInfo.subresourceRange.layerCount = 1;
+        imageViewInfo.subresourceRange.baseArrayLayer = 0;
+
+        VK_CHECK(vkCreateImageView(device,&imageViewInfo, nullptr,&swapChainImageViews[i]),"create Image view Failed");
+    }
+
+    //Create Semophere
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
+        vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create semaphores!");
+    }
+
 }
 
 void Application::shutdownVulkan() {
+
+    vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+    vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+    imageAvailableSemaphore=VK_NULL_HANDLE;
+    renderFinishedSemaphore= VK_NULL_HANDLE;
+    for(auto& imageView :swapChainImageViews){
+        vkDestroyImageView(device,imageView, nullptr);
+    }
+    swapChainImageViews.clear();
+    swapChainImages.clear();
+
     vkDestroySwapchainKHR(device,swapchain, nullptr);
     swapchain= VK_NULL_HANDLE;
     vkDestroyDevice(device, nullptr);
+
     device=VK_NULL_HANDLE;
     vkDestroyDebugMessenger(instance,debugMessenger, nullptr);
+
     debugMessenger = VK_NULL_HANDLE;
     vkDestroySurfaceKHR(instance,surface, nullptr);
     instance= VK_NULL_HANDLE ;
+
     vkDestroyInstance(instance, nullptr);
     surface = VK_NULL_HANDLE;
 
+}
+
+void Application::shutdownWindow() {
+    glfwDestroyWindow(window);
+    window = nullptr;
+}
+
+void Application::RenderFrame(){
+    uint32_t imageIndex =0;
+    vkAcquireNextImageKHR(device,swapchain,std::numeric_limits<uint64_t>::max(),
+                          imageAvailableSemaphore,VK_NULL_HANDLE,&imageIndex);
+
+    VkCommandBuffer commandBuffer = render->render(imageIndex);
+
+    VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        throw std::runtime_error("failed to submit draw command buffer!");
+    }
+
+    VkPresentInfoKHR presentInfo{};
+    VkSwapchainKHR swapChains[] = {swapchain};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = nullptr; // Optional
+    vkQueuePresentKHR(presentQueue, &presentInfo);
 }
 
 void Application::mainLoop() {
@@ -461,16 +566,14 @@ void Application::mainLoop() {
 
     while (!glfwWindowShouldClose(window)){
         glfwPollEvents();
+        RenderFrame();
     }
+
+    vkDeviceWaitIdle(device);
 }
 
-void Application::shutdownWindow() {
-    glfwDestroyWindow(window);
-    window = nullptr;
-}
 
 void Application::initVulkanExtensions() {
-
     vkDestroyDebugMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance,"vkDestroyDebugUtilsMessengerEXT");
     if(!vkDestroyDebugMessenger)
         throw std::runtime_error("Create DestroyDebugUtilsMessengerEXT function Failed\n");
@@ -530,7 +633,6 @@ SwapchainSupportedDetails Application::fetchSwapchainSupportedDetails(VkPhysical
     return details;
 }
 
-
 SwapchainSettings Application::selectOptimalSwapchainSettings(SwapchainSupportedDetails& details) {
     SwapchainSettings settings;
 
@@ -579,6 +681,24 @@ SwapchainSettings Application::selectOptimalSwapchainSettings(SwapchainSupported
     }
 
     return settings;
+}
+
+void Application::shutdownRender() {
+    render->shutdown();
+}
+
+void Application::initRender() {
+    RenderContext context ;
+    context.device_ = device;
+    context.extend = swapChainExtent;
+    context.format= swapChainImageFormat;
+    context.imageViews= swapChainImageViews;
+    context.queueFamilyIndex = fetchFamilyIndices(physicalDevice);
+    render = new Render(context);
+    render->init(R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\shaders\vert.spv)",
+                 R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\shaders\frag.spv)");
+
+
 }
 
 
