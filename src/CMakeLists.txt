@@ -10,9 +10,12 @@ cmake_minimum_required(VERSION 3.12)
 #endif ()
 
 aux_source_directory(./ SRC)
-add_executable(niagara ${SRC} app/pbrRender.cpp)
+add_executable(niagara ${SRC}
+        app/pbrRender.cpp
+        app/utils.hpp
+        app/Render.cpp
+        app/Render.h app/Application.cpp app/Application.h app/macro.h)
 target_include_directories(niagara PRIVATE ../extern/glfw/include)
-target_compile_options(niagara PRIVATE "-Wall;-Werror")
 target_include_directories(niagara PRIVATE ../extern/vulkan/include)
 target_include_directories(niagara PRIVATE ../extern/glm)
 target_link_directories(niagara PRIVATE ${Vulkan_LIB_PATH})

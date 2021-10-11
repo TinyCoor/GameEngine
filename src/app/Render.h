@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_RENDER_H
 #define GAMEENGINE_RENDER_H
-
+#include "macro.h"
 #include <vulkan.h>
 #include <string>
 #include <vector>

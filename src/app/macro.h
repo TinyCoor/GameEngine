@@ -1,0 +1,31 @@
+//
+// Created by y123456 on 2021/10/11.
+//
+
+#ifndef GAMEENGINE_MACRO_H
+#define GAMEENGINE_MACRO_H
+#include <vulkan.h>
+
+#define VK_CHECK(call,msg)                              \
+    do {                                                \
+        VkResult res  =(call);                            \
+        if(res != VK_SUCCESS ){                          \
+             throw std::runtime_error(msg);               \
+        }                                                 \
+    }while(0)
+
+#define TH_WITH_MSG(condition,msg) \
+    do{                               \
+    if((condition))                  \
+        throw std::runtime_error(msg);  \
+    }while(0)
+
+
+#define CERR_MSG(condition,msg) \
+    do{                               \
+    if((condition))                  \
+       std::cout << msg ;       \
+       return false;             \
+    }while(0)
+
+#endif //GAMEENGINE_MACRO_H
