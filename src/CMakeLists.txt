@@ -14,7 +14,7 @@ add_executable(niagara ${SRC}
         app/pbrRender.cpp
         app/utils.hpp
         app/Render.cpp
-        app/Render.h app/Application.cpp app/Application.h app/macro.h)
+        app/Render.h app/Application.cpp app/Application.h app/macro.h app/vertex.cpp app/vertex.h app/render_data.cpp app/render_data.h)
 target_include_directories(niagara PRIVATE ../extern/glfw/include)
 target_include_directories(niagara PRIVATE ../extern/vulkan/include)
 target_include_directories(niagara PRIVATE ../extern/glm)

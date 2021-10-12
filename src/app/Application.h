@@ -16,8 +16,7 @@
 #include <vector>
 #include <set>
 #include <limits>
-#include <functional>
-
+#include <algorithm>
 
 struct SwapchainSupportedDetails {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -33,9 +32,7 @@ struct SwapchainSettings{
 
 class Application{
 public:
-
     void run();
-
 private:
     bool checkValidationLayers(std::vector<const char*>& layers);
     bool checkRequiredExtension(std::vector<const char*>& extensions);

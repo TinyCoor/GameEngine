@@ -6,6 +6,8 @@
 #define GAMEENGINE_MACRO_H
 #include <vulkan.h>
 
+#define OFFSET_OF(type,member) ((size_t) (& ((type*) 0)->member))
+
 #define VK_CHECK(call,msg)                              \
     do {                                                \
         VkResult res  =(call);                            \

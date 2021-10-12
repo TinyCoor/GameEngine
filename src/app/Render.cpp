@@ -5,46 +5,41 @@
 #include "Render.h"
 #include "utils.hpp"
 
-VkShaderModule Render::createShader(const std::string &path) const {
-    std::vector<char> vertex_code = readFile(path);
-    VkShaderModuleCreateInfo shaderInfo={};
-    shaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    shaderInfo.pCode = reinterpret_cast<const uint32_t *>(vertex_code.data());
-    shaderInfo.codeSize = static_cast<uint32_t> (vertex_code.size());
-    VkShaderModule shader;
-    if(vkCreateShaderModule(context.device_,&shaderInfo, nullptr,&shader)){
-      throw std::runtime_error("Create shader module failed\n");
-    }
 
-    return shader;
-}
 
 void Render::init(const std::string &vertShaderFile, const std::string &fragShaderFile) {
 
-    vertShader = createShader(vertShaderFile);
-    fragShader = createShader(fragShaderFile);
-
+    data.init(vertShaderFile,fragShaderFile);
     VkPipelineShaderStageCreateInfo vertexShaderStageInfo ={};
     vertexShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertexShaderStageInfo.module = vertShader;
+    vertexShaderStageInfo.module = data.getVertexShader();
     vertexShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vertexShaderStageInfo.pName ="main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo ={};
     fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.module = fragShader;
+    fragShaderStageInfo.module = data.getFragmentShader();
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragShaderStageInfo.pName ="main";
 
-
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShaderStageInfo,fragShaderStageInfo};
 
+
+
+    //Create vertex input
+    auto bindingDescription = Vertex::getBindingDescription();
+    auto attributeDescriptions = Vertex::getAttributeDescriptions();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 0;
     vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
     vertexInputInfo.vertexAttributeDescriptionCount = 0;
     vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
     inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -270,6 +265,11 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeLine);
+
+        VkBuffer vertexBuffers[] = {data.getVertexBuffer()};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
         vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
         vkCmdEndRenderPass(commandBuffers[i]);
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
@@ -280,21 +280,23 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
 }
 
 void Render::shutdown() {
+    data.shutdown();
     vkDestroyCommandPool(context.device_,commandPool, nullptr);
+
     for (auto framebuffer : frameBuffers) {
         vkDestroyFramebuffer(context.device_, framebuffer, nullptr);
     }
     frameBuffers.clear();
+
     vkDestroyPipeline(context.device_, graphicsPipeLine, nullptr);
     vkDestroyRenderPass(context.device_, renderPass, nullptr);
     vkDestroyPipelineLayout(context.device_,pipelineLayout, nullptr);
-    vkDestroyShaderModule(context.device_,vertShader,nullptr);
-    vkDestroyShaderModule(context.device_,fragShader,nullptr);
+
+    commandPool =VK_NULL_HANDLE;
     graphicsPipeLine = VK_NULL_HANDLE;
     renderPass = VK_NULL_HANDLE;
     pipelineLayout = VK_NULL_HANDLE;
-    vertShader = VK_NULL_HANDLE;
-    fragShader = VK_NULL_HANDLE;
+
 }
 
 VkCommandBuffer Render::render(uint32_t imageIndex) {

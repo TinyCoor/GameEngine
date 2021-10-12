@@ -152,13 +152,9 @@ bool Application::checkRequiredExtension(std::vector<const char*>& extensions) {
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
     std::vector<const char*> requiredExtensions(glfwExtensions,glfwExtensions + glfwExtensionCount);
-
     requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-
     extensions.clear();
-
     for (const auto& requiredExtension : requiredExtensions) {
         bool supported = false;
         for(const auto& ex : vulkanExtensions){
@@ -605,11 +601,13 @@ void Application::shutdownRender() {
 void Application::initRender() {
     RenderContext context ;
     context.device_ = device;
+    context.physicalDevice = physicalDevice;
     context.extend = swapChainExtent;
     context.format= swapChainImageFormat;
     context.imageViews= swapChainImageViews;
     context.queueFamilyIndex = fetchFamilyIndices(physicalDevice);
-    render = new Render(context);
+    RenderData data(context);
+    render = new Render(context,data);
     render->init(R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\shaders\vert.spv)",
                  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\shaders\frag.spv)");
 
