@@ -19,7 +19,7 @@ private:
     VkRenderPass renderPass =VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout=VK_NULL_HANDLE;
     VkPipeline graphicsPipeLine = VK_NULL_HANDLE;
-    VkCommandPool commandPool =VK_NULL_HANDLE;
+
     std::vector<VkFramebuffer> frameBuffers;
     std::vector<VkCommandBuffer> commandBuffers;
 public:

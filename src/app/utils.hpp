@@ -4,7 +4,6 @@
 
 #ifndef GAMEENGINE_UTILS_HPP
 #define GAMEENGINE_UTILS_HPP
-
 #include <string>
 #include <fstream>
 #include <vector>

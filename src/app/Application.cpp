@@ -390,10 +390,18 @@ void Application::initVulkan() {
         }
     }
 
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = indices.graphicsFamily.second;
+    poolInfo.flags = 0; // Optional
 
+    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create command pool!");
+    }
 }
 
 void Application::shutdownVulkan() {
+    vkDestroyCommandPool(device,commandPool, nullptr);
     for (int i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
         vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
@@ -601,11 +609,13 @@ void Application::shutdownRender() {
 void Application::initRender() {
     RenderContext context ;
     context.device_ = device;
+    context.commandPool = commandPool;
     context.physicalDevice = physicalDevice;
     context.extend = swapChainExtent;
     context.format= swapChainImageFormat;
     context.imageViews= swapChainImageViews;
-    context.queueFamilyIndex = fetchFamilyIndices(physicalDevice);
+    context.graphicsQueue= graphicsQueue;
+    context.presentQueue = presentQueue;
     RenderData data(context);
     render = new Render(context,data);
     render->init(R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\shaders\vert.spv)",

@@ -223,20 +223,11 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
         }
     }
 
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = context.queueFamilyIndex.graphicsFamily.second;
-    poolInfo.flags = 0; // Optional
-
-    if (vkCreateCommandPool(context.device_, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create command pool!");
-    }
-
     //create command buffers
     commandBuffers.resize(frameBuffers.size());
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
+    allocInfo.commandPool = context.commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = commandBuffers.size();
 
@@ -267,21 +258,22 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeLine);
 
         VkBuffer vertexBuffers[] = {data.getVertexBuffer()};
+        VkBuffer indexBuffer= data.getIndexBuffer();
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffers[i],indexBuffer,0,VK_INDEX_TYPE_UINT16);
 
-        vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+        vkCmdDrawIndexed(commandBuffers[i],indices.size(),1,0,0,0);
+
         vkCmdEndRenderPass(commandBuffers[i]);
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to record command buffer!");
         }
-
     }
 }
 
 void Render::shutdown() {
     data.shutdown();
-    vkDestroyCommandPool(context.device_,commandPool, nullptr);
 
     for (auto framebuffer : frameBuffers) {
         vkDestroyFramebuffer(context.device_, framebuffer, nullptr);
@@ -292,7 +284,6 @@ void Render::shutdown() {
     vkDestroyRenderPass(context.device_, renderPass, nullptr);
     vkDestroyPipelineLayout(context.device_,pipelineLayout, nullptr);
 
-    commandPool =VK_NULL_HANDLE;
     graphicsPipeLine = VK_NULL_HANDLE;
     renderPass = VK_NULL_HANDLE;
     pipelineLayout = VK_NULL_HANDLE;
