@@ -9,6 +9,14 @@
 #include <array>
 #include <vector>
 
+
+struct UniformBufferObject{
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
+
 struct Vertex{
     glm::vec2 position;
     glm::vec3 color;
@@ -35,7 +43,6 @@ struct Vertex{
         attributeDescriptions[1].offset = offsetof(Vertex, color);
         return attributeDescriptions;
     }
-
 };
 
 const std::vector<Vertex> vertices = {
@@ -49,8 +56,5 @@ const std::vector<uint16_t> indices = {
         0, 1, 2,
         2, 3, 0,
 };
-
-
-
 
 #endif //GAMEENGINE_VERTEX_H

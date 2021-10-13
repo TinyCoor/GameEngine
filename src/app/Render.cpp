@@ -25,7 +25,6 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShaderStageInfo,fragShaderStageInfo};
 
 
-
     //Create vertex input
     auto bindingDescription = Vertex::getBindingDescription();
     auto attributeDescriptions = Vertex::getAttributeDescriptions();
@@ -126,6 +125,23 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
     dynamicStateInfo.dynamicStateCount = 2;
     dynamicStateInfo.pDynamicStates = dynamicStates;
 
+    //Create DescriptorSetLayout
+    VkDescriptorSetLayoutBinding uboLayoutBinding{};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.pImmutableSamplers = nullptr;
+
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &uboLayoutBinding;
+
+    VK_CHECK(vkCreateDescriptorSetLayout(context.device_, &layoutInfo, nullptr, &descriptorSetLayout),"failed to create descriptor set layout!");
+
+
     //Pipeline layout
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -134,9 +150,7 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-    if (vkCreatePipelineLayout(context.device_, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
+    VK_CHECK(vkCreatePipelineLayout(context.device_, &pipelineLayoutInfo, nullptr, &pipelineLayout),"failed to create pipeline layout!");
 
     //create Render Pass
     VkAttachmentDescription colorAttachment{};
@@ -176,9 +190,7 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(context.device_, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create render pass!");
-    }
+    VK_CHECK(vkCreateRenderPass(context.device_, &renderPassInfo, nullptr, &renderPass),"failed to create render pass!");
 
     //Create Graphics PipeLine
     VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -199,9 +211,7 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipelineInfo.basePipelineIndex = -1; // Optional
 
-    if (vkCreateGraphicsPipelines(context.device_, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeLine) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create graphics pipeline!");
-    }
+    VK_CHECK(vkCreateGraphicsPipelines(context.device_, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeLine),"failed to create graphics pipeline!");
 
     frameBuffers.resize(context.imageViews.size());
     for (size_t i = 0; i < context.imageViews.size(); i++) {
@@ -218,9 +228,7 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
         framebufferInfo.height = context.extend.height;
         framebufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(context.device_, &framebufferInfo, nullptr, &frameBuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer!");
-        }
+        VK_CHECK(vkCreateFramebuffer(context.device_, &framebufferInfo, nullptr, &frameBuffers[i]),"failed to create framebuffer!");
     }
 
     //create command buffers
@@ -231,9 +239,8 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = commandBuffers.size();
 
-    if (vkAllocateCommandBuffers(context.device_, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate command buffers!");
-    }
+    VK_CHECK(vkAllocateCommandBuffers(context.device_, &allocInfo, commandBuffers.data()),"failed to allocate command buffers!");
+
     //Record command buffers
     for (size_t i = 0; i < commandBuffers.size(); i++) {
         VkCommandBufferBeginInfo beginInfo{};
@@ -241,9 +248,8 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
         beginInfo.pInheritanceInfo = nullptr; // Optional
 
-        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
-            throw std::runtime_error("failed to begin recording command buffer!");
-        }
+        VK_CHECK(vkBeginCommandBuffer(commandBuffers[i], &beginInfo), "failed to begin recording command buffer!");
+
         VkRenderPassBeginInfo renderPassBeginInfo{};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassBeginInfo.renderPass = renderPass;
@@ -258,19 +264,18 @@ void Render::init(const std::string &vertShaderFile, const std::string &fragShad
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeLine);
 
         VkBuffer vertexBuffers[] = {data.getVertexBuffer()};
-        VkBuffer indexBuffer= data.getIndexBuffer();
+        VkBuffer indexBuffer = data.getIndexBuffer();
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffers[i],indexBuffer,0,VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
-        vkCmdDrawIndexed(commandBuffers[i],indices.size(),1,0,0,0);
+        vkCmdDrawIndexed(commandBuffers[i], indices.size(), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffers[i]);
-        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to record command buffer!");
-        }
+        VK_CHECK(vkEndCommandBuffer(commandBuffers[i]), "failed to record command buffer!");
     }
 }
+
 
 void Render::shutdown() {
     data.shutdown();
@@ -280,10 +285,12 @@ void Render::shutdown() {
     }
     frameBuffers.clear();
 
+    vkDestroyDescriptorSetLayout(context.device_,descriptorSetLayout, nullptr);
     vkDestroyPipeline(context.device_, graphicsPipeLine, nullptr);
     vkDestroyRenderPass(context.device_, renderPass, nullptr);
     vkDestroyPipelineLayout(context.device_,pipelineLayout, nullptr);
 
+    descriptorSetLayout = VK_NULL_HANDLE;
     graphicsPipeLine = VK_NULL_HANDLE;
     renderPass = VK_NULL_HANDLE;
     pipelineLayout = VK_NULL_HANDLE;

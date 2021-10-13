@@ -3,6 +3,7 @@
 //
 
 #include "Application.h"
+#include "vulkan_utils.h"
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -397,6 +398,12 @@ void Application::initVulkan() {
 
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
+    }
+
+    VkDeviceSize uboSize = sizeof(UniformBufferObject);
+    uniformBuffers.resize(swapChainImageCount);
+    for (size_t i = 0; i < swapChainImages.size(); i++) {
+       vulkanUtils::createBuffer(uboSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
     }
 }
 

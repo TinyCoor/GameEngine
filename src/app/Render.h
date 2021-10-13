@@ -16,6 +16,7 @@ class Render{
 private:
     RenderData data;
     RenderContext context;
+    VkDescriptorSetLayout descriptorSetLayout =VK_NULL_HANDLE;
     VkRenderPass renderPass =VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout=VK_NULL_HANDLE;
     VkPipeline graphicsPipeLine = VK_NULL_HANDLE;

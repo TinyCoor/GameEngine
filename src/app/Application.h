@@ -72,6 +72,9 @@ private:
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
 
+    std::vector<VkBuffer> uniformBuffers;
+    std::vector<VkDeviceMemory> uniformBufferMemory;
+
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
     enum {
