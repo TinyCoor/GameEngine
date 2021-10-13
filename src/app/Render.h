@@ -16,13 +16,18 @@ class Render{
 private:
     RenderData data;
     RenderContext context;
-    VkDescriptorSetLayout descriptorSetLayout =VK_NULL_HANDLE;
+
     VkRenderPass renderPass =VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout=VK_NULL_HANDLE;
     VkPipeline graphicsPipeLine = VK_NULL_HANDLE;
 
-    std::vector<VkFramebuffer> frameBuffers;
-    std::vector<VkCommandBuffer> commandBuffers;
+    VkDescriptorSetLayout descriptorSetLayout =VK_NULL_HANDLE;
+    std::vector<VkDescriptorSet> descriptorSets{};
+
+    std::vector<VkFramebuffer> frameBuffers{};
+    std::vector<VkCommandBuffer> commandBuffers{};
+    std::vector<VkBuffer> uniformBuffers{};
+    std::vector<VkDeviceMemory> uniformBuffersMemory{};
 public:
     explicit Render(RenderContext& ctx,RenderData& renderData)
                     :context(ctx),data(renderData){
@@ -30,6 +35,7 @@ public:
 
     void init(const std::string& vertShaderFile,
               const std::string& fragShaderFile);
+
     VkCommandBuffer render(uint32_t imageIndex);
     void shutdown();
 

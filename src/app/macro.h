@@ -30,4 +30,14 @@
        return false;             \
     }while(0)
 
+#define VK_DESTROY_OBJECT(destructor_call,variable) \
+                do{                                 \
+                 (destructor_call) ;             \
+                 variable =VK_NULL_HANDLE;                \
+                }while(0)
+
+#define VK_INIT_VARIABLE_OBJECT(type,var_name) \
+                type var_name = VK_NULL_HANDLE
+
+
 #endif //GAMEENGINE_MACRO_H

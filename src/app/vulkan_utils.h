@@ -24,8 +24,9 @@ struct RenderContext{
     VkExtent2D extend;
     VkCommandPool commandPool =VK_NULL_HANDLE;
     VkFormat format ;
-    VkQueue graphicsQueue;
-    VkQueue presentQueue;
+    VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
+    VkQueue graphicsQueue =VK_NULL_HANDLE;
+    VkQueue presentQueue = VK_NULL_HANDLE;
     std::vector<VkImageView> imageViews;
 };
 

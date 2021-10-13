@@ -40,11 +40,6 @@ VkShaderModule RenderData::createShader(const std::string &path) const {
 }
 
 
-
-
-
-
-
 void RenderData::createVertexBuffer() {
     VkDeviceSize bufferSize = sizeof(Vertex)* vertices.size();
     VkBuffer stagingBuffer;

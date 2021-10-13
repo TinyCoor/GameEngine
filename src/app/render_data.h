@@ -25,7 +25,6 @@ private:
 
 
 
-
 public:
    explicit RenderData(RenderContext& ctx): context(ctx){
    }

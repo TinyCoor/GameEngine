@@ -3,7 +3,6 @@
 //
 
 #include "Application.h"
-#include "vulkan_utils.h"
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -391,24 +390,32 @@ void Application::initVulkan() {
         }
     }
 
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.queueFamilyIndex = indices.graphicsFamily.second;
-    poolInfo.flags = 0; // Optional
+    VkCommandPoolCreateInfo commandPoolInfo{};
+    commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.second;
+    commandPoolInfo.flags = 0; // Optional
+    VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool),"failed to create command pool!");
 
-    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create command pool!");
-    }
+    //create descriptor Pool
+    VkDescriptorPoolSize descriptorPoolSize{};
+    descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorPoolSize.descriptorCount = swapChainImageCount;
 
-    VkDeviceSize uboSize = sizeof(UniformBufferObject);
-    uniformBuffers.resize(swapChainImageCount);
-    for (size_t i = 0; i < swapChainImages.size(); i++) {
-       vulkanUtils::createBuffer(uboSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
-    }
+    VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
+    descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolCreateInfo.poolSizeCount = 1;
+    descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
+    descriptorPoolCreateInfo.maxSets =swapChainImageCount;
+    descriptorPoolCreateInfo.flags = 0;
+    VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
+
 }
 
 void Application::shutdownVulkan() {
     vkDestroyCommandPool(device,commandPool, nullptr);
+    commandPool = VK_NULL_HANDLE;
+    vkDestroyDescriptorPool(device,descriptorPool, nullptr);
+    descriptorPool =VK_NULL_HANDLE;
     for (int i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
         vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
@@ -469,10 +476,7 @@ void Application::RenderFrame(){
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
-        throw std::runtime_error("failed to submit draw command buffer!");
-    }
-
+    VK_CHECK(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]),"failed to submit draw command buffer!");
     VkPresentInfoKHR presentInfo{};
     VkSwapchainKHR swapChains[] = {swapchain};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -501,12 +505,10 @@ void Application::mainLoop() {
 
 void Application::initVulkanExtensions() {
     vkDestroyDebugMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance,"vkDestroyDebugUtilsMessengerEXT");
-    if(!vkDestroyDebugMessenger)
-        throw std::runtime_error("Create DestroyDebugUtilsMessengerEXT function Failed\n");
+    TH_WITH_MSG(!vkDestroyDebugMessenger,"Create DestroyDebugUtilsMessengerEXT function Failed\n");
 
     vkCreateDebugMessenger = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance,"vkCreateDebugUtilsMessengerEXT");
-    if(!vkCreateDebugMessenger)
-        throw std::runtime_error("Create CreateDebugUtilsMessengerEXT function Failed\n");
+    TH_WITH_MSG(!vkCreateDebugMessenger,"Create CreateDebugUtilsMessengerEXT function Failed\n");
 
 }
 
@@ -616,6 +618,7 @@ void Application::shutdownRender() {
 void Application::initRender() {
     RenderContext context ;
     context.device_ = device;
+    context.descriptorPool = descriptorPool;
     context.commandPool = commandPool;
     context.physicalDevice = physicalDevice;
     context.extend = swapChainExtent;
@@ -623,6 +626,7 @@ void Application::initRender() {
     context.imageViews= swapChainImageViews;
     context.graphicsQueue= graphicsQueue;
     context.presentQueue = presentQueue;
+
     RenderData data(context);
     render = new Render(context,data);
     render->init(R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\shaders\vert.spv)",

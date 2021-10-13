@@ -68,12 +68,12 @@ private:
     VkSurfaceKHR surface {VK_NULL_HANDLE};
     VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
     VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
+
+    VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
     VkCommandPool commandPool =VK_NULL_HANDLE;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
 
-    std::vector<VkBuffer> uniformBuffers;
-    std::vector<VkDeviceMemory> uniformBufferMemory;
 
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
