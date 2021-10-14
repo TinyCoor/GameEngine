@@ -7,10 +7,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 
-void Render::init(const std::string &vertShaderFile, const std::string &fragShaderFile) {
+void Render::init(const std::string &vertShaderFile,
+                  const std::string &fragShaderFile,
+                  const std::string &textureFile) {
 
-    data.init(vertShaderFile,fragShaderFile);
+    data.init(vertShaderFile,fragShaderFile,textureFile);
     size_t imageCount = context.imageViews.size();
+
     //Creaet Uniform Buffers
     VkDeviceSize uboSize = sizeof(UniformBufferObject);
     uniformBuffers.resize(imageCount);

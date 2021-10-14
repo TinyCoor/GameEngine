@@ -26,6 +26,8 @@ add_executable(niagara ${SRC}
 target_include_directories(niagara PRIVATE ../extern/glfw/include)
 target_include_directories(niagara PRIVATE ../extern/vulkan/include)
 target_include_directories(niagara PRIVATE ../extern/glm)
+target_include_directories(niagara PRIVATE ../extern/assimp)
+target_include_directories(niagara PRIVATE ../extern/assimp/contrib/stb)
 target_link_directories(niagara PRIVATE ${Vulkan_LIB_PATH})
 target_link_libraries(niagara PRIVATE vulkan-1)
 target_link_libraries(niagara PRIVATE glfw)

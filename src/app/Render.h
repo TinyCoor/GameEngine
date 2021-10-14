@@ -26,15 +26,18 @@ private:
 
     std::vector<VkFramebuffer> frameBuffers{};
     std::vector<VkCommandBuffer> commandBuffers{};
+
     std::vector<VkBuffer> uniformBuffers{};
     std::vector<VkDeviceMemory> uniformBuffersMemory{};
+
 public:
     explicit Render(RenderContext& ctx,RenderData& renderData)
                     :context(ctx),data(renderData){
     }
 
     void init(const std::string& vertShaderFile,
-              const std::string& fragShaderFile);
+              const std::string& fragShaderFile,
+              const std::string& textureFile);
 
     VkCommandBuffer render(uint32_t imageIndex);
     void shutdown();

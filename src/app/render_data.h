@@ -11,9 +11,12 @@
 #include <vector>
 #include <string>
 
+
+
 class RenderData{
 private:
     RenderContext context;
+
     VkShaderModule vertShader=VK_NULL_HANDLE;
     VkShaderModule fragShader=VK_NULL_HANDLE;
 
@@ -23,6 +26,11 @@ private:
     VkBuffer indexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory indexBufferMemory= VK_NULL_HANDLE;
 
+    std::vector<VkBuffer> uniformBuffers{};
+    std::vector<VkDeviceMemory> uniformBuffersMemory{};
+
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
 
 
 public:
@@ -30,7 +38,8 @@ public:
    }
 
     void init(const std::string& vertShaderFile,
-              const std::string& fragShaderFile);
+              const std::string& fragShaderFile,
+              const std::string& textureFile);
 
     inline VkShaderModule getVertexShader() const {return vertShader;}
     inline VkShaderModule getFragmentShader() const{return fragShader;}
@@ -44,6 +53,7 @@ private:
     VkShaderModule createShader(const std::string &path) const ;
     void createIndexBuffer();
     void createVertexBuffer();
+    void createImage(const std::string& path);
 
 };
 

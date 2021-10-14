@@ -110,8 +110,8 @@ namespace {
     }
 }
 
-const int Width =800;
-const int Height = 600;
+const int Width =1920;
+const int Height = 1080;
 
 
 std::vector<const char*> Application:: requiredPhysicalDeviceExtensions ={
@@ -629,8 +629,9 @@ void Application::initRender() {
 
     RenderData data(context);
     render = new Render(context,data);
-    render->init(R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\shaders\vert.spv)",
-                 R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\shaders\frag.spv)");
+    render->init(R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\vert.spv)",
+                 R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\frag.spv)",
+                 R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\texture.jpg)");
 
 
 }
