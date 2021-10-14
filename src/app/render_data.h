@@ -29,8 +29,9 @@ private:
     std::vector<VkBuffer> uniformBuffers{};
     std::vector<VkDeviceMemory> uniformBuffersMemory{};
 
-    VkImage textureImage;
-    VkDeviceMemory textureImageMemory;
+    VkImage textureImage{};
+    VkImageView textureImageView{};
+    VkDeviceMemory textureImageMemory{};
 
 
 public:

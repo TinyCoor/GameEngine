@@ -350,45 +350,6 @@ void Application::initVulkan() {
     swapChainImageFormat = settings.format.format;
     swapChainExtent = settings.extent;
 
-    swapChainImageViews.resize(swapChainImageCount);
-    for (int i = 0; i <swapChainImageViews.size() ; ++i) {
-        VkImageViewCreateInfo imageViewInfo ={};
-        imageViewInfo.sType =VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        imageViewInfo.image = swapChainImages[i];
-        imageViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        imageViewInfo.format = swapChainImageFormat;
-
-        imageViewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-        imageViewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-        imageViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageViewInfo.subresourceRange.baseMipLevel = 0;
-        imageViewInfo.subresourceRange.levelCount = 1;
-        imageViewInfo.subresourceRange.layerCount = 1;
-        imageViewInfo.subresourceRange.baseArrayLayer = 0;
-
-        VK_CHECK(vkCreateImageView(device,&imageViewInfo, nullptr,&swapChainImageViews[i]),"create Image view Failed");
-    }
-
-    //Create Sync Object
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    imageAvailableSemaphores.resize(MAX_FRAME_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAME_IN_FLIGHT);
-    inFlightFences.resize(MAX_FRAME_IN_FLIGHT);
-
-    VkFenceCreateInfo fenceInfo = {};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    for (size_t i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create semaphores!");
-        }
-    }
 
     VkCommandPoolCreateInfo commandPoolInfo{};
     commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -408,6 +369,32 @@ void Application::initVulkan() {
     descriptorPoolCreateInfo.maxSets =swapChainImageCount;
     descriptorPoolCreateInfo.flags = 0;
     VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
+
+    RenderContext context ;
+    context.device_ = device;
+
+    swapChainImageViews.resize(swapChainImageCount);
+    for (int i = 0; i <swapChainImageViews.size() ; ++i) {
+        swapChainImageViews[i] = vulkanUtils::createImage2DVIew(context,swapChainImages[i],swapChainImageFormat);
+    }
+
+    //Create Sync Object
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    imageAvailableSemaphores.resize(MAX_FRAME_IN_FLIGHT);
+    renderFinishedSemaphores.resize(MAX_FRAME_IN_FLIGHT);
+    inFlightFences.resize(MAX_FRAME_IN_FLIGHT);
+
+    VkFenceCreateInfo fenceInfo = {};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    for (size_t i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+            vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create semaphores!");
+        }
+    }
 
 }
 
@@ -518,7 +505,7 @@ QueueFamilyIndices Application::fetchFamilyIndices(VkPhysicalDevice physical_dev
     std::vector<VkQueueFamilyProperties> queueFamilies(queueCount);
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device,&queueCount,queueFamilies.data());
     int i = 0;
-    QueueFamilyIndices indices;
+    QueueFamilyIndices indices{};
     for (const auto& queueFamily : queueFamilies) {
         VkBool32  presentSupport=false;
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
@@ -562,7 +549,7 @@ SwapchainSupportedDetails Application::fetchSwapchainSupportedDetails(VkPhysical
 }
 
 SwapchainSettings Application::selectOptimalSwapchainSettings(SwapchainSupportedDetails& details) {
-    SwapchainSettings settings;
+    SwapchainSettings settings{};
 
     //select best format if the surface has no preferred format
     if(details.formats.size() == 1 && details.formats[0].format == VK_FORMAT_UNDEFINED){
@@ -616,6 +603,7 @@ void Application::shutdownRender() {
 }
 
 void Application::initRender() {
+
     RenderContext context ;
     context.device_ = device;
     context.descriptorPool = descriptorPool;

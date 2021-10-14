@@ -20,6 +20,7 @@ void RenderData::init(const std::string& vertShaderFile,
 }
 
 void RenderData::shutdown(){
+    vkDestroyImageView(context.device_,textureImageView, nullptr);
     vkDestroyImage(context.device_, textureImage, nullptr);
     vkFreeMemory(context.device_, textureImageMemory, nullptr);
     vkDestroyShaderModule(context.device_,vertShader,nullptr);
@@ -128,10 +129,10 @@ void RenderData::createImage(const std::string& path){
     memcpy(data, pixels, static_cast<size_t>(imageSize));
     vkUnmapMemory(context.device_, stagingBufferMemory);
 
-
+    VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
     vulkanUtils::createImage2D(context,texWidth,
                                texHeight,
-                               VK_FORMAT_R8G8B8A8_SRGB,
+                               format,
                                VK_IMAGE_TILING_OPTIMAL,
                                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -158,5 +159,8 @@ void RenderData::createImage(const std::string& path){
     vkFreeMemory(context.device_, stagingBufferMemory, nullptr);
     stbi_image_free(pixels);
     pixels = nullptr;
+
+    //create ImageView
+    textureImageView =vulkanUtils::createImage2DVIew(context,textureImage,format);
 
 }

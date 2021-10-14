@@ -192,7 +192,7 @@ vulkanUtils::transitionImageLayout(const RenderContext& context,
 
     vkCmdPipelineBarrier(
             commandBuffer,
-            sourceStage /* TODO */, destinationStage /* TODO */,
+            sourceStage , destinationStage,
             0,
             0, nullptr,
             0, nullptr,
@@ -232,4 +232,22 @@ void vulkanUtils::copyBufferToImage(const RenderContext &context, VkBuffer srcBu
             &region
     );
     endSingleTimeCommands(context,commandBuffer);
+}
+
+VkImageView vulkanUtils::createImage2DVIew(const RenderContext& context,
+                                           VkImage image,
+                                           VkFormat format) {
+    VkImageView textureImageView{};
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+    VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
+    return textureImageView;
 }

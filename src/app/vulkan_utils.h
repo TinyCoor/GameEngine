@@ -75,6 +75,9 @@ public:
 
    static std::vector<char> readFile(const std::string& filename);
 
+   static VkImageView createImage2DVIew(const RenderContext& context,
+                                        VkImage image,
+                                        VkFormat format);
 
    static void transitionImageLayout(const RenderContext& context,
                                      VkImage image,
