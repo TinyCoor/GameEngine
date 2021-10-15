@@ -3,6 +3,7 @@
 //
 
 #include "vulkan_utils.h"
+#include "VulkanRenderContext.h"
 #include "macro.h"
 #include <stdexcept>
 #include <fstream>

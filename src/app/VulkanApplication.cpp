@@ -3,6 +3,12 @@
 //
 
 #include "Application.h"
+#include<iostream>
+#include <set>
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
+#include <algorithm>
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -21,7 +27,7 @@ namespace {
         //填充应用信息
         VkApplicationInfo appInfo={};
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName ="PBR Render";
+        appInfo.pApplicationName ="PBR VulkanRender";
         appInfo.applicationVersion= VK_MAKE_VERSION(1,0,0);
         appInfo.pEngineName = "No Engine";
         appInfo.engineVersion = VK_MAKE_VERSION(1,0,0);
@@ -626,7 +632,7 @@ void Application::initRender() {
     context.presentQueue = presentQueue;
 
     RenderData data(context);
-    render = new Render(context,data);
+    render = new VulkanRender(context,data);
     render->init(R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\vert.spv)",
                  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\frag.spv)",
                  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\texture.jpg)");

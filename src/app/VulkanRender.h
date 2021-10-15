@@ -4,9 +4,10 @@
 
 #ifndef GAMEENGINE_RENDER_H
 #define GAMEENGINE_RENDER_H
-#include "macro.h"
-#include "render_data.h"
-#include "vertex.h"
+#include "Macro.h"
+#include "VulkanRenderData.h"
+#include "VulkanRenderContext.h"
+#include "Vertex.h"
 #include <vulkan.h>
 #include <string>
 #include <vector>

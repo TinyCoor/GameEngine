@@ -5,18 +5,11 @@
 #ifndef GAMEENGINE_APPLICATION_H
 #define GAMEENGINE_APPLICATION_H
 
-#include "Render.h"
+#include "VulkanRender.h"
 #include <vulkan.h>
-#include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
-#include <glm/vec4.hpp>
-#include <stdexcept>
-#include <iostream>
-#include <optional>
 #include <vector>
-#include <set>
-#include <limits>
-#include <algorithm>
+
+class GLFWwindow;
 
 struct SwapchainSupportedDetails {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -57,8 +50,7 @@ private:
 
 private:
     GLFWwindow* window{nullptr};
-
-    Render* render{nullptr};
+    VulkanRender* render{nullptr};
 
     VkInstance instance{VK_NULL_HANDLE};
     VkPhysicalDevice physicalDevice{VK_NULL_HANDLE};
@@ -73,6 +65,10 @@ private:
     VkCommandPool commandPool =VK_NULL_HANDLE;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
+
+    VkImage depthImage;
+    VkDeviceMemory depthImageMemory;
+    VkImageView depthImageView;
 
 
     VkFormat swapChainImageFormat;
