@@ -15,11 +15,13 @@ void RenderData::init(const std::string& vertShaderFile,
     vertShader = createShader(vertShaderFile);
     fragShader = createShader(fragShaderFile);
     createImage(textureFile);
-   createVertexBuffer();
-   createIndexBuffer();
+    createVertexBuffer();
+    createIndexBuffer();
 }
 
 void RenderData::shutdown(){
+
+    vkDestroySampler(context.device_,textureImageSampler, nullptr);
     vkDestroyImageView(context.device_,textureImageView, nullptr);
     vkDestroyImage(context.device_, textureImage, nullptr);
     vkFreeMemory(context.device_, textureImageMemory, nullptr);
@@ -162,5 +164,6 @@ void RenderData::createImage(const std::string& path){
 
     //create ImageView
     textureImageView =vulkanUtils::createImage2DVIew(context,textureImage,format);
+    textureImageSampler= vulkanUtils::createSampler2D(context);
 
 }

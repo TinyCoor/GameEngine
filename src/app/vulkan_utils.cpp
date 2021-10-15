@@ -75,7 +75,7 @@ std::vector<char> vulkanUtils::readFile(const std::string& filename){
     size_t file_size = static_cast<size_t>(file.tellg());
     std::vector<char> buffer(file_size);
     file.seekg(0);
-    file.read(buffer.data(),file_size);
+    file.read(buffer.data(),(long long)file_size);
     file.close();
     return buffer;
 }
@@ -142,11 +142,13 @@ void vulkanUtils::createImage2D(const RenderContext &context, uint32_t width, ui
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(context,memRequirements.memoryTypeBits, usage);
+    allocInfo.memoryTypeIndex = findMemoryType(context,memRequirements.memoryTypeBits, properties);
     VK_CHECK(vkAllocateMemory(context.device_, &allocInfo, nullptr, &memory) ,"failed to allocate vertex buffer memory!");
     VK_CHECK(vkBindImageMemory(context.device_, image, memory, 0),"Bind Buffer VertexBuffer Failed");
 }
 
+
+//TODO FIX
 void
 vulkanUtils::transitionImageLayout(const RenderContext& context,
                                    VkImage image,
@@ -168,8 +170,6 @@ vulkanUtils::transitionImageLayout(const RenderContext& context,
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = 1;
 
-//    barrier.srcAccessMask = 0; // TODO
-//    barrier.dstAccessMask = 0; // TODO
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
 
@@ -250,4 +250,30 @@ VkImageView vulkanUtils::createImage2DVIew(const RenderContext& context,
     viewInfo.subresourceRange.layerCount = 1;
     VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
     return textureImageView;
+}
+
+
+
+VkSampler vulkanUtils::createSampler2D(const RenderContext& context){
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = 10;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+    VkSampler textureSampler{VK_NULL_HANDLE};
+    VK_CHECK(vkCreateSampler(context.device_, &samplerInfo, nullptr, &textureSampler),"failed to create texture sampler!") ;
+
+    return textureSampler;
 }

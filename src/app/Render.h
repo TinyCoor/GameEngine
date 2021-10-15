@@ -40,6 +40,7 @@ public:
               const std::string& textureFile);
 
     VkCommandBuffer render(uint32_t imageIndex);
+
     void shutdown();
 
 };

@@ -150,10 +150,24 @@ void Render::init(const std::string &vertShaderFile,
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr;
 
+    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+    samplerLayoutBinding.binding = 1;
+    samplerLayoutBinding.descriptorCount = 1;
+    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerLayoutBinding.pImmutableSamplers = nullptr;
+    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    layoutInfo.pBindings = bindings.data();
+
+
     VkDescriptorSetLayoutCreateInfo desctiptorLayoutInfo{};
     desctiptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    desctiptorLayoutInfo.bindingCount = 1;
-    desctiptorLayoutInfo.pBindings = &uboLayoutBinding;
+    desctiptorLayoutInfo.bindingCount = bindings.size();
+    desctiptorLayoutInfo.pBindings = bindings.data();
     VK_CHECK(vkCreateDescriptorSetLayout(context.device_, &desctiptorLayoutInfo, nullptr, &descriptorSetLayout),"failed to create descriptor set layout!");
 
     // Create Descriptor Sets
@@ -174,19 +188,35 @@ void Render::init(const std::string &vertShaderFile,
         descriptorBufferInfo.offset = 0;
         descriptorBufferInfo.range = sizeof(UniformBufferObject);
 
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = data.getTextureImageView();
+        imageInfo.sampler = data.getTextureImageSmapler();
+
+        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
         VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = descriptorSets[i];
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = descriptorSets[i];
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &descriptorBufferInfo;
+        descriptorWrites[0].pImageInfo = nullptr; // Optional
+        descriptorWrites[0].pTexelBufferView = nullptr; // Optional
 
-        descriptorWrite.pBufferInfo = &descriptorBufferInfo;
-        descriptorWrite.pImageInfo = nullptr; // Optional
-        descriptorWrite.pTexelBufferView = nullptr; // Optional
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = descriptorSets[i];
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pImageInfo = &imageInfo;
 
-        vkUpdateDescriptorSets(context.device_, 1, &descriptorWrite, 0, nullptr);
+        vkUpdateDescriptorSets(context.device_,
+                               descriptorWrites.size(),
+                               descriptorWrites.data(),
+                               0, nullptr);
 
    }
 
@@ -311,9 +341,6 @@ void Render::init(const std::string &vertShaderFile,
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeLine);
-//        vkCmdBindDescriptorSets(commandBuffers[i],VK_PIPELINE_BIND_POINT_GRAPHICS,
-//                                pipelineLayout,
-//                                0, 1, &descriptorSets[i], 0, nullptr);
 
         VkBuffer vertexBuffers[] = {data.getVertexBuffer()};
         VkBuffer indexBuffer = data.getIndexBuffer();

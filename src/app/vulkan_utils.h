@@ -84,6 +84,9 @@ public:
                                      VkFormat format,
                                      VkImageLayout oldLayout,
                                      VkImageLayout newLayout);
+
+   static VkSampler createSampler2D(const RenderContext& context);
+
 };
 
 

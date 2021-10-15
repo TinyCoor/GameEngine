@@ -86,6 +86,7 @@ namespace {
         VkDevice device;
         VkDeviceCreateInfo deviceCreateInfo={};
         VkPhysicalDeviceFeatures deviceFeatures ={};
+        deviceFeatures.samplerAnisotropy = VK_TRUE;
         deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         deviceCreateInfo.pQueueCreateInfos = queuesInfo.data();
         deviceCreateInfo.queueCreateInfoCount = queuesInfo.size();
@@ -251,8 +252,12 @@ bool Application::checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurface
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(physical_device,&deviceFeatures);
 
-    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
-           && deviceFeatures.geometryShader;
+    if(!deviceFeatures.geometryShader)
+        return false;
+    if(!deviceFeatures.samplerAnisotropy)
+        return false;
+
+    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 }
 void Application::initVulkan() {
     //检查vulkan extension and layer
@@ -358,14 +363,18 @@ void Application::initVulkan() {
     VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool),"failed to create command pool!");
 
     //create descriptor Pool
-    VkDescriptorPoolSize descriptorPoolSize{};
-    descriptorPoolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorPoolSize.descriptorCount = swapChainImageCount;
+
+    std::array<VkDescriptorPoolSize,2> descriptorPoolSizes{};
+    descriptorPoolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorPoolSizes[0].descriptorCount = swapChainImageCount;
+    descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorPoolSizes[1].descriptorCount = swapChainImageCount;
+
 
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
     descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    descriptorPoolCreateInfo.poolSizeCount = 1;
-    descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
+    descriptorPoolCreateInfo.poolSizeCount = descriptorPoolSizes.size();
+    descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
     descriptorPoolCreateInfo.maxSets =swapChainImageCount;
     descriptorPoolCreateInfo.flags = 0;
     VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
@@ -401,8 +410,9 @@ void Application::initVulkan() {
 void Application::shutdownVulkan() {
     vkDestroyCommandPool(device,commandPool, nullptr);
     commandPool = VK_NULL_HANDLE;
+
     vkDestroyDescriptorPool(device,descriptorPool, nullptr);
-    descriptorPool =VK_NULL_HANDLE;
+
     for (int i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
         vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);

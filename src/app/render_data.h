@@ -30,8 +30,10 @@ private:
     std::vector<VkDeviceMemory> uniformBuffersMemory{};
 
     VkImage textureImage{};
-    VkImageView textureImageView{};
     VkDeviceMemory textureImageMemory{};
+
+    VkImageView textureImageView{};
+    VkSampler textureImageSampler{};
 
 
 public:
@@ -46,6 +48,8 @@ public:
     inline VkShaderModule getFragmentShader() const{return fragShader;}
     inline VkBuffer getVertexBuffer() const{return vertexBuffer;}
     inline VkBuffer getIndexBuffer() const{return indexBuffer;}
+    inline VkImageView getTextureImageView() const {return textureImageView;}
+    inline VkSampler  getTextureImageSmapler()const {return textureImageSampler;}
 
 
     void shutdown();

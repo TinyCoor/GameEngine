@@ -9,6 +9,4 @@
 #include <vector>
 
 
-
-
 #endif //GAMEENGINE_UTILS_HPP
