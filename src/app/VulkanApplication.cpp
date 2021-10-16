@@ -401,6 +401,7 @@ void Application::initVulkan() {
     for (int i = 0; i <swapChainImageViews.size() ; ++i) {
         swapChainImageViews[i] = vulkanUtils::createImage2DView(context,
                                                                 swapChainImages[i],
+                                                                1,
                                                                 swapChainImageFormat,
                                                                 VK_IMAGE_ASPECT_COLOR_BIT);
     }
@@ -429,6 +430,7 @@ void Application::initVulkan() {
     vulkanUtils::createImage2D(context,
                                  swapChainExtent.width,
                                  swapChainExtent.height,
+                                 1,
                                  depthFormat,
                                  VK_IMAGE_TILING_OPTIMAL,
                                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -438,11 +440,13 @@ void Application::initVulkan() {
 
    depthImageView = vulkanUtils::createImage2DView(context,
                                    depthImage,
+                                   1,
                                    depthFormat,
                                    VK_IMAGE_ASPECT_DEPTH_BIT);
 
    vulkanUtils::transitionImageLayout(context,
                                        depthImage,
+                                       1,
                                        depthFormat,
                                        VK_IMAGE_LAYOUT_UNDEFINED,
                                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);

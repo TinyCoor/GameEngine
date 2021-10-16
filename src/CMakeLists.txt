@@ -21,6 +21,7 @@ add_executable(niagara
         app/VulkanUtils.h
         app/VulkanUtils.cpp
         app/VulkanRenderScene.cpp
+        app/VulkanTexture.cpp
         )
 target_include_directories(niagara PRIVATE ../extern/glfw/include)
 target_include_directories(niagara PRIVATE ../extern/vulkan/include)

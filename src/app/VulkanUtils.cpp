@@ -115,8 +115,10 @@ VkCommandBuffer vulkanUtils::beginSingleTimeCommands(const VulkanRenderContext& 
 }
 
 
-void vulkanUtils::createImage2D(const VulkanRenderContext &context, uint32_t width, uint32_t height, VkFormat format,
-                                VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+void vulkanUtils::createImage2D(const VulkanRenderContext &context,
+                                uint32_t width, uint32_t height,  uint32_t mipLevel,
+                                VkFormat format,VkImageTiling tiling,
+                                VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                 VkImage &image, VkDeviceMemory &memory) {
     //Create Vertex Buffer
     VkImageCreateInfo imageInfo{};
@@ -125,7 +127,7 @@ void vulkanUtils::createImage2D(const VulkanRenderContext &context, uint32_t wid
     imageInfo.extent.width = static_cast<uint32_t>(width);
     imageInfo.extent.height = static_cast<uint32_t>(height);
     imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = 1;
+    imageInfo.mipLevels = mipLevel;
     imageInfo.arrayLayers = 1;
     imageInfo.format = format;
     imageInfo.tiling = tiling;
@@ -153,6 +155,7 @@ void vulkanUtils::createImage2D(const VulkanRenderContext &context, uint32_t wid
 void
 vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
                                    VkImage image,
+                                   uint32_t mipLevels,
                                    VkFormat format,
                                    VkImageLayout oldLayout,
                                    VkImageLayout newLayout)
@@ -166,7 +169,7 @@ vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
     barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.levelCount = mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = 1;
 
@@ -248,8 +251,10 @@ void vulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer
 
 VkImageView vulkanUtils::createImage2DView(const VulkanRenderContext& context,
                                            VkImage image,
+                                           uint32_t mipLevels,
                                            VkFormat format,
-                                           VkImageAspectFlags aspectFlags) {
+                                           VkImageAspectFlags aspectFlags
+                                          ) {
     VkImageView textureImageView{};
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -258,7 +263,7 @@ VkImageView vulkanUtils::createImage2DView(const VulkanRenderContext& context,
     viewInfo.format = format;
     viewInfo.subresourceRange.aspectMask = aspectFlags;
     viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.levelCount = mipLevels;
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
     VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
@@ -292,5 +297,40 @@ VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context){
 
 bool vulkanUtils::hasStencilComponent(VkFormat format){
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+void
+vulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
+                                    VkImage image, uint32_t width, uint32_t height,
+                                    uint32_t mipLevel) {
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands(context);
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.image = image;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.levelCount = 1;
+
+
+    int mipWidth =width;
+    int mipHeight = height;
+    for (uint32_t i = 1; i < mipLevel; i++) {
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    }
+    vkCmdPipelineBarrier(commandBuffer,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                         0, nullptr,
+                         0, nullptr,
+                         1, &barrier);
+
+    endSingleTimeCommands(context,commandBuffer);
+
 }
 

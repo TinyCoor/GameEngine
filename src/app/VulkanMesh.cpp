@@ -110,7 +110,6 @@ void VulkanMesh::createIndexBuffer() {
 
 //This is a bug in load form File
 bool VulkanMesh::loadFromFile(const std::string &file) {
-    //indices 不正确
     clearCPUData();
 #ifndef false
     Assimp::Importer importer;

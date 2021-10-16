@@ -8,10 +8,11 @@
 #include "VulkanRenderContext.h"
 #include <string>
 
-
 class VulkanTexture {
 public:
-    VulkanTexture(const VulkanRenderContext& ctx): context(ctx){}
+    VulkanTexture(const VulkanRenderContext& ctx)
+    : context(ctx){}
+    ~VulkanTexture();
 
     bool loadFromFile(const std::string& file);
     inline VkImage getImage()const {return image;}
@@ -29,6 +30,8 @@ private:
     int width =0;
     int height =0;
     int channels =0;
+    int mipLevels = 0;
+
     VkFormat format{VK_FORMAT_B8G8R8A8_UNORM};
     VkImage image{};
     VkDeviceMemory imageMemory{};

@@ -43,10 +43,13 @@ public:
                            uint32_t width,
                            uint32_t height);
 
+
+
    static void createImage2D(
            const VulkanRenderContext& context,
            uint32_t width,
            uint32_t height,
+           uint32_t mipLevel,
            VkFormat format,
            VkImageTiling tiling,
            VkImageUsageFlags usage,
@@ -55,19 +58,22 @@ public:
            VkDeviceMemory& memory
            );
 
+    static VkImageView createImage2DView(const VulkanRenderContext& context,
+                                         VkImage image,
+                                         uint32_t minLevels,
+                                         VkFormat format,
+                                         VkImageAspectFlags aspectFlags
+                                         );
+
    static void endSingleTimeCommands(const VulkanRenderContext& context,VkCommandBuffer commandBuffer);
 
    static VkCommandBuffer beginSingleTimeCommands(const VulkanRenderContext& context);
 
    static std::vector<char> readFile(const std::string& filename);
 
-   static VkImageView createImage2DView(const VulkanRenderContext& context,
-                                        VkImage image,
-                                        VkFormat format,
-                                        VkImageAspectFlags aspectFlags);
-
    static void transitionImageLayout(const VulkanRenderContext& context,
                                      VkImage image,
+                                     uint32_t mipLevels,
                                      VkFormat format,
                                      VkImageLayout oldLayout,
                                      VkImageLayout newLayout);
@@ -75,6 +81,14 @@ public:
    static VkSampler createSampler2D(const VulkanRenderContext& context);
 
    static bool hasStencilComponent(VkFormat format);
+
+   static void generateImage2DMipMaps(
+           const VulkanRenderContext& context,
+           VkImage image,
+           uint32_t width,
+           uint32_t height,
+           uint32_t mipLevel,
+           )
 
 };
 

@@ -10,6 +10,13 @@
 #include <stb_image.h>
 #include <iostream>
 
+VulkanTexture::~VulkanTexture() {
+    //TODO
+    // clearCPUData();
+    // clearGPUData();
+}
+
+
 void VulkanTexture::uploadToGPU() {
 
     //TODO Support Other Image Format
@@ -30,9 +37,9 @@ void VulkanTexture::uploadToGPU() {
     memcpy(data, pixels, static_cast<size_t>(imageSize));
     vkUnmapMemory(context.device_, stagingBufferMemory);
 
-//  VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
     vulkanUtils::createImage2D(context,width,
                                height,
+                               mipLevels,
                                format,
                                VK_IMAGE_TILING_OPTIMAL,
                                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -40,9 +47,7 @@ void VulkanTexture::uploadToGPU() {
                                image, imageMemory);
 
     //Copy to GPU
-    vulkanUtils::transitionImageLayout(context,
-                                       image,
-                                       format,
+    vulkanUtils::transitionImageLayout(context,image,mipLevels,format,
                                        VK_IMAGE_LAYOUT_UNDEFINED,
                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
@@ -51,6 +56,7 @@ void VulkanTexture::uploadToGPU() {
                                    width,height);
 
     vulkanUtils::transitionImageLayout(context, image,
+                                       mipLevels,
                                        format,
                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -62,6 +68,7 @@ void VulkanTexture::uploadToGPU() {
     //create ImageView
     imageView =vulkanUtils::createImage2DView(context,
                                               image,
+                                              mipLevels,
                                               format,
                                               VK_IMAGE_ASPECT_COLOR_BIT);
     imageSampler= vulkanUtils::createSampler2D(context);
@@ -98,6 +105,8 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
         return false;
     }
 
+    mipLevels =static_cast<int>( std::floor(std::log2(std::max(width,height)))+ 1);
+
     clearCPUData();
 
     size_t size = width* height *4;
@@ -111,3 +120,4 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
 
     return true;
 }
+
