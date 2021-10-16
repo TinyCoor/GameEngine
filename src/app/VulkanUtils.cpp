@@ -270,7 +270,8 @@ VkImageView vulkanUtils::createImage2DView(const VulkanRenderContext& context,
     return textureImageView;
 }
 
-VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context){
+VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context,
+                                       uint32_t mipLevels){
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -279,7 +280,7 @@ VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context){
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = 10;
+    samplerInfo.maxAnisotropy = 1;//other requires GPU Feature
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;
@@ -287,7 +288,7 @@ VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context){
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 0.0f;
+    samplerInfo.maxLod =static_cast<float>(mipLevels);
     VkSampler textureSampler{VK_NULL_HANDLE};
     VK_CHECK(vkCreateSampler(context.device_, &samplerInfo, nullptr, &textureSampler),"failed to create texture sampler!") ;
 
@@ -301,8 +302,22 @@ bool vulkanUtils::hasStencilComponent(VkFormat format){
 
 void
 vulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
-                                    VkImage image, uint32_t width, uint32_t height,
-                                    uint32_t mipLevel) {
+                                    VkImage image,uint32_t width, uint32_t height,
+                                    uint32_t mipLevel,VkFormat format,
+                                    VkFilter filter) {
+    VkFormatProperties formatProperties;
+    bool supportsLinearFiltering = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) == 0;
+    bool supportCubicFiltering = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT) == 0;
+
+    //TODO Fix
+    vkGetPhysicalDeviceFormatProperties(context.physicalDevice, format, &formatProperties);
+    if ((filter == VK_FILTER_LINEAR) && !supportsLinearFiltering) {
+        throw std::runtime_error("texture image format does not support linear blitting!");
+    }
+    if ((filter == VK_FILTER_CUBIC_EXT) && !supportCubicFiltering) {
+        throw std::runtime_error("texture image format does not support cubic blitting!");
+    }
+
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(context);
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -314,21 +329,58 @@ vulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
     barrier.subresourceRange.layerCount = 1;
     barrier.subresourceRange.levelCount = 1;
 
-
     int mipWidth =width;
     int mipHeight = height;
-    for (uint32_t i = 1; i < mipLevel; i++) {
+
+    for (uint32_t i = 1; i <  mipLevel; i++) {
         barrier.subresourceRange.baseMipLevel = i - 1;
         barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                             0, nullptr,
+                             0, nullptr,
+                             1, &barrier);
+
+        VkImageBlit blit{};
+        blit.srcOffsets[0] = { 0, 0, 0 };
+        blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.mipLevel = i - 1;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount = 1;
+        blit.dstOffsets[0] = { 0, 0, 0 };
+        blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
+        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.mipLevel = i;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount = 1;
+
+
+        vkCmdBlitImage(commandBuffer,
+                       image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       1, &blit,
+                       filter);
+
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                             0, nullptr,
+                             0, nullptr,
+                             1, &barrier);
+
+        mipWidth = std::max(1,mipWidth/=2);
+        mipHeight= std::max(1,mipHeight/=2);
     }
-    vkCmdPipelineBarrier(commandBuffer,
-                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                         0, nullptr,
-                         0, nullptr,
-                         1, &barrier);
 
     endSingleTimeCommands(context,commandBuffer);
 

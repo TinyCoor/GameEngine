@@ -37,7 +37,6 @@ private:
     VkDeviceMemory imageMemory{};
     VkImageView imageView{};
     VkSampler  imageSampler{};
-
 };
 
 

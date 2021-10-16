@@ -111,9 +111,9 @@ void VulkanMesh::createIndexBuffer() {
 //This is a bug in load form File
 bool VulkanMesh::loadFromFile(const std::string &file) {
     clearCPUData();
-#ifndef false
+#ifdef true
     Assimp::Importer importer;
-    unsigned int flags =aiProcess_Triangulate | aiProcess_FlipUVs;
+    unsigned int flags = aiProcess_Triangulate;
     const aiScene* scene = importer.ReadFile(file,flags);
     if(!scene){
         std::cout << "Load Model failed:"<<file << "Error: "<<importer.GetErrorString();

@@ -58,7 +58,7 @@ public:
            VkDeviceMemory& memory
            );
 
-    static VkImageView createImage2DView(const VulkanRenderContext& context,
+   static VkImageView createImage2DView(const VulkanRenderContext& context,
                                          VkImage image,
                                          uint32_t minLevels,
                                          VkFormat format,
@@ -78,7 +78,7 @@ public:
                                      VkImageLayout oldLayout,
                                      VkImageLayout newLayout);
 
-   static VkSampler createSampler2D(const VulkanRenderContext& context);
+   static VkSampler createSampler2D(const VulkanRenderContext& context, uint32_t mipLevels);
 
    static bool hasStencilComponent(VkFormat format);
 
@@ -88,7 +88,9 @@ public:
            uint32_t width,
            uint32_t height,
            uint32_t mipLevel,
-           )
+           VkFormat format,
+           VkFilter filter
+           );
 
 };
 

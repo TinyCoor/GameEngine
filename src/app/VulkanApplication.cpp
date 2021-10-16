@@ -11,8 +11,8 @@
 
 const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\vert.spv)";
 const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\frag.spv)";
-const std::string texture_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\chalet.jpg)";
-const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\chalet.obj)";
+const std::string texture_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\viking_room.png)";
+const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\viking_room.obj)";
 
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -264,8 +264,6 @@ bool Application::checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurface
 
     if(!deviceFeatures.geometryShader)
         return false;
-    if(!deviceFeatures.samplerAnisotropy)
-        return false;
 
     return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 }
@@ -452,8 +450,6 @@ void Application::initVulkan() {
                                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 
-
-   //Create Frame Buffer
 
 }
 
