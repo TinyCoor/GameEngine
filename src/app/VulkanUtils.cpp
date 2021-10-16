@@ -9,7 +9,7 @@
 #include <fstream>
 #include <stb_image.h>
 
-void vulkanUtils::createBuffer(const RenderContext& context,
+void vulkanUtils::createBuffer(const VulkanRenderContext& context,
                                VkDeviceSize size,
                                VkBufferUsageFlags usageFlags,
                                VkMemoryPropertyFlags memoryFlags,
@@ -38,7 +38,7 @@ void vulkanUtils::createBuffer(const RenderContext& context,
 
 
 
-uint32_t vulkanUtils::findMemoryType(const RenderContext& context,
+uint32_t vulkanUtils::findMemoryType(const VulkanRenderContext& context,
                                      uint32_t typeFilter,
                                      VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
@@ -52,7 +52,7 @@ uint32_t vulkanUtils::findMemoryType(const RenderContext& context,
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void vulkanUtils::copyBuffer(const RenderContext& context,
+void vulkanUtils::copyBuffer(const VulkanRenderContext& context,
                              VkBuffer srcBuffer,
                              VkBuffer dstBuffer,
                              VkDeviceSize size) {
@@ -81,7 +81,7 @@ std::vector<char> vulkanUtils::readFile(const std::string& filename){
     return buffer;
 }
 
-void vulkanUtils::endSingleTimeCommands(const RenderContext& context,VkCommandBuffer commandBuffer) {
+void vulkanUtils::endSingleTimeCommands(const VulkanRenderContext& context,VkCommandBuffer commandBuffer) {
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -95,7 +95,7 @@ void vulkanUtils::endSingleTimeCommands(const RenderContext& context,VkCommandBu
     vkFreeCommandBuffers(context.device_, context.commandPool, 1, &commandBuffer);
 }
 
-VkCommandBuffer vulkanUtils::beginSingleTimeCommands(const RenderContext& context) {
+VkCommandBuffer vulkanUtils::beginSingleTimeCommands(const VulkanRenderContext& context) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -115,7 +115,7 @@ VkCommandBuffer vulkanUtils::beginSingleTimeCommands(const RenderContext& contex
 }
 
 
-void vulkanUtils::createImage2D(const RenderContext &context, uint32_t width, uint32_t height, VkFormat format,
+void vulkanUtils::createImage2D(const VulkanRenderContext &context, uint32_t width, uint32_t height, VkFormat format,
                                 VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                 VkImage &image, VkDeviceMemory &memory) {
     //Create Vertex Buffer
@@ -151,7 +151,7 @@ void vulkanUtils::createImage2D(const RenderContext &context, uint32_t width, ui
 
 //TODO FIX
 void
-vulkanUtils::transitionImageLayout(const RenderContext& context,
+vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
                                    VkImage image,
                                    VkFormat format,
                                    VkImageLayout oldLayout,
@@ -215,7 +215,7 @@ vulkanUtils::transitionImageLayout(const RenderContext& context,
     endSingleTimeCommands(context,commandBuffer);
 }
 
-void vulkanUtils::copyBufferToImage(const RenderContext &context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
+void vulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
                                     uint32_t height) {
     auto commandBuffer = beginSingleTimeCommands(context);
 
@@ -246,7 +246,7 @@ void vulkanUtils::copyBufferToImage(const RenderContext &context, VkBuffer srcBu
     endSingleTimeCommands(context,commandBuffer);
 }
 
-VkImageView vulkanUtils::createImage2DView(const RenderContext& context,
+VkImageView vulkanUtils::createImage2DView(const VulkanRenderContext& context,
                                            VkImage image,
                                            VkFormat format,
                                            VkImageAspectFlags aspectFlags) {
@@ -265,7 +265,7 @@ VkImageView vulkanUtils::createImage2DView(const RenderContext& context,
     return textureImageView;
 }
 
-VkSampler vulkanUtils::createSampler2D(const RenderContext& context){
+VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context){
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;

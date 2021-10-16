@@ -18,9 +18,9 @@ public:
     virtual VulkanMesh loadModel(const std::string& path) =0;
 };
 
-class RenderData{
+class VulkanRenderScene{
 private:
-    RenderContext context;
+    VulkanRenderContext context;
     VulkanMesh mesh;
 
     VkShaderModule vertShader=VK_NULL_HANDLE;
@@ -36,7 +36,7 @@ private:
     VkSampler textureImageSampler{};
 
 public:
-   explicit RenderData(RenderContext& ctx): context(ctx), mesh(ctx){
+   explicit VulkanRenderScene(VulkanRenderContext& ctx) : context(ctx), mesh(ctx){
    }
 
     void init(const std::string& vertShaderFile,

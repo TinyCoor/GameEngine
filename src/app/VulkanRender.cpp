@@ -28,6 +28,7 @@ void VulkanRender::init(const std::string &vertShaderFile,
                                   uniformBuffersMemory[i]);
     }
 
+    //
     VkPipelineShaderStageCreateInfo vertexShaderStageInfo ={};
     vertexShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertexShaderStageInfo.module = data.getVertexShader();
@@ -41,7 +42,6 @@ void VulkanRender::init(const std::string &vertShaderFile,
     fragShaderStageInfo.pName ="main";
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShaderStageInfo,fragShaderStageInfo};
-
 
     //Create vertex input
     auto bindingDescription = VulkanMesh::getBindingDescription();
@@ -325,7 +325,7 @@ void VulkanRender::init(const std::string &vertShaderFile,
     //Create FrameBuffer
     frameBuffers.resize(imageCount);
     for (size_t i = 0; i < imageCount; i++) {
-      std::array<VkImageView,2> attachments = {
+      std::array<VkImageView,2> attachment = {
                 context.imageViews[i],
                 context.depthImageView,
         };
@@ -333,8 +333,8 @@ void VulkanRender::init(const std::string &vertShaderFile,
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = renderPass;
-        framebufferInfo.attachmentCount = attachments.size();
-        framebufferInfo.pAttachments = attachments.data();
+        framebufferInfo.attachmentCount = attachment.size();
+        framebufferInfo.pAttachments = attachment.data();
         framebufferInfo.width = context.extend.width;
         framebufferInfo.height = context.extend.height;
         framebufferInfo.layers = 1;

@@ -5,7 +5,7 @@
 #ifndef GAMEENGINE_VULKANRENDER_H
 #define GAMEENGINE_VULKANRENDER_H
 #include "Macro.h"
-#include "VulkanRenderData.h"
+#include "VulkanRenderScene.h"
 #include "VulkanRenderContext.h"
 #include <vulkan.h>
 #include <string>
@@ -14,8 +14,8 @@
 
 class VulkanRender{
 private:
-    RenderData data;
-    RenderContext context;
+    VulkanRenderScene data;
+    VulkanRenderContext context;
     VkRenderPass renderPass =VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout=VK_NULL_HANDLE;
     VkPipeline graphicsPipeLine = VK_NULL_HANDLE;
@@ -23,14 +23,16 @@ private:
     VkDescriptorSetLayout descriptorSetLayout =VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> descriptorSets{};
 
-    std::vector<VkFramebuffer> frameBuffers{};
+
     std::vector<VkCommandBuffer> commandBuffers{};
+    //VkCommandBuffer commandBuffer;
+    std::vector<VkFramebuffer> frameBuffers{};
 
     std::vector<VkBuffer> uniformBuffers{};
     std::vector<VkDeviceMemory> uniformBuffersMemory{};
 
 public:
-    explicit VulkanRender(RenderContext& ctx,RenderData& renderData)
+    explicit VulkanRender(VulkanRenderContext& ctx,VulkanRenderScene& renderData)
                     :context(ctx),data(renderData){
     }
 

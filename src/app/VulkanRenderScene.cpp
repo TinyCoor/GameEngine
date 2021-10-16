@@ -5,12 +5,11 @@
 #include <stdexcept>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#include "VulkanRenderData.h"
+#include "VulkanRenderScene.h"
 #include "Macro.h"
 
 
-
-void RenderData::init(const std::string& vertShaderFile,
+void VulkanRenderScene::init(const std::string& vertShaderFile,
                       const std::string& fragShaderFile,
                       const std::string& textureFile,
                       const std::string& modelFile){
@@ -20,8 +19,9 @@ void RenderData::init(const std::string& vertShaderFile,
     createImage(textureFile);
 }
 
-void RenderData::shutdown(){
-
+void VulkanRenderScene::shutdown(){
+    mesh.clearGPUData();
+    mesh.clearCPUData();
     vkDestroySampler(context.device_,textureImageSampler, nullptr);
     vkDestroyImageView(context.device_,textureImageView, nullptr);
     vkDestroyImage(context.device_, textureImage, nullptr);
@@ -34,7 +34,7 @@ void RenderData::shutdown(){
 
 }
 
-VkShaderModule RenderData::createShader(const std::string &path) const {
+VkShaderModule VulkanRenderScene::createShader(const std::string &path) const {
     std::vector<char> vertex_code = vulkanUtils::readFile(path);
     VkShaderModuleCreateInfo shaderInfo={};
     shaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -47,7 +47,7 @@ VkShaderModule RenderData::createShader(const std::string &path) const {
 
 
 
-void RenderData::createImage(const std::string& path){
+void VulkanRenderScene::createImage(const std::string& path){
     int texWidth, texHeight, texChannels;
     // pixel data will have alpha channel even if the original image
     stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels,  STBI_rgb_alpha);

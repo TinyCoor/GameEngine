@@ -162,9 +162,14 @@ void VulkanMesh::clearGPUData() {
 }
 
 void VulkanMesh::uploadToGPU() {
-    //TODO
+    if(!vertices.empty()){
         createVertexBuffer();
+    }
+    if(!indices.empty()){
         createIndexBuffer();
+    }
+
+
 }
 
 void VulkanMesh::clearCPUData() {

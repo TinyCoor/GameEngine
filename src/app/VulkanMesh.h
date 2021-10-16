@@ -26,7 +26,7 @@ private:
         glm::vec3 color;
         glm::vec2 uv;
     };
-    RenderContext context;
+    VulkanRenderContext context;
     std::vector<Vertex> vertices{};
     std::vector<uint32_t> indices{};
 
@@ -37,7 +37,7 @@ private:
     VkDeviceMemory indexBufferMemory= VK_NULL_HANDLE;
 
 public:
-    VulkanMesh(const RenderContext& ctx): context(ctx){}
+    VulkanMesh(const VulkanRenderContext& ctx): context(ctx){}
     ~VulkanMesh();
     inline uint32_t getNumIndices() const {return indices.size();}
     inline VkBuffer getVertexBuffer() const { return vertexBuffer;}

@@ -390,7 +390,7 @@ void Application::initVulkan() {
     VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
 
 
-    RenderContext context ;
+    VulkanRenderContext context ;
     context.device_ = device;
     context.physicalDevice = physicalDevice;
     context.commandPool = commandPool;
@@ -448,6 +448,8 @@ void Application::initVulkan() {
                                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 
+
+   //Create Frame Buffer
 
 }
 
@@ -662,7 +664,7 @@ void Application::shutdownRender() {
 
 void Application::initRender() {
 
-    RenderContext context ;
+    VulkanRenderContext context ;
     context.device_ = device;
     context.descriptorPool = descriptorPool;
     context.commandPool = commandPool;
@@ -675,7 +677,7 @@ void Application::initRender() {
     context.graphicsQueue= graphicsQueue;
     context.presentQueue = presentQueue;
 
-    RenderData data(context);
+    VulkanRenderScene data(context);
     render = new VulkanRender(context,data);
     render->init(vertex_shader_path,
                  fragment_shader_path,

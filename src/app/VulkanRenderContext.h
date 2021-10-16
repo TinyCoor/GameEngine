@@ -7,7 +7,7 @@
 #include <vulkan.h>
 #include <vector>
 
-struct RenderContext{
+struct VulkanRenderContext{
     VkDevice device_ =VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkExtent2D extend;
