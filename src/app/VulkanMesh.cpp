@@ -10,6 +10,9 @@
 #include <assimp/postprocess.h>
 #include <iostream>
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
+
 
 VulkanMesh::~VulkanMesh(){
 //    clearGPUData();
@@ -105,47 +108,89 @@ void VulkanMesh::createIndexBuffer() {
     vkFreeMemory(context.device_, stagingBufferMemory, nullptr);
 }
 
+//This is a bug in load form File
 bool VulkanMesh::loadFromFile(const std::string &file) {
+    //indices 不正确
+    vertices.clear();
+    indices.clear();
+#ifndef false
     Assimp::Importer importer;
     unsigned int flags =aiProcess_Triangulate | aiProcess_FlipUVs;
     const aiScene* scene = importer.ReadFile(file,flags);
     if(!scene){
         std::cout << "Load Model failed:"<<file << "Error: "<<importer.GetErrorString();
         return false;
-    }
-
-    if(!scene->HasMeshes()) {
+    }if(!scene->HasMeshes()) {
         std::cerr<< "No mesh In the file\n";
         return false;
     }else{
         aiMesh* mesh = scene->mMeshes[0];
-        assert(mesh !=nullptr);
+        assert(mesh != nullptr);
+
         vertices.resize(mesh->mNumVertices);
-        Vertex vertex;
-        for(unsigned int i =0; i < mesh->mNumVertices;++i){
-            glm::vec3 vector;
-            vector.x = mesh->mVertices[i].x;
-            vector.y = mesh->mVertices[i].y;
-            vector.z = mesh->mVertices[i].z;
-            vertex.position = vector;
-            if(mesh->mTextureCoords[0])
-            {
-                glm::vec2 vec;
-                vec.x = mesh->mTextureCoords[0][i].x;
-                vec.y = mesh->mTextureCoords[0][i].y;
-                vertex.uv = vec;
-            }else
-                vertex.uv = glm::vec2(0.0f, 0.0f);
-            vertices.push_back(vertex);
+        indices.resize(mesh->mNumFaces * 3);
+
+        aiVector3D* vertex =mesh-> mVertices;
+        for(unsigned int i=0;i< mesh->mNumVertices;i++)
+            vertices[i].position= glm::vec3(vertex[i].x,vertex[i].y,vertex[i].z);
+
+        aiColor4D* colors = mesh->mColors[0];
+        if(colors){
+            for (unsigned int i = 0; i < mesh->mNumVertices ; ++i)
+                vertices[i].color= glm::vec3 (colors[i].r,colors[i].g,colors[i].b);
+        } else{
+            for (unsigned int i = 0; i <  mesh->mNumVertices ; ++i)
+                vertices[i].color= glm::vec3 (1.0,1.0,1.0);
         }
 
-        for(unsigned int i = 0; i < mesh->mNumFaces; i++)
-        {
-            aiFace face = mesh->mFaces[i];
-            for(unsigned int j = 0; j < face.mNumIndices; j++)
-                indices.push_back(face.mIndices[j]);
+        aiFace* faces =mesh->mFaces;
+        unsigned int index =0;
+        for (unsigned int i = 0; i <mesh->mNumFaces; ++i) {
+            for (int faceIndex = 0; faceIndex <faces[i].mNumIndices; ++faceIndex) {
+                indices[index++] = faces[i].mIndices[faceIndex];
+            }
+        }
+        // uv
+        aiVector3D* uvs = mesh->mTextureCoords[0];
+        if(uvs){
+            for (unsigned int i = 0; i < mesh->mNumVertices ; ++i) {
+                vertices[i].uv = glm::vec2(uvs[i].x,1.0-uvs[i].y);
+            }
+        }else{
+            for (unsigned int i = 0; i < mesh->mNumVertices ; ++i) {
+                vertices[i].uv = glm::vec2(0.0,0.0);
+            }
         }
     }
+#else
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, file.c_str())) {
+        throw std::runtime_error(warn + err);
+    }
+    for (const auto& shape : shapes) {
+        for (const auto& index : shape.mesh.indices) {
+            Vertex vertex{};
+            vertex.position = {
+                    attrib.vertices[3 * index.vertex_index + 0],
+                    attrib.vertices[3 * index.vertex_index + 1],
+                    attrib.vertices[3 * index.vertex_index + 2]
+            };
+
+            vertex.uv = {
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+            };
+            vertex.color = {1.0f, 1.0f, 1.0f};
+            vertices.push_back(vertex);
+            indices.push_back(indices.size());
+        }
+    }
+#endif
+
     // upload to  GPU
     uploadToGPU();
     //TODO Clear GPU Data
