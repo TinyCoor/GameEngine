@@ -195,15 +195,17 @@ void VulkanRender::init(const std::string &vertShaderFile,
     VK_CHECK(vkAllocateDescriptorSets(context.device_, &deScriptorAllocInfo, descriptorSets.data()),"failed to allocate descriptor sets!") ;
 
     for (size_t i = 0; i < imageCount; i++) {
+        VulkanTexture texture = data.getTexture();
         VkDescriptorBufferInfo descriptorBufferInfo{};
         descriptorBufferInfo.buffer = uniformBuffers[i];
         descriptorBufferInfo.offset = 0;
         descriptorBufferInfo.range = sizeof(UniformBufferObject);
 
         VkDescriptorImageInfo imageInfo{};
+
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = data.getTextureImageView();
-        imageInfo.sampler = data.getTextureImageSmapler();
+        imageInfo.imageView = texture.getImageView();
+        imageInfo.sampler = texture.getSampler();
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
         VkWriteDescriptorSet descriptorWrite{};
