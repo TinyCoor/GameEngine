@@ -115,8 +115,10 @@ VkCommandBuffer vulkanUtils::beginSingleTimeCommands(const VulkanRenderContext& 
 }
 
 
-void vulkanUtils::createImage2D(const VulkanRenderContext &context, uint32_t width, uint32_t height, VkFormat format,
-                                VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+void vulkanUtils::createImage2D(const VulkanRenderContext &context,
+                                uint32_t width, uint32_t height,  uint32_t mipLevel,
+                                VkFormat format,VkImageTiling tiling,
+                                VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                 VkImage &image, VkDeviceMemory &memory) {
     //Create Vertex Buffer
     VkImageCreateInfo imageInfo{};
@@ -125,7 +127,7 @@ void vulkanUtils::createImage2D(const VulkanRenderContext &context, uint32_t wid
     imageInfo.extent.width = static_cast<uint32_t>(width);
     imageInfo.extent.height = static_cast<uint32_t>(height);
     imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = 1;
+    imageInfo.mipLevels = mipLevel;
     imageInfo.arrayLayers = 1;
     imageInfo.format = format;
     imageInfo.tiling = tiling;
@@ -153,6 +155,7 @@ void vulkanUtils::createImage2D(const VulkanRenderContext &context, uint32_t wid
 void
 vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
                                    VkImage image,
+                                   uint32_t mipLevels,
                                    VkFormat format,
                                    VkImageLayout oldLayout,
                                    VkImageLayout newLayout)
@@ -166,7 +169,7 @@ vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
     barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.levelCount = mipLevels;
     barrier.subresourceRange.baseArrayLayer = 0;
     barrier.subresourceRange.layerCount = 1;
 
@@ -248,8 +251,10 @@ void vulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer
 
 VkImageView vulkanUtils::createImage2DView(const VulkanRenderContext& context,
                                            VkImage image,
+                                           uint32_t mipLevels,
                                            VkFormat format,
-                                           VkImageAspectFlags aspectFlags) {
+                                           VkImageAspectFlags aspectFlags
+                                          ) {
     VkImageView textureImageView{};
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -258,14 +263,15 @@ VkImageView vulkanUtils::createImage2DView(const VulkanRenderContext& context,
     viewInfo.format = format;
     viewInfo.subresourceRange.aspectMask = aspectFlags;
     viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.levelCount = mipLevels;
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
     VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
     return textureImageView;
 }
 
-VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context){
+VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context,
+                                       uint32_t mipLevels){
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -274,7 +280,7 @@ VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context){
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = 10;
+    samplerInfo.maxAnisotropy = 1;//other requires GPU Feature
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;
@@ -282,7 +288,7 @@ VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context){
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
     samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 0.0f;
+    samplerInfo.maxLod =static_cast<float>(mipLevels);
     VkSampler textureSampler{VK_NULL_HANDLE};
     VK_CHECK(vkCreateSampler(context.device_, &samplerInfo, nullptr, &textureSampler),"failed to create texture sampler!") ;
 
@@ -292,5 +298,91 @@ VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context){
 
 bool vulkanUtils::hasStencilComponent(VkFormat format){
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+
+void
+vulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
+                                    VkImage image,uint32_t width, uint32_t height,
+                                    uint32_t mipLevel,VkFormat format,
+                                    VkFilter filter) {
+    VkFormatProperties formatProperties;
+    bool supportsLinearFiltering = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) == 0;
+    bool supportCubicFiltering = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT) == 0;
+
+    //TODO Fix
+    vkGetPhysicalDeviceFormatProperties(context.physicalDevice, format, &formatProperties);
+    if ((filter == VK_FILTER_LINEAR) && !supportsLinearFiltering) {
+        throw std::runtime_error("texture image format does not support linear blitting!");
+    }
+    if ((filter == VK_FILTER_CUBIC_EXT) && !supportCubicFiltering) {
+        throw std::runtime_error("texture image format does not support cubic blitting!");
+    }
+
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands(context);
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.image = image;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.levelCount = 1;
+
+    int mipWidth =width;
+    int mipHeight = height;
+
+    for (uint32_t i = 1; i <  mipLevel; i++) {
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                             0, nullptr,
+                             0, nullptr,
+                             1, &barrier);
+
+        VkImageBlit blit{};
+        blit.srcOffsets[0] = { 0, 0, 0 };
+        blit.srcOffsets[1] = { mipWidth, mipHeight, 1 };
+        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.srcSubresource.mipLevel = i - 1;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount = 1;
+        blit.dstOffsets[0] = { 0, 0, 0 };
+        blit.dstOffsets[1] = { mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1};
+        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        blit.dstSubresource.mipLevel = i;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount = 1;
+
+
+        vkCmdBlitImage(commandBuffer,
+                       image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                       1, &blit,
+                       filter);
+
+        barrier.subresourceRange.baseMipLevel = i - 1;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+
+        vkCmdPipelineBarrier(commandBuffer,
+                             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
+                             0, nullptr,
+                             0, nullptr,
+                             1, &barrier);
+
+        mipWidth = std::max(1,mipWidth/=2);
+        mipHeight= std::max(1,mipHeight/=2);
+    }
+
+    endSingleTimeCommands(context,commandBuffer);
+
 }
 

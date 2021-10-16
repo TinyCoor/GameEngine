@@ -37,8 +37,6 @@ private:
                                                              VkSurfaceKHR& surface);
     SwapchainSettings selectOptimalSwapchainSettings(SwapchainSupportedDetails& details);
 
-
-
     void initWindow();
     void initVulkan();
     void initVulkanExtensions();
@@ -53,9 +51,6 @@ private:
 private:
     GLFWwindow* window{nullptr};
     VulkanRender* render{nullptr};
-
-
-
 
     VkInstance instance{VK_NULL_HANDLE};
     VkPhysicalDevice physicalDevice{VK_NULL_HANDLE};

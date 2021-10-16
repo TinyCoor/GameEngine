@@ -11,8 +11,8 @@
 
 const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\vert.spv)";
 const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\frag.spv)";
-const std::string texture_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\chalet.jpg)";
-const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\chalet.obj)";
+const std::string texture_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\viking_room.png)";
+const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\viking_room.obj)";
 
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -264,8 +264,6 @@ bool Application::checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurface
 
     if(!deviceFeatures.geometryShader)
         return false;
-    if(!deviceFeatures.samplerAnisotropy)
-        return false;
 
     return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 }
@@ -401,6 +399,7 @@ void Application::initVulkan() {
     for (int i = 0; i <swapChainImageViews.size() ; ++i) {
         swapChainImageViews[i] = vulkanUtils::createImage2DView(context,
                                                                 swapChainImages[i],
+                                                                1,
                                                                 swapChainImageFormat,
                                                                 VK_IMAGE_ASPECT_COLOR_BIT);
     }
@@ -429,6 +428,7 @@ void Application::initVulkan() {
     vulkanUtils::createImage2D(context,
                                  swapChainExtent.width,
                                  swapChainExtent.height,
+                                 1,
                                  depthFormat,
                                  VK_IMAGE_TILING_OPTIMAL,
                                  VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -438,18 +438,18 @@ void Application::initVulkan() {
 
    depthImageView = vulkanUtils::createImage2DView(context,
                                    depthImage,
+                                   1,
                                    depthFormat,
                                    VK_IMAGE_ASPECT_DEPTH_BIT);
 
    vulkanUtils::transitionImageLayout(context,
                                        depthImage,
+                                       1,
                                        depthFormat,
                                        VK_IMAGE_LAYOUT_UNDEFINED,
                                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 
-
-   //Create Frame Buffer
 
 }
 

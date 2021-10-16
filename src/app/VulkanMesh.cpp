@@ -110,12 +110,10 @@ void VulkanMesh::createIndexBuffer() {
 
 //This is a bug in load form File
 bool VulkanMesh::loadFromFile(const std::string &file) {
-    //indices 不正确
-    vertices.clear();
-    indices.clear();
-#ifndef false
+    clearCPUData();
+#ifdef true
     Assimp::Importer importer;
-    unsigned int flags =aiProcess_Triangulate | aiProcess_FlipUVs;
+    unsigned int flags = aiProcess_Triangulate;
     const aiScene* scene = importer.ReadFile(file,flags);
     if(!scene){
         std::cout << "Load Model failed:"<<file << "Error: "<<importer.GetErrorString();
@@ -192,6 +190,7 @@ bool VulkanMesh::loadFromFile(const std::string &file) {
 #endif
 
     // upload to  GPU
+    clearGPUData();
     uploadToGPU();
     //TODO Clear GPU Data
     return true;
@@ -204,6 +203,8 @@ void VulkanMesh::clearGPUData() {
     vkFreeMemory(context.device_,indexBufferMemory, nullptr);
     vertexBuffer =VK_NULL_HANDLE;
     vertexBufferMemory = VK_NULL_HANDLE;
+    indexBuffer= VK_NULL_HANDLE;
+    indexBufferMemory=VK_NULL_HANDLE;
 }
 
 void VulkanMesh::uploadToGPU() {

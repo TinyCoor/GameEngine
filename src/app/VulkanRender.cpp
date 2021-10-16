@@ -91,7 +91,7 @@ void VulkanRender::init(const std::string &vertShaderFile,
     rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
     rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizerInfo.lineWidth = 1.0f;
-    rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
     rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizerInfo.depthBiasEnable = VK_FALSE;
     rasterizerInfo.depthBiasConstantFactor = 0.0f; // Optional
@@ -195,15 +195,17 @@ void VulkanRender::init(const std::string &vertShaderFile,
     VK_CHECK(vkAllocateDescriptorSets(context.device_, &deScriptorAllocInfo, descriptorSets.data()),"failed to allocate descriptor sets!") ;
 
     for (size_t i = 0; i < imageCount; i++) {
+        VulkanTexture texture = data.getTexture();
         VkDescriptorBufferInfo descriptorBufferInfo{};
         descriptorBufferInfo.buffer = uniformBuffers[i];
         descriptorBufferInfo.offset = 0;
         descriptorBufferInfo.range = sizeof(UniformBufferObject);
 
         VkDescriptorImageInfo imageInfo{};
+
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = data.getTextureImageView();
-        imageInfo.sampler = data.getTextureImageSmapler();
+        imageInfo.imageView = texture.getImageView();
+        imageInfo.sampler = texture.getSampler();
 
         std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
         VkWriteDescriptorSet descriptorWrite{};
@@ -433,7 +435,7 @@ VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {
     VkDeviceMemory uniformBufferMemory = uniformBuffersMemory[imageIndex];
 
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.1f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), context.extend.width / (float) context.extend.height, 0.1f, 10.0f);
     ubo.proj[1][1] *= -1;

@@ -11,5 +11,5 @@
 	path = extern/glm
 	url = https://github.com/oyshole/glm.git
 [submodule "tinyobjloader"]
-	path = tinyobjloader
+	path = extern/tinyobjloader
 	url = https://github.com/tinyobjloader/tinyobjloader.git

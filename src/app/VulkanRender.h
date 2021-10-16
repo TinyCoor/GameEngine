@@ -4,10 +4,9 @@
 
 #ifndef GAMEENGINE_VULKANRENDER_H
 #define GAMEENGINE_VULKANRENDER_H
-#include "Macro.h"
+
 #include "VulkanRenderScene.h"
 #include "VulkanRenderContext.h"
-#include <vulkan.h>
 #include <string>
 #include <vector>
 #include <stdexcept>
@@ -22,7 +21,6 @@ private:
 
     VkDescriptorSetLayout descriptorSetLayout =VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> descriptorSets{};
-
 
     std::vector<VkCommandBuffer> commandBuffers{};
     //VkCommandBuffer commandBuffer;
