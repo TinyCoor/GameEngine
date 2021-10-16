@@ -121,10 +121,6 @@ namespace {
     }
 }
 
-const int Width =1920;
-const int Height = 1080;
-
-
 std::vector<const char*> Application:: requiredPhysicalDeviceExtensions ={
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
@@ -137,10 +133,18 @@ PFN_vkCreateDebugUtilsMessengerEXT Application::vkCreateDebugMessenger{VK_NULL_H
 PFN_vkDestroyDebugUtilsMessengerEXT Application::vkDestroyDebugMessenger{VK_NULL_HANDLE};
 
 void Application::initWindow() {
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    glfwWindowHint(GL_RED_BITS,mode->redBits);
+    glfwWindowHint(GL_GREEN_BITS,mode->greenBits);
+    glfwWindowHint(GL_BLUE_BITS,mode->blueBits);
+
     glfwWindowHint(GLFW_CLIENT_API,GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE,GLFW_FALSE);
 
-    window = glfwCreateWindow(Width,Height,"Vulkan", nullptr, nullptr);
+    window = glfwCreateWindow(mode->width,mode->height,"Vulkan", monitor, nullptr);
+    windowWidth = mode->width;
+    windowHeight = mode->height;
 }
 
 void Application::run(){
@@ -645,7 +649,7 @@ SwapchainSettings Application::selectOptimalSwapchainSettings(SwapchainSupported
     }else{
         //Manually set extent match
         VkSurfaceCapabilitiesKHR& capabilities =details.capabilities;
-        settings.extent = { Width,Height};
+        settings.extent = { windowWidth,windowHeight};
         settings.extent.width = std::clamp(settings.extent.width,
                                            details.capabilities.minImageExtent.width,
                                            details.capabilities.maxImageExtent.width);

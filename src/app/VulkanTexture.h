@@ -32,7 +32,7 @@ private:
     int channels =0;
     int mipLevels = 0;
 
-    VkFormat format{VK_FORMAT_B8G8R8A8_UNORM};
+    VkFormat format{VK_FORMAT_R8G8B8A8_UNORM};
     VkImage image{};
     VkDeviceMemory imageMemory{};
     VkImageView imageView{};

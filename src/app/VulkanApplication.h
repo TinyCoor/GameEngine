@@ -49,7 +49,11 @@ private:
     void shutdownRender();
 
 private:
+    uint32_t windowWidth;
+    uint32_t windowHeight;
     GLFWwindow* window{nullptr};
+
+
     VulkanRender* render{nullptr};
 
     VkInstance instance{VK_NULL_HANDLE};

@@ -434,10 +434,17 @@ VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {
     VkBuffer uniformBuffer = uniformBuffers[imageIndex];
     VkDeviceMemory uniformBufferMemory = uniformBuffersMemory[imageIndex];
 
+    const glm::vec3& up = {0.f,0.f,1.f};
+    const glm::vec3& zero = {0.f,0.f,0.f};
+
+    const float aspect = context.extend.width/(float)context.extend.height;
+    const float znear = 0.1f;
+    const float zfar = 10.f;
+
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.1f * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), context.extend.width / (float) context.extend.height, 0.1f, 10.0f);
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.1f * glm::radians(90.0f), up);
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), zero, up);
+    ubo.proj = glm::perspective(glm::radians(45.0f), aspect, znear, zfar);
     ubo.proj[1][1] *= -1;
 
     void* data_uniform = nullptr;
