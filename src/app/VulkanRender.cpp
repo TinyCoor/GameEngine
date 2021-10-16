@@ -2,18 +2,19 @@
 // Created by y123456 on 2021/10/10.
 //
 
-#include "Render.h"
+#include "VulkanRender.h"
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 
 
-void Render::init(const std::string &vertShaderFile,
+void VulkanRender::init(const std::string &vertShaderFile,
                   const std::string &fragShaderFile,
-                  const std::string &textureFile) {
+                  const std::string &textureFile,
+                  const std::string& model_path) {
 
-    data.init(vertShaderFile,fragShaderFile,textureFile);
+    data.init(vertShaderFile,fragShaderFile,textureFile,model_path);
+
     size_t imageCount = context.imageViews.size();
-
     //Creaet Uniform Buffers
     VkDeviceSize uboSize = sizeof(UniformBufferObject);
     uniformBuffers.resize(imageCount);
@@ -43,8 +44,8 @@ void Render::init(const std::string &vertShaderFile,
 
 
     //Create vertex input
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    auto bindingDescription = VulkanMesh::getBindingDescription();
+    auto attributeDescriptions = VulkanMesh::getAttributeDescriptions();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 0;
@@ -107,7 +108,18 @@ void Render::init(const std::string &vertShaderFile,
     multisamplingInfo.alphaToCoverageEnable = VK_FALSE; // Optional
     multisamplingInfo.alphaToOneEnable = VK_FALSE; // Optional
 
-    VkPipelineDepthStencilStateCreateInfo depthStencilInfo ={};
+    // Create Depth Stencil state
+    VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
+    depthStencilInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilInfo.depthTestEnable = VK_TRUE;
+    depthStencilInfo.depthWriteEnable = VK_TRUE;
+    depthStencilInfo.depthCompareOp = VK_COMPARE_OP_LESS;
+    depthStencilInfo.depthBoundsTestEnable = VK_FALSE;
+    depthStencilInfo.minDepthBounds = 0.0f; // Optional
+    depthStencilInfo.maxDepthBounds = 1.0f; // Optional
+    depthStencilInfo.stencilTestEnable = VK_FALSE;
+    depthStencilInfo.front = {}; // Optional
+    depthStencilInfo.back = {}; // Optional
 
     // Blend state
     VkPipelineColorBlendAttachmentState colorBlendAttachmentInfo{};
@@ -228,11 +240,12 @@ void Render::init(const std::string &vertShaderFile,
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
+
     VK_CHECK(vkCreatePipelineLayout(context.device_, &pipelineLayoutInfo, nullptr, &pipelineLayout),"failed to create pipeline layout!");
 
-    //create Render Pass
+    //create VulkanRender Pass
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = context.format;
+    colorAttachment.format = context.colorFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -245,10 +258,27 @@ void Render::init(const std::string &vertShaderFile,
     colorAttachmentRef.attachment = 0;
     colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+
+    VkAttachmentDescription depthAttachment{};
+    depthAttachment.format = context.depthFormat;
+    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference depthAttachmentRef{};
+    depthAttachmentRef.attachment = 1;
+    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
+    subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
     VkSubpassDependency dependency{};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -256,13 +286,14 @@ void Render::init(const std::string &vertShaderFile,
     dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.srcAccessMask = 0;
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-    //Render Pass Create Info
+    std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
+    //VulkanRender Render Pass
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.attachmentCount = attachments.size();
+    renderPassInfo.pAttachments = attachments.data();
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
     renderPassInfo.dependencyCount = 1;
@@ -280,7 +311,7 @@ void Render::init(const std::string &vertShaderFile,
     pipelineInfo.pViewportState = &viewportStateInfo;
     pipelineInfo.pRasterizationState = &rasterizerInfo;
     pipelineInfo.pMultisampleState = &multisamplingInfo;
-    pipelineInfo.pDepthStencilState = nullptr; // Optional
+    pipelineInfo.pDepthStencilState = &depthStencilInfo;
     pipelineInfo.pColorBlendState = &colorBlendingInfo;
     pipelineInfo.pDynamicState = nullptr; // Optional
     pipelineInfo.layout = pipelineLayout;
@@ -294,15 +325,16 @@ void Render::init(const std::string &vertShaderFile,
     //Create FrameBuffer
     frameBuffers.resize(imageCount);
     for (size_t i = 0; i < imageCount; i++) {
-        VkImageView attachments[] = {
-                context.imageViews[i]
+      std::array<VkImageView,2> attachments = {
+                context.imageViews[i],
+                context.depthImageView,
         };
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = renderPass;
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.attachmentCount = attachments.size();
+        framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = context.extend.width;
         framebufferInfo.height = context.extend.height;
         framebufferInfo.layers = 1;
@@ -335,28 +367,35 @@ void Render::init(const std::string &vertShaderFile,
         renderPassBeginInfo.framebuffer = frameBuffers[i];
         renderPassBeginInfo.renderArea.offset = {0, 0};
         renderPassBeginInfo.renderArea.extent = context.extend;
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-        renderPassBeginInfo.clearValueCount = 1;
-        renderPassBeginInfo.pClearValues = &clearColor;
+
+
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[1].depthStencil = {1.0f, 0};
+
+        renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassBeginInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeLine);
 
-        VkBuffer vertexBuffers[] = {data.getVertexBuffer()};
-        VkBuffer indexBuffer = data.getIndexBuffer();
+        const VulkanMesh& mesh = data.getMesh();
+        VkBuffer vertexBuffers[] = {mesh.getVertexBuffer()};
+        VkBuffer indexBuffer = mesh.getIndexBuffer();
         VkDeviceSize offsets[] = {0};
 
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(commandBuffers[i], mesh.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
-        vkCmdDrawIndexed(commandBuffers[i], indices.size(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(commandBuffers[i],static_cast<uint32_t>(mesh.getNumIndices()), 1, 0, 0, 0);
         vkCmdEndRenderPass(commandBuffers[i]);
         VK_CHECK(vkEndCommandBuffer(commandBuffers[i]), "failed to record command buffer!");
     }
 }
 
 
-void Render::shutdown() {
+void VulkanRender::shutdown() {
     data.shutdown();
 
     for (auto framebuffer : frameBuffers) {
@@ -385,7 +424,7 @@ void Render::shutdown() {
 
 }
 
-VkCommandBuffer Render::render(uint32_t imageIndex) {
+VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float,std::chrono::seconds::period>(currentTime-startTime).count();

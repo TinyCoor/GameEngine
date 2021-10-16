@@ -2,7 +2,10 @@
 // Created by y123456 on 2021/10/10.
 //
 
-#include "Application.h"
+#include "VulkanApplication.h"
+
+#include <GLFW/glfw3.h>
+#include <iostream>
 
 int main(){
    if(!glfwInit())

@@ -2,12 +2,18 @@
 // Created by y123456 on 2021/10/11.
 //
 
-#include "Application.h"
+#include "VulkanApplication.h"
 #include<iostream>
 #include <set>
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <algorithm>
+
+const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\vert.spv)";
+const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\frag.spv)";
+const std::string texture_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\chalet.jpg)";
+const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\chalet.obj)";
+
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -39,10 +45,8 @@ namespace {
             VkApplicationInfo& appInfo){
         VkDebugUtilsMessengerCreateInfoEXT  debugMessengerInfo={};
         debugMessengerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debugMessengerInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
-                                             | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        debugMessengerInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
-                                         | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+        debugMessengerInfo.messageSeverity =  VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debugMessengerInfo.messageType =VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
                                          | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         debugMessengerInfo.pfnUserCallback = debugCallback;
         debugMessengerInfo.pUserData = nullptr;
@@ -385,12 +389,20 @@ void Application::initVulkan() {
     descriptorPoolCreateInfo.flags = 0;
     VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
 
+
     RenderContext context ;
     context.device_ = device;
+    context.physicalDevice = physicalDevice;
+    context.commandPool = commandPool;
+    context.graphicsQueue = graphicsQueue;
+    context.presentQueue= presentQueue;
 
     swapChainImageViews.resize(swapChainImageCount);
     for (int i = 0; i <swapChainImageViews.size() ; ++i) {
-        swapChainImageViews[i] = vulkanUtils::createImage2DVIew(context,swapChainImages[i],swapChainImageFormat);
+        swapChainImageViews[i] = vulkanUtils::createImage2DView(context,
+                                                                swapChainImages[i],
+                                                                swapChainImageFormat,
+                                                                VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
     //Create Sync Object
@@ -410,6 +422,32 @@ void Application::initVulkan() {
             throw std::runtime_error("failed to create semaphores!");
         }
     }
+
+    //Create Depth Buffer
+    depthFormat = selectOptimalDepthFormat();
+
+    vulkanUtils::createImage2D(context,
+                                 swapChainExtent.width,
+                                 swapChainExtent.height,
+                                 depthFormat,
+                                 VK_IMAGE_TILING_OPTIMAL,
+                                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                 depthImage, depthImageMemory
+                                 );
+
+   depthImageView = vulkanUtils::createImage2DView(context,
+                                   depthImage,
+                                   depthFormat,
+                                   VK_IMAGE_ASPECT_DEPTH_BIT);
+
+   vulkanUtils::transitionImageLayout(context,
+                                       depthImage,
+                                       depthFormat,
+                                       VK_IMAGE_LAYOUT_UNDEFINED,
+                                       VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+
 
 }
 
@@ -432,6 +470,10 @@ void Application::shutdownVulkan() {
     }
     swapChainImageViews.clear();
     swapChainImages.clear();
+
+    vkDestroyImageView(device,depthImageView, nullptr);
+    vkFreeMemory(device,depthImageMemory, nullptr);
+    vkDestroyImage(device,depthImage, nullptr);
 
     vkDestroySwapchainKHR(device,swapchain, nullptr);
     swapchain= VK_NULL_HANDLE;
@@ -626,17 +668,48 @@ void Application::initRender() {
     context.commandPool = commandPool;
     context.physicalDevice = physicalDevice;
     context.extend = swapChainExtent;
-    context.format= swapChainImageFormat;
+    context.colorFormat= swapChainImageFormat;
+    context.depthFormat = depthFormat;
+    context.depthImageView = depthImageView;
     context.imageViews= swapChainImageViews;
     context.graphicsQueue= graphicsQueue;
     context.presentQueue = presentQueue;
 
     RenderData data(context);
     render = new VulkanRender(context,data);
-    render->init(R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\vert.spv)",
-                 R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\frag.spv)",
-                 R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\texture.jpg)");
+    render->init(vertex_shader_path,
+                 fragment_shader_path,
+                 texture_path,
+                 model_path);
 
 
 }
 
+
+VkFormat Application::selectOptimalSupportedFormat(const std::vector<VkFormat>& candiates,
+                                                   VkImageTiling tiling,
+                                                   VkFormatFeatureFlags features)
+{
+    for(VkFormat format : candiates)
+    {
+        VkFormatProperties properties;
+        vkGetPhysicalDeviceFormatProperties(physicalDevice,format,&properties);
+        if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & features) == features)
+            return format;
+
+        if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+        std::cout << format<<"\n";
+    }
+
+    TH_WITH_MSG(true,"can not find support format");
+}
+
+VkFormat  Application::selectOptimalDepthFormat(){
+    return selectOptimalSupportedFormat(
+            {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+    );
+}

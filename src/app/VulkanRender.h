@@ -2,22 +2,20 @@
 // Created by y123456 on 2021/10/10.
 //
 
-#ifndef GAMEENGINE_RENDER_H
-#define GAMEENGINE_RENDER_H
+#ifndef GAMEENGINE_VULKANRENDER_H
+#define GAMEENGINE_VULKANRENDER_H
 #include "Macro.h"
 #include "VulkanRenderData.h"
 #include "VulkanRenderContext.h"
-#include "Vertex.h"
 #include <vulkan.h>
 #include <string>
 #include <vector>
 #include <stdexcept>
 
-class Render{
+class VulkanRender{
 private:
     RenderData data;
     RenderContext context;
-
     VkRenderPass renderPass =VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout=VK_NULL_HANDLE;
     VkPipeline graphicsPipeLine = VK_NULL_HANDLE;
@@ -32,19 +30,18 @@ private:
     std::vector<VkDeviceMemory> uniformBuffersMemory{};
 
 public:
-    explicit Render(RenderContext& ctx,RenderData& renderData)
+    explicit VulkanRender(RenderContext& ctx,RenderData& renderData)
                     :context(ctx),data(renderData){
     }
 
     void init(const std::string& vertShaderFile,
               const std::string& fragShaderFile,
-              const std::string& textureFile);
+              const std::string& textureFile,
+              const std::string& model_path);
 
     VkCommandBuffer render(uint32_t imageIndex);
-
     void shutdown();
-
 };
 
 
-#endif //GAMEENGINE_RENDER_H
+#endif //GAMEENGINE_VULKANRENDER_H

@@ -39,5 +39,8 @@
 #define VK_INIT_VARIABLE_OBJECT(type,var_name) \
                 type var_name = VK_NULL_HANDLE
 
+#define FOR(i,index) \
+    for(i =0; i< index; i++)
 
 #endif //GAMEENGINE_MACRO_H
+

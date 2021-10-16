@@ -2,9 +2,9 @@
 // Created by y123456 on 2021/10/13.
 //
 
-#include "vulkan_utils.h"
+#include "VulkanUtils.h"
 #include "VulkanRenderContext.h"
-#include "macro.h"
+#include "Macro.h"
 #include <stdexcept>
 #include <fstream>
 #include <stb_image.h>
@@ -70,7 +70,7 @@ void vulkanUtils::copyBuffer(const RenderContext& context,
 std::vector<char> vulkanUtils::readFile(const std::string& filename){
     std::ifstream file(filename,std::ios::ate | std::ios::binary);
     if(!file.is_open()){
-        throw std::runtime_error("open file failed");
+        throw std::runtime_error("open file failed: "+ filename);
     }
 
     size_t file_size = static_cast<size_t>(file.tellg());
@@ -165,7 +165,6 @@ vulkanUtils::transitionImageLayout(const RenderContext& context,
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
@@ -173,6 +172,14 @@ vulkanUtils::transitionImageLayout(const RenderContext& context,
 
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
+    if(newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL){
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        if (hasStencilComponent(format)) {
+            barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+    }else {
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    }
 
     if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
         barrier.srcAccessMask = 0;
@@ -186,6 +193,12 @@ vulkanUtils::transitionImageLayout(const RenderContext& context,
 
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     } else {
         throw std::invalid_argument("unsupported layout transition!");
     }
@@ -199,9 +212,7 @@ vulkanUtils::transitionImageLayout(const RenderContext& context,
             0, nullptr,
             1, &barrier
     );
-
     endSingleTimeCommands(context,commandBuffer);
-
 }
 
 void vulkanUtils::copyBufferToImage(const RenderContext &context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
@@ -235,16 +246,17 @@ void vulkanUtils::copyBufferToImage(const RenderContext &context, VkBuffer srcBu
     endSingleTimeCommands(context,commandBuffer);
 }
 
-VkImageView vulkanUtils::createImage2DVIew(const RenderContext& context,
+VkImageView vulkanUtils::createImage2DView(const RenderContext& context,
                                            VkImage image,
-                                           VkFormat format) {
+                                           VkFormat format,
+                                           VkImageAspectFlags aspectFlags) {
     VkImageView textureImageView{};
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.image = image;
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.aspectMask = aspectFlags;
     viewInfo.subresourceRange.baseMipLevel = 0;
     viewInfo.subresourceRange.levelCount = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;
@@ -252,8 +264,6 @@ VkImageView vulkanUtils::createImage2DVIew(const RenderContext& context,
     VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
     return textureImageView;
 }
-
-
 
 VkSampler vulkanUtils::createSampler2D(const RenderContext& context){
     VkSamplerCreateInfo samplerInfo{};
@@ -278,3 +288,9 @@ VkSampler vulkanUtils::createSampler2D(const RenderContext& context){
 
     return textureSampler;
 }
+
+
+bool vulkanUtils::hasStencilComponent(VkFormat format){
+    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+}
+

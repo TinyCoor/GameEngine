@@ -2,8 +2,8 @@
 // Created by y123456 on 2021/10/13.
 //
 
-#ifndef GAMEENGINE_VULKAN_UTILS_H
-#define GAMEENGINE_VULKAN_UTILS_H
+#ifndef GAMEENGINE_VULKANUTILS_H
+#define GAMEENGINE_VULKANUTILS_H
 #include<vulkan.h>
 #include<vector>
 #include <string>
@@ -16,7 +16,6 @@ struct QueueFamilyIndices{
         return graphicsFamily.first && presentFamily.first;
     }
 };
-
 
 struct RenderContext;
 
@@ -65,9 +64,10 @@ public:
 
    static std::vector<char> readFile(const std::string& filename);
 
-   static VkImageView createImage2DVIew(const RenderContext& context,
+   static VkImageView createImage2DView(const RenderContext& context,
                                         VkImage image,
-                                        VkFormat format);
+                                        VkFormat format,
+                                        VkImageAspectFlags aspectFlags);
 
    static void transitionImageLayout(const RenderContext& context,
                                      VkImage image,
@@ -77,7 +77,11 @@ public:
 
    static VkSampler createSampler2D(const RenderContext& context);
 
+
+   static bool hasStencilComponent(VkFormat format);
+
+
 };
 
 
-#endif //GAMEENGINE_VULKAN_UTILS_H
+#endif //GAMEENGINE_VULKANUTILS_H

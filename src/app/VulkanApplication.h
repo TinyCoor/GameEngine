@@ -2,8 +2,8 @@
 // Created by y123456 on 2021/10/11.
 //
 
-#ifndef GAMEENGINE_APPLICATION_H
-#define GAMEENGINE_APPLICATION_H
+#ifndef GAMEENGINE_VULKANAPPLICATION_H
+#define GAMEENGINE_VULKANAPPLICATION_H
 
 #include "VulkanRender.h"
 #include <vulkan.h>
@@ -37,6 +37,8 @@ private:
                                                              VkSurfaceKHR& surface);
     SwapchainSettings selectOptimalSwapchainSettings(SwapchainSupportedDetails& details);
 
+
+
     void initWindow();
     void initVulkan();
     void initVulkanExtensions();
@@ -61,12 +63,20 @@ private:
     VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
     VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
 
+    VkFormat selectOptimalSupportedFormat(
+                                                 const std::vector<VkFormat>& candiates,
+                                                 VkImageTiling tiling,
+                                                 VkFormatFeatureFlags features);
+
+    VkFormat selectOptimalDepthFormat();
+
     VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
     VkCommandPool commandPool =VK_NULL_HANDLE;
     std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
 
     VkImage depthImage;
+    VkFormat depthFormat;
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
 
@@ -88,4 +98,4 @@ private:
 };
 
 
-#endif //GAMEENGINE_APPLICATION_H
+#endif //GAMEENGINE_VULKANAPPLICATION_H
