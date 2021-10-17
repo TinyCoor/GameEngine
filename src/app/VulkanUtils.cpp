@@ -116,7 +116,7 @@ VkCommandBuffer vulkanUtils::beginSingleTimeCommands(const VulkanRenderContext& 
 
 
 void vulkanUtils::createImage2D(const VulkanRenderContext &context,
-                                uint32_t width, uint32_t height,  uint32_t mipLevel,
+                                uint32_t width, uint32_t height,  uint32_t mipLevel, VkSampleCountFlagBits numberSample,
                                 VkFormat format,VkImageTiling tiling,
                                 VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                 VkImage &image, VkDeviceMemory &memory) {
@@ -133,7 +133,7 @@ void vulkanUtils::createImage2D(const VulkanRenderContext &context,
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage = usage;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.samples = numberSample;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VK_CHECK(vkCreateImage(context.device_, &imageInfo, nullptr, &image),
@@ -196,6 +196,11 @@ vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
 
         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT| VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
@@ -384,5 +389,24 @@ vulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
 
     endSingleTimeCommands(context,commandBuffer);
 
+}
+
+
+VkSampleCountFlagBits vulkanUtils::getMaxUsableSampleCount(const VulkanRenderContext& context) {
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(context.physicalDevice, &physicalDeviceProperties);
+
+    VkSampleCountFlags counts = std::min(
+            physicalDeviceProperties.limits.framebufferColorSampleCounts,
+            physicalDeviceProperties.limits.framebufferDepthSampleCounts
+    );
+    if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
+    if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
+    if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
+    if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
+    if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
+    if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
+
+    return VK_SAMPLE_COUNT_1_BIT;
 }
 

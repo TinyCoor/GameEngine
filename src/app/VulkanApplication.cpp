@@ -359,6 +359,7 @@ void Application::initVulkan() {
     context.commandPool = commandPool;
     context.graphicsQueue = graphicsQueue;
     context.presentQueue= presentQueue;
+    context.msaaSamples = vulkanUtils::getMaxUsableSampleCount(context);
 }
 
 void Application::shutdownVulkan() {
@@ -443,7 +444,7 @@ void Application::RenderFrame(){
     presentInfo.pResults = nullptr; // Optional
     result = vkQueuePresentKHR(presentQueue, &presentInfo);
     if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || frameBufferResized){
-        frameBufferResized  =true;
+        frameBufferResized  =false;
         recreateSwapChain();
     }else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR ){
         throw std::runtime_error("can not recreate swap chain");
@@ -580,6 +581,8 @@ void Application::initRender() {
     swapChainContext.colorFormat = swapChainImageFormat;
     swapChainContext.imageViews = swapChainImageViews;
     swapChainContext.descriptorPool =descriptorPool;
+    swapChainContext.colorImageView = colorImageView;
+
     render = new VulkanRender(context,swapChainContext);
     render->init(scene);
 }
@@ -666,6 +669,7 @@ void Application::initVulkanSwapChain() {
     swapChainImageFormat = settings.format.format;
     swapChainExtent = settings.extent;
 
+    //
     swapChainImageViews.resize(swapChainImageCount);
     for (int i = 0; i <swapChainImageViews.size() ; ++i) {
         swapChainImageViews[i] = vulkanUtils::createImage2DView(context,
@@ -675,6 +679,29 @@ void Application::initVulkanSwapChain() {
                                                                 VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
+    //Create Color Image ImageView
+    vulkanUtils::createImage2D(context,
+                               swapChainExtent.width,
+                               swapChainExtent.height,
+                               1,
+                               context.msaaSamples,
+                               swapChainImageFormat,
+                               VK_IMAGE_TILING_OPTIMAL,
+                               VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                               colorImage, colorImageMemory
+    );
+    colorImageView = vulkanUtils::createImage2DView(context,
+                                                    colorImage,
+                                                    1,
+                                                    swapChainImageFormat,
+                                                    VK_IMAGE_ASPECT_COLOR_BIT);
+    vulkanUtils::transitionImageLayout(context,
+                                       colorImage,
+                                       1,
+                                       swapChainImageFormat,
+                                       VK_IMAGE_LAYOUT_UNDEFINED,
+                                       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     //Create Depth Buffer
     depthFormat = selectOptimalDepthFormat();
@@ -682,6 +709,7 @@ void Application::initVulkanSwapChain() {
                                swapChainExtent.width,
                                swapChainExtent.height,
                                1,
+                               context.msaaSamples,
                                depthFormat,
                                VK_IMAGE_TILING_OPTIMAL,
                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -731,13 +759,17 @@ void Application::shutdownSwapChain() {
 
     vkDestroyImage(device,depthImage, nullptr);
     depthImage = VK_NULL_HANDLE;
-
     vkDestroyImageView(device,depthImageView, nullptr);
-
     depthImageView =  VK_NULL_HANDLE;
-
     vkFreeMemory(device,depthImageMemory, nullptr);
     depthImageMemory = VK_NULL_HANDLE;
+
+    vkDestroyImage(device,colorImage, nullptr);
+    colorImage = VK_NULL_HANDLE;
+    vkDestroyImageView(device,colorImageView, nullptr);
+    colorImageView =  VK_NULL_HANDLE;
+    vkFreeMemory(device,colorImageMemory, nullptr);
+    colorImageMemory = VK_NULL_HANDLE;
 
     vkDestroySwapchainKHR(device,swapchain, nullptr);
     swapchain= VK_NULL_HANDLE;

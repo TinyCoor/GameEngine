@@ -87,6 +87,10 @@ private:
     VkCommandPool commandPool =VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
 
+    VkImage colorImage;
+    VkImageView colorImageView;
+    VkDeviceMemory colorImageMemory;
+
 
     //SwapChain
     VkImage depthImage;

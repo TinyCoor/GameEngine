@@ -13,6 +13,7 @@ struct VulkanRenderContext{
     VkCommandPool commandPool =VK_NULL_HANDLE;
     VkQueue graphicsQueue =VK_NULL_HANDLE;
     VkQueue presentQueue = VK_NULL_HANDLE;
+    VkSampleCountFlagBits msaaSamples;
 };
 
 struct VulkanSwapChainContext{
@@ -22,6 +23,8 @@ struct VulkanSwapChainContext{
     VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
     std::vector<VkImageView> imageViews;
     VkImageView depthImageView =VK_NULL_HANDLE;
+    VkImageView colorImageView;
+
 };
 
 #endif //GAMEENGINE_VULKANRENDERCONTEXT_H

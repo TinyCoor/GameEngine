@@ -50,6 +50,7 @@ public:
            uint32_t width,
            uint32_t height,
            uint32_t mipLevel,
+           VkSampleCountFlagBits numberSample,
            VkFormat format,
            VkImageTiling tiling,
            VkImageUsageFlags usage,
@@ -91,6 +92,8 @@ public:
            VkFormat format,
            VkFilter filter
            );
+
+   static VkSampleCountFlagBits getMaxUsableSampleCount(const VulkanRenderContext& context);
 
 };
 
