@@ -5,11 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(BUILD_SHARED_LIBS ON)
 
-include_directories(../extern/vulkan)
-#get_filename_component(ABSOLUTE_PATH ${CMAKE_CURRENT_LIST_DIR} ABSOLUTE)
-#set(Vulkan_LIBRARIES ${ABSOLUTE_PATH}/ )
-set(Vulkan_LIB_PATH ${CMAKE_CURRENT_LIST_DIR}/extern/vulkan/lib)
-message(STATUS ${Vulkan_LIB})
 
 #message(STATUS ${ABSOLUTE_PATH} )
 #
@@ -51,6 +46,20 @@ elseif(CMAKE_HOST_UNIX)
 elseif(CMAKE_HOST_APPLE)
     message(STATUS "This is Apple Platform")
 endif()
+
+set(ShaderC_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/extern/shaderc/lib)
+message(STATUS ${ShaderC_LIBRARIES})
+#include(cmake/FindShaderC.cmake)
+
+#list(APPEND CMKAE_MODULE_PATH "cmake")
+#find_package(ShaderC REQUIRED)
+#if(ShaderC_FOUND)
+#    message(STATUS "Found ShaderC lib")
+#else()
+#    message(STATUS "Not Found ShaderC Including and Linking")
+#endif()
+
+
 #设置debug dll输出路径
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
 #lib output

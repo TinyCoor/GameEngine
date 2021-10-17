@@ -11,8 +11,8 @@
 #include <algorithm>
 #include <functional>
 
-const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\vert.spv)";
-const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\frag.spv)";
+const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\shader.vert)";
+const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\shader.frag)";
 const std::string texture_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\viking_room.png)";
 const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\viking_room.obj)";
 

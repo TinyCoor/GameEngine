@@ -95,7 +95,7 @@ public:
    static VkSampleCountFlagBits getMaxUsableSampleCount(const VulkanRenderContext& context);
 
    static VkShaderModule createShaderModule(const VulkanRenderContext& context,
-                                      uint32_t* code,
+                                      uint32_t * code,
                                       uint32_t size);
 };
 

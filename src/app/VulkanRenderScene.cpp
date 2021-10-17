@@ -9,8 +9,8 @@ void VulkanRenderScene::init(const std::string& vertShaderFile,
                       const std::string& fragShaderFile,
                       const std::string& textureFile,
                       const std::string& modelFile){
-    vertShader.loadFromFile(vertShaderFile);
-    fragShader.loadFromFile(fragShaderFile);
+    vertShader.compileFromFile(vertShaderFile,ShaderKind::vertex);
+    fragShader.compileFromFile(fragShaderFile,ShaderKind::fragment);
     mesh.loadFromFile(modelFile);
     texture.loadFromFile(textureFile);
 }

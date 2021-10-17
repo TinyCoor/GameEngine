@@ -6,12 +6,38 @@
 #include "VulkanUtils.h"
 #include <fstream>
 #include <iostream>
+#include <shaderc.h>
 
-
-bool VulkanShader::loadFromFile(const std::string &path) {
+namespace {
+     shaderc_shader_kind vulkan_to_shderc_kind(ShaderKind kind) {
+        switch (kind) {
+            case ShaderKind::vertex: {
+                return shaderc_vertex_shader;
+            }
+            case ShaderKind::fragment: {
+                return shaderc_fragment_shader;
+            }
+            case ShaderKind::compute: {
+                return shaderc_compute_shader;
+            }
+            case ShaderKind::geometry: {
+                return shaderc_geometry_shader;
+            }
+            case ShaderKind::tessellation_control: {
+                return shaderc_tess_control_shader;
+            }
+            case ShaderKind::tessellation_evaluation: {
+                return shaderc_tess_evaluation_shader;
+            }
+        }
+        throw std::runtime_error("not support shader kind");
+    }
+}
+bool VulkanShader::compileFromFile(const std::string &path,ShaderKind kind) {
     std::ifstream  file(path,std::ios::ate | std::ios::binary);
     if(!file.is_open()){
         std::cerr << "VulkanShader: Laod Shder File Failed:"<< path << "\n";
+
         return  false;
     }
     clear();
@@ -21,9 +47,31 @@ bool VulkanShader::loadFromFile(const std::string &path) {
     file.read(buffer.data(),fileSize);
     file.close();
     //TODO GLSL to spir byte code
+    shaderc_compiler_t compiler = shaderc_compiler_initialize();
+    shaderc_compilation_result_t result = shaderc_compile_into_spv(compiler,
+                                                                  buffer.data(),
+                                                                  buffer.size(),
+                                                                  vulkan_to_shderc_kind(kind),path.c_str(),"main",
+                                                                  nullptr);
+
+    if(shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success){
+        std::cerr << "shderc compile error: at \"" << path << "\"" <<std::endl;
+        std::cerr <<"\t";
+        std::cerr << shaderc_result_get_error_message(result);
+        shaderc_result_release(result);
+        shaderc_compiler_release(compiler);
+        return false;
+    }
+
+    auto byte_size = shaderc_result_get_length(result);
+    uint32_t * bytes = reinterpret_cast<uint32_t*>(shaderc_result_get_bytes(result));
 
     clear();
-    shaderModule = vulkanUtils::createShaderModule(context,reinterpret_cast<uint32_t*>(buffer.data()),buffer.size());
+    shaderModule = vulkanUtils::createShaderModule(context,bytes,byte_size);
+
+    shaderc_result_release(result);
+    shaderc_compiler_release(compiler);
+
     return true;
 }
 

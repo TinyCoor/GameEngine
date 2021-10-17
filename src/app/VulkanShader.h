@@ -8,15 +8,33 @@
 #include "VulkanRenderContext.h"
 #include <volk.h>
 #include <string>
+#include <stdexcept>
+
+
+enum class ShaderKind{
+    vertex =0,
+    fragment,
+    compute,
+    geometry,
+    tessellation_control,
+    tessellation_evaluation,
+
+};
+
+
+
 
 class VulkanShader {
 public:
     explicit VulkanShader(const VulkanRenderContext& ctx): context(ctx){}
 
-    bool loadFromFile(const std::string& path);
+    bool compileFromFile(const std::string& path,ShaderKind kind);
 
     void clear();
     inline const VkShaderModule& getShaderModule() const {return shaderModule;}
+
+private:
+
 
 private:
     VulkanRenderContext context;
