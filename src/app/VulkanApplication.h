@@ -39,49 +39,67 @@ private:
     void initWindow();
     void initVulkan();
     void shutdownVulkan();
-    void mainLoop();
-    void RenderFrame();
-    void shutdownWindow();
+
+    void initVulkanSwapChain();
+    void shutdownSwapChain();
+
+    void initScene();
+    void shutdownScene();
 
     void initRender();
     void shutdownRender();
 
+    void mainLoop();
+    void RenderFrame();
+    void shutdownWindow();
+
+    void recreateSwapChain();
+
+    static void OnFrameBufferResized(GLFWwindow* window,int width,int height);
+
 private:
-    uint32_t windowWidth;
-    uint32_t windowHeight;
+    VkFormat selectOptimalSupportedFormat(
+            const std::vector<VkFormat>& candiates,
+            VkImageTiling tiling,
+            VkFormatFeatureFlags features);
+
+    VkFormat selectOptimalDepthFormat();
+
+private:
     GLFWwindow* window{nullptr};
-
-
+    RenderScene* scene{nullptr};
     VulkanRender* render{nullptr};
+
+    bool frameBufferResized{false};
+
+    VulkanRenderContext context;
 
     VkInstance instance{VK_NULL_HANDLE};
     VkPhysicalDevice physicalDevice{VK_NULL_HANDLE};
     VkDevice device{VK_NULL_HANDLE};
+    VkSurfaceKHR surface {VK_NULL_HANDLE};
+
     VkQueue graphicsQueue {VK_NULL_HANDLE};
     VkQueue presentQueue {VK_NULL_HANDLE};
-    VkSurfaceKHR surface {VK_NULL_HANDLE};
-    VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
-    VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
 
-    VkFormat selectOptimalSupportedFormat(
-                                                 const std::vector<VkFormat>& candiates,
-                                                 VkImageTiling tiling,
-                                                 VkFormatFeatureFlags features);
 
-    VkFormat selectOptimalDepthFormat();
-
-    VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
     VkCommandPool commandPool =VK_NULL_HANDLE;
-    std::vector<VkImage> swapChainImages;
-    std::vector<VkImageView> swapChainImageViews;
+    VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
 
+
+    //SwapChain
     VkImage depthImage;
     VkFormat depthFormat;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
+    VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
+    std::vector<VkImage> swapChainImages;
+    std::vector<VkImageView> swapChainImageViews;
+    VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
+
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
 
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
     enum {
         MAX_FRAME_IN_FLIGHT =2,
     };

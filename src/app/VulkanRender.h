@@ -11,10 +11,11 @@
 #include <vector>
 #include <stdexcept>
 
-class VulkanRender{
+
+class VulkanRender {
 private:
-    VulkanRenderScene data;
     VulkanRenderContext context;
+    VulkanSwapChainContext swapChainContext;
     VkRenderPass renderPass =VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout=VK_NULL_HANDLE;
     VkPipeline graphicsPipeLine = VK_NULL_HANDLE;
@@ -30,14 +31,11 @@ private:
     std::vector<VkDeviceMemory> uniformBuffersMemory{};
 
 public:
-    explicit VulkanRender(VulkanRenderContext& ctx,VulkanRenderScene& renderData)
-                    :context(ctx),data(renderData){
+    explicit VulkanRender(VulkanRenderContext& ctx, VulkanSwapChainContext& swapChainCtx)
+                    :context(ctx),swapChainContext(swapChainCtx){
     }
 
-    void init(const std::string& vertShaderFile,
-              const std::string& fragShaderFile,
-              const std::string& textureFile,
-              const std::string& model_path);
+    void init(RenderScene* scene);
 
     VkCommandBuffer render(uint32_t imageIndex);
     void shutdown();

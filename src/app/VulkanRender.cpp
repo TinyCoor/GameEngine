@@ -5,16 +5,12 @@
 #include "VulkanRender.h"
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
+#include <iostream>
 
 
-void VulkanRender::init(const std::string &vertShaderFile,
-                  const std::string &fragShaderFile,
-                  const std::string &textureFile,
-                  const std::string& model_path) {
+void VulkanRender::init(RenderScene* scene) {
 
-    data.init(vertShaderFile,fragShaderFile,textureFile,model_path);
-
-    size_t imageCount = context.imageViews.size();
+    size_t imageCount = swapChainContext.imageViews.size();
     //Creaet Uniform Buffers
     VkDeviceSize uboSize = sizeof(UniformBufferObject);
     uniformBuffers.resize(imageCount);
@@ -31,13 +27,13 @@ void VulkanRender::init(const std::string &vertShaderFile,
     //
     VkPipelineShaderStageCreateInfo vertexShaderStageInfo ={};
     vertexShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertexShaderStageInfo.module = data.getVertexShader();
+    vertexShaderStageInfo.module = scene->getVertexShader();
     vertexShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vertexShaderStageInfo.pName ="main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo ={};
     fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.module = data.getFragmentShader();
+    fragShaderStageInfo.module = scene->getFragmentShader();
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragShaderStageInfo.pName ="main";
 
@@ -66,15 +62,15 @@ void VulkanRender::init(const std::string &vertShaderFile,
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)context.extend.width;
-    viewport.height = (float)context.extend.height;
+    viewport.width = (float)swapChainContext.extend.width;
+    viewport.height = (float)swapChainContext.extend.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     //create scissor
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = context.extend;
+    scissor.extent = swapChainContext.extend;
 
     //Creat View Port
     VkPipelineViewportStateCreateInfo viewportStateInfo{};
@@ -187,7 +183,7 @@ void VulkanRender::init(const std::string &vertShaderFile,
 
     VkDescriptorSetAllocateInfo deScriptorAllocInfo{};
     deScriptorAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    deScriptorAllocInfo.descriptorPool = context.descriptorPool;
+    deScriptorAllocInfo.descriptorPool = swapChainContext.descriptorPool;
     deScriptorAllocInfo.descriptorSetCount = imageCount;
     deScriptorAllocInfo.pSetLayouts = layouts.data();
 
@@ -195,7 +191,7 @@ void VulkanRender::init(const std::string &vertShaderFile,
     VK_CHECK(vkAllocateDescriptorSets(context.device_, &deScriptorAllocInfo, descriptorSets.data()),"failed to allocate descriptor sets!") ;
 
     for (size_t i = 0; i < imageCount; i++) {
-        VulkanTexture texture = data.getTexture();
+        VulkanTexture texture = scene->getTexture();
         VkDescriptorBufferInfo descriptorBufferInfo{};
         descriptorBufferInfo.buffer = uniformBuffers[i];
         descriptorBufferInfo.offset = 0;
@@ -247,7 +243,7 @@ void VulkanRender::init(const std::string &vertShaderFile,
 
     //create VulkanRender Pass
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = context.colorFormat;
+    colorAttachment.format = swapChainContext.colorFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -262,7 +258,7 @@ void VulkanRender::init(const std::string &vertShaderFile,
 
 
     VkAttachmentDescription depthAttachment{};
-    depthAttachment.format = context.depthFormat;
+    depthAttachment.format = swapChainContext.depthFormat;
     depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -328,8 +324,8 @@ void VulkanRender::init(const std::string &vertShaderFile,
     frameBuffers.resize(imageCount);
     for (size_t i = 0; i < imageCount; i++) {
       std::array<VkImageView,2> attachment = {
-                context.imageViews[i],
-                context.depthImageView,
+                swapChainContext.imageViews[i],
+                swapChainContext.depthImageView,
         };
 
         VkFramebufferCreateInfo framebufferInfo{};
@@ -337,8 +333,8 @@ void VulkanRender::init(const std::string &vertShaderFile,
         framebufferInfo.renderPass = renderPass;
         framebufferInfo.attachmentCount = attachment.size();
         framebufferInfo.pAttachments = attachment.data();
-        framebufferInfo.width = context.extend.width;
-        framebufferInfo.height = context.extend.height;
+        framebufferInfo.width = swapChainContext.extend.width;
+        framebufferInfo.height = swapChainContext.extend.height;
         framebufferInfo.layers = 1;
 
         VK_CHECK(vkCreateFramebuffer(context.device_, &framebufferInfo, nullptr, &frameBuffers[i]),"failed to create framebuffer!");
@@ -368,7 +364,7 @@ void VulkanRender::init(const std::string &vertShaderFile,
         renderPassBeginInfo.renderPass = renderPass;
         renderPassBeginInfo.framebuffer = frameBuffers[i];
         renderPassBeginInfo.renderArea.offset = {0, 0};
-        renderPassBeginInfo.renderArea.extent = context.extend;
+        renderPassBeginInfo.renderArea.extent = swapChainContext.extend;
 
 
         std::array<VkClearValue, 2> clearValues{};
@@ -381,7 +377,7 @@ void VulkanRender::init(const std::string &vertShaderFile,
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeLine);
 
-        const VulkanMesh& mesh = data.getMesh();
+        const VulkanMesh& mesh = scene->getMesh();
         VkBuffer vertexBuffers[] = {mesh.getVertexBuffer()};
         VkBuffer indexBuffer = mesh.getIndexBuffer();
         VkDeviceSize offsets[] = {0};
@@ -398,7 +394,6 @@ void VulkanRender::init(const std::string &vertShaderFile,
 
 
 void VulkanRender::shutdown() {
-    data.shutdown();
 
     for (auto framebuffer : frameBuffers) {
         vkDestroyFramebuffer(context.device_, framebuffer, nullptr);
@@ -415,6 +410,7 @@ void VulkanRender::shutdown() {
     uniformBuffersMemory.clear();
 
     VK_DESTROY_OBJECT(vkDestroyDescriptorSetLayout(context.device_,descriptorSetLayout, nullptr), descriptorSetLayout);
+
     vkDestroyPipeline(context.device_, graphicsPipeLine, nullptr);
     vkDestroyRenderPass(context.device_, renderPass, nullptr);
     vkDestroyPipelineLayout(context.device_,pipelineLayout, nullptr);
@@ -423,6 +419,7 @@ void VulkanRender::shutdown() {
     graphicsPipeLine = VK_NULL_HANDLE;
     renderPass = VK_NULL_HANDLE;
     pipelineLayout = VK_NULL_HANDLE;
+
 
 }
 
@@ -437,9 +434,10 @@ VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {
     const glm::vec3& up = {0.f,0.f,1.f};
     const glm::vec3& zero = {0.f,0.f,0.f};
 
-    const float aspect = context.extend.width/(float)context.extend.height;
+    const float aspect = swapChainContext.extend.width/(float)swapChainContext.extend.height;
     const float znear = 0.1f;
     const float zfar = 10.f;
+   // float aspect = 1.0;
 
     UniformBufferObject ubo{};
     ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.1f * glm::radians(90.0f), up);

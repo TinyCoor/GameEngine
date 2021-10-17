@@ -19,6 +19,7 @@ void VulkanRenderScene::init(const std::string& vertShaderFile,
 void VulkanRenderScene::shutdown(){
     mesh.clearGPUData();
     mesh.clearCPUData();
+
     texture.clearCPUData();
     texture.clearGPUData();
     vkDestroyShaderModule(context.device_,vertShader,nullptr);

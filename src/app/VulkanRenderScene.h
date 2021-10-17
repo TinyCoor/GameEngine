@@ -19,16 +19,28 @@ public:
     virtual VulkanMesh loadModel(const std::string& path) =0;
 };
 
-class VulkanRenderScene{
+class RenderScene{
+public:
+    virtual void init(const std::string& vertShaderFile,
+                      const std::string& fragShaderFile,
+                      const std::string& textureFile,
+                      const std::string& modelFile)=0;
+    virtual VkShaderModule getVertexShader()  =0;
+    virtual VkShaderModule getFragmentShader()  =0;
+    virtual VulkanTexture getTexture() =0;
+    virtual VulkanMesh getMesh() =0;
+    virtual  void shutdown()=0;
+};
+
+class VulkanRenderScene : public RenderScene{
 private:
     VulkanRenderContext context;
     VulkanMesh mesh;
     VulkanTexture texture;
+
     VkShaderModule vertShader=VK_NULL_HANDLE;
     VkShaderModule fragShader=VK_NULL_HANDLE;
 
-    std::vector<VkBuffer> uniformBuffers{};
-    std::vector<VkDeviceMemory> uniformBuffersMemory{};
 
 public:
    explicit VulkanRenderScene(VulkanRenderContext& ctx)
@@ -40,10 +52,10 @@ public:
               const std::string& textureFile,
               const std::string& modelFile);
 
-     inline VkShaderModule getVertexShader() const {return vertShader;}
-     inline VkShaderModule getFragmentShader() const{return fragShader;}
-     inline VulkanTexture getTexture() const {return texture;}
-     inline const VulkanMesh getMesh() const {return mesh;}
+     VkShaderModule getVertexShader()override  {return vertShader;}
+     VkShaderModule getFragmentShader()override {return fragShader;}
+     VulkanTexture getTexture()override {return texture;}
+     VulkanMesh getMesh() override {return mesh;}
      void shutdown();
 
 private:

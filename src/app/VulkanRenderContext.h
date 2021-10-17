@@ -10,16 +10,18 @@
 struct VulkanRenderContext{
     VkDevice device_ =VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkExtent2D extend;
     VkCommandPool commandPool =VK_NULL_HANDLE;
-    VkFormat colorFormat;
-    VkFormat depthFormat ;
-    VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
     VkQueue graphicsQueue =VK_NULL_HANDLE;
     VkQueue presentQueue = VK_NULL_HANDLE;
+};
+
+struct VulkanSwapChainContext{
+    VkFormat colorFormat;
+    VkFormat depthFormat ;
+    VkExtent2D extend;
+    VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
     std::vector<VkImageView> imageViews;
     VkImageView depthImageView =VK_NULL_HANDLE;
 };
-
 
 #endif //GAMEENGINE_VULKANRENDERCONTEXT_H
