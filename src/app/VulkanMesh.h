@@ -6,8 +6,6 @@
 #define GAMEENGINE_VULKANRENDERMODEL_H
 #include <vector>
 #include <string>
-#include <vulkan.h>
-#include <vulkan.h>
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>

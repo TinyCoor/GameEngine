@@ -4,9 +4,8 @@
 
 #ifndef GAMEENGINE_VULKANAPPLICATION_H
 #define GAMEENGINE_VULKANAPPLICATION_H
-
 #include "VulkanRender.h"
-#include <vulkan.h>
+#include "volk.h"
 #include <vector>
 
 class GLFWwindow;
@@ -39,7 +38,6 @@ private:
 
     void initWindow();
     void initVulkan();
-    void initVulkanExtensions();
     void shutdownVulkan();
     void mainLoop();
     void RenderFrame();
@@ -82,7 +80,6 @@ private:
     VkDeviceMemory depthImageMemory;
     VkImageView depthImageView;
 
-
     VkFormat swapChainImageFormat;
     VkExtent2D swapChainExtent;
     enum {
@@ -95,8 +92,6 @@ private:
     std::vector<VkFence> inFlightFences;
     static std::vector<const char*> requiredPhysicalDeviceExtensions;
     static std::vector<const char*> requiredValidationLayers;
-    static PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugMessenger;
-    static PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugMessenger;
 };
 
 

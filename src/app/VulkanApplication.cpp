@@ -129,9 +129,6 @@ std::vector<const char*> Application::requiredValidationLayers={
         "VK_LAYER_KHRONOS_validation"
 };
 
-PFN_vkCreateDebugUtilsMessengerEXT Application::vkCreateDebugMessenger{VK_NULL_HANDLE};
-PFN_vkDestroyDebugUtilsMessengerEXT Application::vkDestroyDebugMessenger{VK_NULL_HANDLE};
-
 void Application::initWindow() {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -272,6 +269,8 @@ bool Application::checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurface
     return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 }
 void Application::initVulkan() {
+
+    VK_CHECK( volkInitialize(),"can not init volk help lib");
     //检查vulkan extension and layer
     std::vector<const char*> extensions;
     TH_WITH_MSG(!checkRequiredExtension(extensions),"This device is not have Vulkan Extension\n");
@@ -282,10 +281,10 @@ void Application::initVulkan() {
     auto appInfo =createApplicationInfo();
     auto debugMessengerInfo = createDebugMessengerCreateInfo(appInfo);
     instance = createInstance(extensions,layers,appInfo,debugMessengerInfo);
-//
-    initVulkanExtensions();
+    volkLoadInstance(instance);
 
-    VK_CHECK( vkCreateDebugMessenger(instance, &debugMessengerInfo, nullptr, &debugMessenger)," CreateDebugUtilsMessengerEXT  Failed\n");
+
+    VK_CHECK(vkCreateDebugUtilsMessengerEXT(instance, &debugMessengerInfo, nullptr, &debugMessenger)," CreateDebugUtilsMessengerEXT  Failed\n");
     //create Vulkan Surface TODO cross platform support
     surface = createSurface(instance,window);
     //枚举物理设备
@@ -309,6 +308,7 @@ void Application::initVulkan() {
     // vkGetPhysicalDeviceFeatures(physical_device,&deviceFeatures);
 
     device= createDevice(physicalDevice,queuesInfo,this->requiredPhysicalDeviceExtensions,layers);
+    volkLoadDevice(device);
     vkGetDeviceQueue(device,indices.graphicsFamily.second,0,&graphicsQueue);
     TH_WITH_MSG(graphicsQueue == VK_NULL_HANDLE,
                 "Get graphics queue from logical device failed\n");
@@ -460,7 +460,7 @@ void Application::initVulkan() {
 void Application::shutdownVulkan() {
     vkDestroyCommandPool(device,commandPool, nullptr);
     commandPool = VK_NULL_HANDLE;
-
+    vkDestroyDebugUtilsMessengerEXT(instance,debugMessenger, nullptr);
     vkDestroyDescriptorPool(device,descriptorPool, nullptr);
 
     for (int i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
@@ -486,9 +486,7 @@ void Application::shutdownVulkan() {
     vkDestroyDevice(device, nullptr);
 
     device=VK_NULL_HANDLE;
-    vkDestroyDebugMessenger(instance,debugMessenger, nullptr);
 
-    debugMessenger = VK_NULL_HANDLE;
     vkDestroySurfaceKHR(instance,surface, nullptr);
     instance= VK_NULL_HANDLE ;
 
@@ -505,6 +503,7 @@ void Application::shutdownWindow() {
 void Application::RenderFrame(){
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
+
 
     uint32_t imageIndex =0;
 
@@ -551,16 +550,6 @@ void Application::mainLoop() {
     }
 
     vkDeviceWaitIdle(device);
-}
-
-
-void Application::initVulkanExtensions() {
-    vkDestroyDebugMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance,"vkDestroyDebugUtilsMessengerEXT");
-    TH_WITH_MSG(!vkDestroyDebugMessenger,"Create DestroyDebugUtilsMessengerEXT function Failed\n");
-
-    vkCreateDebugMessenger = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance,"vkCreateDebugUtilsMessengerEXT");
-    TH_WITH_MSG(!vkCreateDebugMessenger,"Create CreateDebugUtilsMessengerEXT function Failed\n");
-
 }
 
 QueueFamilyIndices Application::fetchFamilyIndices(VkPhysicalDevice physical_device) {
@@ -616,6 +605,7 @@ SwapchainSettings Application::selectOptimalSwapchainSettings(SwapchainSupported
     SwapchainSettings settings{};
 
     //select best format if the surface has no preferred format
+    //TODO RGBA
     if(details.formats.size() == 1 && details.formats[0].format == VK_FORMAT_UNDEFINED){
         settings.format = {VK_FORMAT_B8G8R8A8_UNORM,
                            VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};

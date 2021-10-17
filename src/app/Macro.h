@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_MACRO_H
 #define GAMEENGINE_MACRO_H
-#include <vulkan.h>
+#include "volk.h"
 #include <stdexcept>
 
 #define OFFSET_OF(type,member) ((size_t) (& ((type*) 0)->member))
