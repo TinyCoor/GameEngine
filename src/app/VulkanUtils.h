@@ -17,6 +17,7 @@ struct QueueFamilyIndices{
 };
 
 struct VulkanRenderContext;
+
 class vulkanUtils{
 
 public:
@@ -42,8 +43,6 @@ public:
                            VkImage dstBuffer,
                            uint32_t width,
                            uint32_t height);
-
-
 
    static void createImage2D(
            const VulkanRenderContext& context,
@@ -95,6 +94,9 @@ public:
 
    static VkSampleCountFlagBits getMaxUsableSampleCount(const VulkanRenderContext& context);
 
+   static VkShaderModule createShaderModule(const VulkanRenderContext& context,
+                                      uint32_t* code,
+                                      uint32_t size);
 };
 
 

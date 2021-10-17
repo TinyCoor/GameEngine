@@ -6,6 +6,7 @@
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
+#include "Macro.h"
 
 
 void VulkanRender::init(VulkanRenderScene* scene) {
@@ -24,16 +25,18 @@ void VulkanRender::init(VulkanRenderScene* scene) {
                                   uniformBuffersMemory[i]);
     }
 
+    const VulkanShader& vertShader = scene->getVertexShader();
+    const VulkanShader& fragShader = scene->getFragmentShader();
     //
     VkPipelineShaderStageCreateInfo vertexShaderStageInfo ={};
     vertexShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vertexShaderStageInfo.module = scene->getVertexShader();
+    vertexShaderStageInfo.module = vertShader.getShaderModule();
     vertexShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vertexShaderStageInfo.pName ="main";
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo ={};
     fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    fragShaderStageInfo.module = scene->getFragmentShader();
+    fragShaderStageInfo.module =fragShader.getShaderModule();
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fragShaderStageInfo.pName ="main";
 

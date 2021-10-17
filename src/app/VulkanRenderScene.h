@@ -11,8 +11,7 @@
 #include "volk.h"
 #include <vector>
 #include <string>
-
-#include "Macro.h"
+#include "VulkanShader.h"
 
 class IModelLoader{
 public:
@@ -37,28 +36,27 @@ private:
     VulkanRenderContext context;
     VulkanMesh mesh;
     VulkanTexture texture;
-
-    VkShaderModule vertShader=VK_NULL_HANDLE;
-    VkShaderModule fragShader=VK_NULL_HANDLE;
-
+    VulkanShader vertShader;
+    VulkanShader fragShader;
 public:
    explicit VulkanRenderScene(VulkanRenderContext& ctx)
-   :context(ctx), mesh(ctx), texture(ctx){
+        :context(ctx), mesh(ctx), texture(ctx), vertShader(context), fragShader(context){
    }
 
-    void init(const std::string& vertShaderFile,
+
+     void init(const std::string& vertShaderFile,
               const std::string& fragShaderFile,
               const std::string& textureFile,
               const std::string& modelFile);
 
-     VkShaderModule getVertexShader(){return vertShader;}
-     VkShaderModule getFragmentShader() {return fragShader;}
-     VulkanTexture getTexture(){return texture;}
-     VulkanMesh getMesh() {return mesh;}
+     const VulkanShader& getVertexShader(){return vertShader;}
+     const VulkanShader& getFragmentShader() {return fragShader;}
+     const VulkanTexture& getTexture(){return texture;}
+     const VulkanMesh& getMesh() {return mesh;}
+
+
      void shutdown() ;
 
-private:
-    VkShaderModule createShader(const std::string &path) const;
 };
 
 #endif //GAMEENGINE_RENDER_DATA_H

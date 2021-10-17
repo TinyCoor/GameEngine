@@ -410,3 +410,14 @@ VkSampleCountFlagBits vulkanUtils::getMaxUsableSampleCount(const VulkanRenderCon
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
+VkShaderModule vulkanUtils::createShaderModule(const VulkanRenderContext& context,
+                                         uint32_t* code,
+                                         uint32_t size){
+    VkShaderModuleCreateInfo shaderInfo={};
+    shaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    shaderInfo.pCode =code;
+    shaderInfo.codeSize =size;
+    VkShaderModule shader;
+    VK_CHECK(vkCreateShaderModule(context.device_,&shaderInfo, nullptr,&shader),"Create shader module failed\n");
+    return shader;
+}
