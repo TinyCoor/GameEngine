@@ -152,13 +152,16 @@ void Application::run(){
     initVulkanSwapChain();
     initScene();
     initRender();
-
     mainLoop();
+
     shutdownWindow();
     shutdownScene();
-    shutdownSwapChain();
     shutdownRender();
+    shutdownSwapChain();
     shutdownVulkan();
+}
+
+Application::~Application(){
 }
 
 bool Application::checkRequiredExtension(std::vector<const char*>& extensions) {
@@ -315,8 +318,6 @@ void Application::initVulkan() {
     QueueFamilyIndices indices = fetchFamilyIndices(physicalDevice);
     auto queuesInfo = createDeviceQueueCreateInfo(indices);
 
-    // vkGetPhysicalDeviceFeatures(physical_device,&deviceFeatures);
-
     device= createDevice(physicalDevice,queuesInfo,this->requiredPhysicalDeviceExtensions,layers);
     volkLoadDevice(device);
 
@@ -361,9 +362,15 @@ void Application::initVulkan() {
 }
 
 void Application::shutdownVulkan() {
+
     vkDestroyCommandPool(device,commandPool, nullptr);
     commandPool = VK_NULL_HANDLE;
+
     vkDestroyDebugUtilsMessengerEXT(instance,debugMessenger, nullptr);
+    for(auto image: swapChainImages){
+        vkDestroyImage(device,image, nullptr);
+    }
+
 
     for (int i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
         vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
@@ -373,6 +380,7 @@ void Application::shutdownVulkan() {
     imageAvailableSemaphores.clear();
     renderFinishedSemaphores.clear();
     inFlightFences.clear();
+
     vkDestroyDevice(device, nullptr);
     device=VK_NULL_HANDLE;
 
@@ -392,7 +400,6 @@ void Application::shutdownWindow() {
 void Application::RenderFrame(){
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
-
     uint32_t imageIndex =0;
 
    VkResult result = vkAcquireNextImageKHR(
@@ -560,9 +567,12 @@ SwapchainSettings Application::selectOptimalSwapchainSettings(SwapchainSupported
 
 void Application::shutdownRender() {
     render->shutdown();
+    delete render;
+    render = nullptr;
 }
 
 void Application::initRender() {
+
     VulkanSwapChainContext swapChainContext{};
     swapChainContext.depthImageView = depthImageView;
     swapChainContext.extend = swapChainExtent;
@@ -570,10 +580,8 @@ void Application::initRender() {
     swapChainContext.colorFormat = swapChainImageFormat;
     swapChainContext.imageViews = swapChainImageViews;
     swapChainContext.descriptorPool =descriptorPool;
-
     render = new VulkanRender(context,swapChainContext);
     render->init(scene);
-
 }
 
 
@@ -710,7 +718,6 @@ void Application::initVulkanSwapChain() {
     VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
 }
 
-
 void Application::shutdownSwapChain() {
     vkDestroyDescriptorPool(device,descriptorPool, nullptr);
     descriptorPool = VK_NULL_HANDLE;
@@ -722,10 +729,11 @@ void Application::shutdownSwapChain() {
     swapChainImageViews.clear();
     swapChainImages.clear();
 
-    vkDestroyImageView(device,depthImageView, nullptr);
+    vkDestroyImage(device,depthImage, nullptr);
     depthImage = VK_NULL_HANDLE;
 
-    vkDestroyImage(device,depthImage, nullptr);
+    vkDestroyImageView(device,depthImageView, nullptr);
+
     depthImageView =  VK_NULL_HANDLE;
 
     vkFreeMemory(device,depthImageMemory, nullptr);
@@ -755,12 +763,11 @@ void Application::recreateSwapChain() {
     }
     vkDeviceWaitIdle(device);
 
-    shutdownSwapChain();
     shutdownRender();
+    shutdownSwapChain();
 
     initVulkanSwapChain();
     initRender();
-
 }
 
 

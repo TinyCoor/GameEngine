@@ -19,20 +19,20 @@ public:
     virtual VulkanMesh loadModel(const std::string& path) =0;
 };
 
-class RenderScene{
-public:
-    virtual void init(const std::string& vertShaderFile,
-                      const std::string& fragShaderFile,
-                      const std::string& textureFile,
-                      const std::string& modelFile)=0;
-    virtual VkShaderModule getVertexShader()  =0;
-    virtual VkShaderModule getFragmentShader()  =0;
-    virtual VulkanTexture getTexture() =0;
-    virtual VulkanMesh getMesh() =0;
-    virtual  void shutdown()=0;
-};
+//class RenderScene{
+//public:
+//    virtual void init(const std::string& vertShaderFile,
+//                      const std::string& fragShaderFile,
+//                      const std::string& textureFile,
+//                      const std::string& modelFile)=0;
+//    virtual VkShaderModule getVertexShader()  =0;
+//    virtual VkShaderModule getFragmentShader()  =0;
+//    virtual VulkanTexture getTexture() =0;
+//    virtual VulkanMesh getMesh() =0;
+//    virtual void shutdown() = 0;
+//};
 
-class VulkanRenderScene : public RenderScene{
+class VulkanRenderScene {
 private:
     VulkanRenderContext context;
     VulkanMesh mesh;
@@ -40,7 +40,6 @@ private:
 
     VkShaderModule vertShader=VK_NULL_HANDLE;
     VkShaderModule fragShader=VK_NULL_HANDLE;
-
 
 public:
    explicit VulkanRenderScene(VulkanRenderContext& ctx)
@@ -52,16 +51,14 @@ public:
               const std::string& textureFile,
               const std::string& modelFile);
 
-     VkShaderModule getVertexShader()override  {return vertShader;}
-     VkShaderModule getFragmentShader()override {return fragShader;}
-     VulkanTexture getTexture()override {return texture;}
-     VulkanMesh getMesh() override {return mesh;}
-     void shutdown();
+     VkShaderModule getVertexShader(){return vertShader;}
+     VkShaderModule getFragmentShader() {return fragShader;}
+     VulkanTexture getTexture(){return texture;}
+     VulkanMesh getMesh() {return mesh;}
+     void shutdown() ;
 
 private:
     VkShaderModule createShader(const std::string &path) const;
-
-
 };
 
 #endif //GAMEENGINE_RENDER_DATA_H

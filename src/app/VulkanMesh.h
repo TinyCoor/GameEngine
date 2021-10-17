@@ -17,6 +17,8 @@ struct UniformBufferObject{
     glm::mat4 proj;
 };
 
+
+///GPU顶点数据
 class  VulkanMesh{
 private:
     struct Vertex{

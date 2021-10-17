@@ -16,6 +16,7 @@ class VulkanRender {
 private:
     VulkanRenderContext context;
     VulkanSwapChainContext swapChainContext;
+
     VkRenderPass renderPass =VK_NULL_HANDLE;
     VkPipelineLayout pipelineLayout=VK_NULL_HANDLE;
     VkPipeline graphicsPipeLine = VK_NULL_HANDLE;
@@ -24,7 +25,6 @@ private:
     std::vector<VkDescriptorSet> descriptorSets{};
 
     std::vector<VkCommandBuffer> commandBuffers{};
-    //VkCommandBuffer commandBuffer;
     std::vector<VkFramebuffer> frameBuffers{};
 
     std::vector<VkBuffer> uniformBuffers{};
@@ -35,7 +35,7 @@ public:
                     :context(ctx),swapChainContext(swapChainCtx){
     }
 
-    void init(RenderScene* scene);
+    void init(VulkanRenderScene* scene);
 
     VkCommandBuffer render(uint32_t imageIndex);
     void shutdown();

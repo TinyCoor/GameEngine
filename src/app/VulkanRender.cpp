@@ -8,7 +8,7 @@
 #include <iostream>
 
 
-void VulkanRender::init(RenderScene* scene) {
+void VulkanRender::init(VulkanRenderScene* scene) {
 
     size_t imageCount = swapChainContext.imageViews.size();
     //Creaet Uniform Buffers
@@ -419,8 +419,6 @@ void VulkanRender::shutdown() {
     graphicsPipeLine = VK_NULL_HANDLE;
     renderPass = VK_NULL_HANDLE;
     pipelineLayout = VK_NULL_HANDLE;
-
-
 }
 
 VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {

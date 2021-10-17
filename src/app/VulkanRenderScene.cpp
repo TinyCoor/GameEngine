@@ -4,7 +4,6 @@
 
 
 #include "VulkanRenderScene.h"
-#include "Macro.h"
 
 void VulkanRenderScene::init(const std::string& vertShaderFile,
                       const std::string& fragShaderFile,
@@ -22,6 +21,7 @@ void VulkanRenderScene::shutdown(){
 
     texture.clearCPUData();
     texture.clearGPUData();
+
     vkDestroyShaderModule(context.device_,vertShader,nullptr);
     vkDestroyShaderModule(context.device_,fragShader,nullptr);
     vertShader = VK_NULL_HANDLE;

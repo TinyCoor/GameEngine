@@ -24,6 +24,7 @@ struct SwapchainSettings{
 
 class Application{
 public:
+    ~Application();
     void run();
 private:
     bool checkValidationLayers(std::vector<const char*>& layers);
@@ -67,7 +68,7 @@ private:
 
 private:
     GLFWwindow* window{nullptr};
-    RenderScene* scene{nullptr};
+    VulkanRenderScene* scene{nullptr};
     VulkanRender* render{nullptr};
 
     bool frameBufferResized{false};
@@ -89,16 +90,16 @@ private:
 
     //SwapChain
     VkImage depthImage;
+    VkImageView depthImageView;
+    VkDeviceMemory depthImageMemory;
     VkFormat depthFormat;
-    VkFormat swapChainImageFormat;
+    VkFormat swapChainImageFormat; //color format
     VkExtent2D swapChainExtent;
     VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
-    std::vector<VkImage> swapChainImages;
     std::vector<VkImageView> swapChainImageViews;
+    std::vector<VkImage> swapChainImages;
     VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
 
-    VkDeviceMemory depthImageMemory;
-    VkImageView depthImageView;
 
     enum {
         MAX_FRAME_IN_FLIGHT =2,
