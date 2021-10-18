@@ -13,9 +13,15 @@
 
 const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\shader.vert)";
 const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\shader.frag)";
-const std::string texture_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\viking_room.png)";
-const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\viking_room.obj)";
+const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\DamagedHelmet.fbx)";
+static std::string albedoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_albedo.jpg)";
+static std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_normal.jpg)";
+static std::string aoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_AO.jpg)";
+static std::string shadingTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_metalRoughness.jpg)";
+static std::string emissionTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_emissive.jpg)";
 
+static int maxCombinedImageSamplers = 32;
+static int maxUniformBuffers = 32;
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -733,15 +739,15 @@ void Application::initVulkanSwapChain() {
     //create descriptor Pool
     std::array<VkDescriptorPoolSize,2> descriptorPoolSizes{};
     descriptorPoolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorPoolSizes[0].descriptorCount = swapChainImageCount;
+    descriptorPoolSizes[0].descriptorCount = maxUniformBuffers;
     descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptorPoolSizes[1].descriptorCount = swapChainImageCount;
+    descriptorPoolSizes[1].descriptorCount = maxCombinedImageSamplers;
 
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
     descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolCreateInfo.poolSizeCount = descriptorPoolSizes.size();
     descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
-    descriptorPoolCreateInfo.maxSets =swapChainImageCount;
+    descriptorPoolCreateInfo.maxSets = maxCombinedImageSamplers + maxUniformBuffers;;
     descriptorPoolCreateInfo.flags = 0;
     VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
 }
@@ -777,7 +783,13 @@ void Application::shutdownSwapChain() {
 
 void Application::initScene() {
     scene = new VulkanRenderScene(context);
-    scene->init(vertex_shader_path,fragment_shader_path,texture_path,model_path);
+    scene->init(vertex_shader_path,
+                fragment_shader_path,
+                albedoTexturePath,
+                normalTexturePath,
+                aoTexturePath,
+                emissionTexturePath,
+                shadingTexturePath,model_path);
 }
 
 void Application::shutdownScene() {

@@ -19,7 +19,7 @@ VulkanMesh::~VulkanMesh(){
 //    clearCPUData();
 }
 
-VkVertexInputBindingDescription VulkanMesh::getBindingDescription() {
+VkVertexInputBindingDescription VulkanMesh::getVertexInputBindingDescription() {
     VkVertexInputBindingDescription bindingDescription{};
     bindingDescription.binding = 0;
     bindingDescription.stride = sizeof(Vertex);
@@ -27,25 +27,17 @@ VkVertexInputBindingDescription VulkanMesh::getBindingDescription() {
     return bindingDescription;
 }
 
-std::array<VkVertexInputAttributeDescription, 3> VulkanMesh:: getAttributeDescriptions() {
-    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions ={};
+std::array<VkVertexInputAttributeDescription, 6> VulkanMesh:: getAttributeDescriptions() {
+    std::array<VkVertexInputAttributeDescription, 6> attributes{};
 
-    attributeDescriptions[0].binding = 0;
-    attributeDescriptions[0].location = 0;
-    attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[0].offset = offsetof(Vertex, position);
+    attributes[0] = { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, position) };
+    attributes[1] = { 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, tangent) };
+    attributes[2] = { 2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, binormal) };
+    attributes[3] = { 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, normal) };
+    attributes[4] = { 4, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) };
+    attributes[5] = { 5, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(Vertex, uv) };
 
-    attributeDescriptions[1].binding = 0;
-    attributeDescriptions[1].location = 1;
-    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-    attributeDescriptions[2].binding = 0;
-    attributeDescriptions[2].location = 2;
-    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[2].offset = offsetof(Vertex, uv);
-
-    return attributeDescriptions;
+    return attributes;
 }
 
 
@@ -111,9 +103,13 @@ void VulkanMesh::createIndexBuffer() {
 //This is a bug in load form File
 bool VulkanMesh::loadFromFile(const std::string &file) {
     clearCPUData();
-#ifdef true
+#ifndef false
     Assimp::Importer importer;
-    unsigned int flags = aiProcess_Triangulate;
+    unsigned int flags = aiProcess_GenSmoothNormals |
+            aiProcess_CalcTangentSpace |
+            aiProcess_Triangulate |
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_SortByPType;
     const aiScene* scene = importer.ReadFile(file,flags);
     if(!scene){
         std::cout << "Load Model failed:"<<file << "Error: "<<importer.GetErrorString();
@@ -122,43 +118,63 @@ bool VulkanMesh::loadFromFile(const std::string &file) {
         std::cerr<< "No mesh In the file\n";
         return false;
     }else{
-        aiMesh* mesh = scene->mMeshes[0];
+        aiMesh *mesh = scene->mMeshes[0];
         assert(mesh != nullptr);
 
+        // Fill CPU data
         vertices.resize(mesh->mNumVertices);
         indices.resize(mesh->mNumFaces * 3);
 
-        aiVector3D* vertex =mesh-> mVertices;
-        for(unsigned int i=0;i< mesh->mNumVertices;i++)
-            vertices[i].position= glm::vec3(vertex[i].x,vertex[i].y,vertex[i].z);
+        aiVector3D *meshVertices = mesh->mVertices;
+        for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+            vertices[i].position = glm::vec3(meshVertices[i].x, meshVertices[i].y, meshVertices[i].z);
 
-        aiColor4D* colors = mesh->mColors[0];
-        if(colors){
-            for (unsigned int i = 0; i < mesh->mNumVertices ; ++i)
-                vertices[i].color= glm::vec3 (colors[i].r,colors[i].g,colors[i].b);
-        } else{
-            for (unsigned int i = 0; i <  mesh->mNumVertices ; ++i)
-                vertices[i].color= glm::vec3 (1.0,1.0,1.0);
-        }
+        aiVector3D *meshTangents = mesh->mTangents;
+        if (meshTangents)
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+                vertices[i].tangent = glm::vec3(meshTangents[i].x, meshTangents[i].y, meshTangents[i].z);
+        else
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+                vertices[i].tangent = glm::vec3(0.0f, 0.0f, 0.0f);
 
-        aiFace* faces =mesh->mFaces;
-        unsigned int index =0;
-        for (unsigned int i = 0; i <mesh->mNumFaces; ++i) {
-            for (int faceIndex = 0; faceIndex <faces[i].mNumIndices; ++faceIndex) {
-                indices[index++] = faces[i].mIndices[faceIndex];
-            }
-        }
-        // uv
-        aiVector3D* uvs = mesh->mTextureCoords[0];
-        if(uvs){
-            for (unsigned int i = 0; i < mesh->mNumVertices ; ++i) {
-                vertices[i].uv = glm::vec2(uvs[i].x,1.0-uvs[i].y);
-            }
-        }else{
-            for (unsigned int i = 0; i < mesh->mNumVertices ; ++i) {
-                vertices[i].uv = glm::vec2(0.0,0.0);
-            }
-        }
+        aiVector3D *meshBinormals = mesh->mBitangents;
+        if (meshBinormals)
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+                vertices[i].binormal = glm::vec3(meshBinormals[i].x, meshBinormals[i].y, meshBinormals[i].z);
+        else
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+                vertices[i].binormal = glm::vec3(0.0f, 0.0f, 0.0f);
+
+        aiVector3D *meshNormals = mesh->mNormals;
+        if (meshNormals)
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+                vertices[i].normal = glm::vec3(meshNormals[i].x, meshNormals[i].y, meshNormals[i].z);
+        else
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+                vertices[i].normal = glm::vec3(0.0f, 0.0f, 0.0f);
+
+        aiVector3D *meshUVs = mesh->mTextureCoords[0];
+        if (meshUVs)
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+                vertices[i].uv = glm::vec2(meshUVs[i].x, 1.0f - meshUVs[i].y);
+        else
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+                vertices[i].uv = glm::vec2(0.0f, 0.0f);
+
+        aiColor4D *meshColors = mesh->mColors[0];
+        if (meshColors)
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+                vertices[i].color = glm::vec3(meshColors[i].r, meshColors[i].g, meshColors[i].b);
+        else
+            for (unsigned int i = 0; i < mesh->mNumVertices; i++)
+                vertices[i].color = glm::vec3(1.0f, 1.0f, 1.0f);
+
+        aiFace *meshFaces = mesh->mFaces;
+        unsigned int index = 0;
+        for (unsigned int i = 0; i < mesh->mNumFaces; i++)
+            for (unsigned int faceIndex = 0; faceIndex < meshFaces[i].mNumIndices; faceIndex++)
+                indices[index++] = meshFaces[i].mIndices[faceIndex];
+
     }
 #else
     tinyobj::attrib_t attrib;

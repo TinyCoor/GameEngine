@@ -64,7 +64,7 @@ bool VulkanShader::compileFromFile(const std::string &path,ShaderKind kind) {
     }
 
     auto byte_size = shaderc_result_get_length(result);
-    uint32_t * bytes = reinterpret_cast<uint32_t*>(shaderc_result_get_bytes(result));
+    auto * bytes = reinterpret_cast<uint32_t*>(shaderc_result_get_bytes(result));
 
     clear();
     shaderModule = vulkanUtils::createShaderModule(context,bytes,byte_size);

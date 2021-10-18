@@ -11,10 +11,11 @@
 #include <vector>
 #include "VulkanRenderContext.h"
 
-struct UniformBufferObject{
-    glm::mat4 model;
+struct SharedRenderState{
+    glm::mat4 world;
     glm::mat4 view;
     glm::mat4 proj;
+    glm::vec3 cameraPos;
 };
 
 
@@ -23,6 +24,9 @@ class  VulkanMesh{
 private:
     struct Vertex{
         glm::vec3 position;
+        glm::vec3 tangent;
+        glm::vec3 binormal;
+        glm::vec3 normal;
         glm::vec3 color;
         glm::vec2 uv;
     };
@@ -43,8 +47,8 @@ public:
     inline VkBuffer getVertexBuffer() const { return vertexBuffer;}
     inline VkBuffer getIndexBuffer() const { return indexBuffer;}
 
-    static VkVertexInputBindingDescription getBindingDescription() ;
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() ;
+    static VkVertexInputBindingDescription getVertexInputBindingDescription() ;
+    static std::array<VkVertexInputAttributeDescription, 6> getAttributeDescriptions() ;
 
     bool loadFromFile(const std::string& file);
     void uploadToGPU();

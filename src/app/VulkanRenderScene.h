@@ -35,24 +35,45 @@ class VulkanRenderScene {
 private:
     VulkanRenderContext context;
     VulkanMesh mesh;
-    VulkanTexture texture;
+    VulkanTexture albedoTexture;
+    VulkanTexture normalTexture;
+    VulkanTexture aoTexture;
+    VulkanTexture shadingTexture;
+    VulkanTexture emissionTexture;
+
     VulkanShader vertShader;
     VulkanShader fragShader;
 public:
    explicit VulkanRenderScene(VulkanRenderContext& ctx)
-        :context(ctx), mesh(ctx), texture(ctx), vertShader(context), fragShader(context){
+        :context(ctx), mesh(ctx),
+        albedoTexture(ctx),
+        normalTexture(context),
+        aoTexture(context),
+        shadingTexture(ctx),
+        emissionTexture(ctx),
+        vertShader(context),
+        fragShader(context){
    }
 
 
      void init(const std::string& vertShaderFile,
               const std::string& fragShaderFile,
-              const std::string& textureFile,
+              const std::string& albedoFile,
+              const std::string& normalFile,
+              const std::string& aoFile,
+              const std::string& shadingFile,
+              const std::string &emissionFile,
               const std::string& modelFile);
 
      const VulkanShader& getVertexShader(){return vertShader;}
      const VulkanShader& getFragmentShader() {return fragShader;}
-     const VulkanTexture& getTexture(){return texture;}
-     const VulkanMesh& getMesh() {return mesh;}
+    inline const VulkanTexture &getEmissionTexture() const { return emissionTexture; }
+    inline const VulkanTexture &getAlbedoTexture() const { return albedoTexture; }
+     inline const VulkanTexture &getNormalTexture() const { return normalTexture; }
+     inline const VulkanTexture &getAOTexture() const { return aoTexture; }
+     inline const VulkanTexture &getShadingTexture() const { return shadingTexture; }
+
+    const VulkanMesh& getMesh() {return mesh;}
 
 
      void shutdown() ;

@@ -97,6 +97,24 @@ public:
    static VkShaderModule createShaderModule(const VulkanRenderContext& context,
                                       uint32_t * code,
                                       uint32_t size);
+
+    static void bindUniformBuffer(
+            const VulkanRenderContext &context,
+            VkDescriptorSet descriptorSet,
+            int binding,
+            VkBuffer buffer,
+            VkDeviceSize offset,
+            VkDeviceSize size
+    );
+
+    static void bindCombinedImageSampler(
+            const VulkanRenderContext &context,
+            VkDescriptorSet descriptorSet,
+            int binding,
+            VkImageView imageView,
+            VkSampler sampler
+    );
+
 };
 
 

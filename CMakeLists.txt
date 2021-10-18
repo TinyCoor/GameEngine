@@ -47,18 +47,16 @@ elseif(CMAKE_HOST_APPLE)
     message(STATUS "This is Apple Platform")
 endif()
 
+
+
 set(ShaderC_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/extern/shaderc/lib)
 message(STATUS ${ShaderC_LIBRARIES})
-#include(cmake/FindShaderC.cmake)
 
-#list(APPEND CMKAE_MODULE_PATH "cmake")
-#find_package(ShaderC REQUIRED)
-#if(ShaderC_FOUND)
-#    message(STATUS "Found ShaderC lib")
-#else()
-#    message(STATUS "Not Found ShaderC Including and Linking")
-#endif()
+if(MSVC)
+    #MSVC Setting
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 
+endif()
 
 #设置debug dll输出路径
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)

@@ -6,20 +6,38 @@
 #include "VulkanRenderScene.h"
 
 void VulkanRenderScene::init(const std::string& vertShaderFile,
-                      const std::string& fragShaderFile,
-                      const std::string& textureFile,
-                      const std::string& modelFile){
+                             const std::string& fragShaderFile,
+                             const std::string& albedoFile,
+                             const std::string& normalFile,
+                             const std::string& aoFile,
+                             const std::string& shadingFile,
+                             const std::string &emissionFile,
+                             const std::string& modelFile){
     vertShader.compileFromFile(vertShaderFile,ShaderKind::vertex);
     fragShader.compileFromFile(fragShaderFile,ShaderKind::fragment);
     mesh.loadFromFile(modelFile);
-    texture.loadFromFile(textureFile);
+    albedoTexture.loadFromFile(albedoFile);
+    normalTexture.loadFromFile(normalFile);
+    aoTexture.loadFromFile(aoFile);
+    emissionTexture.loadFromFile(emissionFile);
+    shadingTexture.loadFromFile(shadingFile);
 }
 
 void VulkanRenderScene::shutdown(){
     mesh.clearGPUData();
     mesh.clearCPUData();
-    texture.clearCPUData();
-    texture.clearGPUData();
+
+    albedoTexture.clearCPUData();
+    albedoTexture.clearGPUData();
+    normalTexture.clearCPUData();
+    normalTexture.clearGPUData();
+    aoTexture.clearCPUData();
+    aoTexture.clearGPUData();
+    shadingTexture.clearCPUData();
+    shadingTexture.clearGPUData();
+    emissionTexture.clearGPUData();
+    emissionTexture.clearCPUData();
+
     fragShader.clear();
     vertShader.clear();
 }

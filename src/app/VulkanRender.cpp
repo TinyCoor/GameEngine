@@ -13,7 +13,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
     size_t imageCount = swapChainContext.imageViews.size();
     //Creaet Uniform Buffers
-    VkDeviceSize uboSize = sizeof(UniformBufferObject);
+    VkDeviceSize uboSize = sizeof(SharedRenderState);
     uniformBuffers.resize(imageCount);
     uniformBuffersMemory.resize(imageCount);
     for (size_t i = 0; i < imageCount; i++) {
@@ -43,18 +43,14 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShaderStageInfo,fragShaderStageInfo};
 
     //Create vertex input
-    auto bindingDescription = VulkanMesh::getBindingDescription();
-    auto attributeDescriptions = VulkanMesh::getAttributeDescriptions();
+    auto bindingDescription = VulkanMesh::getVertexInputBindingDescription();
+    auto attributes = VulkanMesh::getAttributeDescriptions();
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+    vertexInputInfo.vertexBindingDescriptionCount =1;
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription; // Optional
+    vertexInputInfo.vertexAttributeDescriptionCount = attributes.size();
+    vertexInputInfo.pVertexAttributeDescriptions = attributes.data(); // Optional
 
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
@@ -90,7 +86,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
     rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizerInfo.lineWidth = 1.0f;
-    rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
+    rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterizerInfo.depthBiasEnable = VK_FALSE;
     rasterizerInfo.depthBiasConstantFactor = 0.0f; // Optional
@@ -148,89 +144,85 @@ void VulkanRender::init(VulkanRenderScene* scene) {
             VK_DYNAMIC_STATE_LINE_WIDTH
     };
 
+
     VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
     dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicStateInfo.dynamicStateCount = 2;
     dynamicStateInfo.pDynamicStates = dynamicStates;
 
+    std::array<VkDescriptorSetLayoutBinding, 6> bindings;
+
+    VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings[0] = { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, stage, nullptr };
+
+    for (uint32_t i = 1; i < 6; i++)
+        bindings[i] = { i, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stage, nullptr };
+
     //Create DescriptorSetLayout
-    VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding = 1;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-
-    VkDescriptorSetLayoutCreateInfo desctiptorLayoutInfo{};
-    desctiptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    desctiptorLayoutInfo.bindingCount = bindings.size();
-    desctiptorLayoutInfo.pBindings = bindings.data();
-    VK_CHECK(vkCreateDescriptorSetLayout(context.device_, &desctiptorLayoutInfo, nullptr, &descriptorSetLayout),"failed to create descriptor set layout!");
+    VK_CHECK(vkCreateDescriptorSetLayout(context.device_, &layoutInfo, nullptr, &descriptorSetLayout),"failed to create descriptor set layout!");
 
     // Create Descriptor Sets
     std::vector<VkDescriptorSetLayout> layouts(imageCount, descriptorSetLayout);
-
-    VkDescriptorSetAllocateInfo deScriptorAllocInfo{};
-    deScriptorAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    deScriptorAllocInfo.descriptorPool = swapChainContext.descriptorPool;
-    deScriptorAllocInfo.descriptorSetCount = imageCount;
-    deScriptorAllocInfo.pSetLayouts = layouts.data();
+    VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
+    descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    descriptorSetAllocInfo.descriptorPool = swapChainContext.descriptorPool;
+    descriptorSetAllocInfo.descriptorSetCount = imageCount;
+    descriptorSetAllocInfo.pSetLayouts = layouts.data();
 
     descriptorSets.resize(imageCount);
-    VK_CHECK(vkAllocateDescriptorSets(context.device_, &deScriptorAllocInfo, descriptorSets.data()),"failed to allocate descriptor sets!") ;
+    VK_CHECK(vkAllocateDescriptorSets(context.device_, &descriptorSetAllocInfo, descriptorSets.data()),"failed to allocate descriptor sets!") ;
 
     for (size_t i = 0; i < imageCount; i++) {
-        VulkanTexture texture = scene->getTexture();
-        VkDescriptorBufferInfo descriptorBufferInfo{};
-        descriptorBufferInfo.buffer = uniformBuffers[i];
-        descriptorBufferInfo.offset = 0;
-        descriptorBufferInfo.range = sizeof(UniformBufferObject);
+        const VulkanTexture &albedoTexture = scene->getAlbedoTexture();
+        const VulkanTexture &normalTexture = scene->getNormalTexture();
+        const VulkanTexture &aoTexture = scene->getAOTexture();
+        const VulkanTexture &shadingTexture = scene->getShadingTexture();
 
-        VkDescriptorImageInfo imageInfo{};
+        vulkanUtils::bindUniformBuffer(
+                context,
+                descriptorSets[i],
+                0,
+                uniformBuffers[i],
+                0,
+                sizeof(SharedRenderState)
+        );
 
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = texture.getImageView();
-        imageInfo.sampler = texture.getSampler();
+        vulkanUtils::bindCombinedImageSampler(
+                context,
+                descriptorSets[i],
+                1,
+                albedoTexture.getImageView(),
+                albedoTexture.getSampler()
+        );
 
-        std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = descriptorSets[i];
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &descriptorBufferInfo;
-        descriptorWrites[0].pImageInfo = nullptr; // Optional
-        descriptorWrites[0].pTexelBufferView = nullptr; // Optional
+        vulkanUtils::bindCombinedImageSampler(
+                context,
+                descriptorSets[i],
+                2,
+                normalTexture.getImageView(),
+                normalTexture.getSampler()
+        );
 
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = descriptorSets[i];
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pImageInfo = &imageInfo;
+        vulkanUtils::bindCombinedImageSampler(
+                context,
+                descriptorSets[i],
+                3,
+                aoTexture.getImageView(),
+                aoTexture.getSampler()
+        );
 
-        vkUpdateDescriptorSets(context.device_,
-                               descriptorWrites.size(),
-                               descriptorWrites.data(),
-                               0, nullptr);
-
+        vulkanUtils::bindCombinedImageSampler(
+                context,
+                descriptorSets[i],
+                4,
+                shadingTexture.getImageView(),
+                shadingTexture.getSampler()
+        );
    }
 
     //Pipeline layout
@@ -399,16 +391,15 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeLine);
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 
         const VulkanMesh& mesh = scene->getMesh();
         VkBuffer vertexBuffers[] = {mesh.getVertexBuffer()};
         VkBuffer indexBuffer = mesh.getIndexBuffer();
         VkDeviceSize offsets[] = {0};
-
         vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffers[i], mesh.getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
         vkCmdDrawIndexed(commandBuffers[i],static_cast<uint32_t>(mesh.getNumIndices()), 1, 0, 0, 0);
         vkCmdEndRenderPass(commandBuffers[i]);
         VK_CHECK(vkEndCommandBuffer(commandBuffers[i]), "failed to record command buffer!");
@@ -460,10 +451,11 @@ VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {
     const float zfar = 10.f;
    // float aspect = 1.0;
 
-    UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * 0.1f * glm::radians(90.0f), up);
+    SharedRenderState ubo{};
+    ubo.world = glm::rotate(glm::mat4(1.0f), time * 0.1f * glm::radians(90.0f), up);
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), zero, up);
     ubo.proj = glm::perspective(glm::radians(45.0f), aspect, znear, zfar);
+    ubo.cameraPos = glm::vec3(2.0f, 2.0f, 2.0f);
     ubo.proj[1][1] *= -1;
 
     void* data_uniform = nullptr;
