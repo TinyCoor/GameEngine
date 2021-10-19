@@ -14,16 +14,16 @@ public:
     : context(ctx){}
     ~VulkanTexture();
 
+    bool loadHDRFromFile(const std::string& file);
     bool loadFromFile(const std::string& file);
     inline VkImage getImage()const {return image;}
     inline VkImageView getImageView() const { return imageView;}
     inline VkSampler getSampler() const {return imageSampler;}
 
-    void uploadToGPU();
     void clearGPUData();
     void clearCPUData();
 private:
-
+    void uploadToGPU(VkFormat format,size_t size);
 private:
     VulkanRenderContext context;
     unsigned char* pixels = nullptr;
@@ -32,7 +32,6 @@ private:
     int channels =0;
     int mipLevels = 0;
 
-    VkFormat format{VK_FORMAT_R8G8B8A8_UNORM};
     VkImage image{};
     VkDeviceMemory imageMemory{};
     VkImageView imageView{};

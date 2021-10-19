@@ -17,11 +17,10 @@ VulkanTexture::~VulkanTexture() {
 }
 
 
-void VulkanTexture::uploadToGPU() {
+void VulkanTexture::uploadToGPU(VkFormat format,size_t size) {
 
     //TODO Support Other Image Format
-
-    VkDeviceSize imageSize = width * height * 4;
+    VkDeviceSize imageSize = width * height * size;
     TH_WITH_MSG(!pixels,"failed to load texture image!");
 
     VkBuffer stagingBuffer{};
@@ -106,7 +105,7 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
 
     //TODO Support Other Format
     stbi_uc* stb_pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-
+    channels  = 4;
     if(!stb_pixels){
         std::cerr<< "load file failed:" << path <<'\n';
         return false;
@@ -115,15 +114,36 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
     mipLevels =static_cast<int>( std::floor(std::log2(std::max(width,height)))+ 1);
 
     clearCPUData();
-
-    size_t size = width* height *4;
+    size_t pixel_size= channels *sizeof(stbi_uc);
+    size_t size = width* height * pixel_size;
     pixels = new unsigned char[size];
     memcpy(pixels,stb_pixels,size);
     stbi_image_free(stb_pixels);
     stb_pixels= nullptr;
     //
     clearGPUData();
-    uploadToGPU();
+    uploadToGPU(VK_FORMAT_R8G8B8A8_UNORM,pixel_size);
+    return true;
+}
+
+bool VulkanTexture::loadHDRFromFile(const std::string& path) {
+    float* stb_pixels = stbi_loadf(path.c_str(), &width, &height, &channels, 0);
+    if(!stb_pixels){
+        std::cerr<< "load file failed:" << path <<'\n';
+        return false;
+    }
+
+    int minLevels = 1;
+    size_t pixel_size =  channels * sizeof(float);
+    size_t size = width *height * pixel_size;
+    clearCPUData();
+
+    pixels = new unsigned char[size];
+    memcpy(pixels,stb_pixels,size);
+    stbi_image_free(stb_pixels);
+    stb_pixels= nullptr;
+    clearGPUData();
+    uploadToGPU(VK_FORMAT_R32_SFLOAT,pixel_size);
 
     return true;
 }

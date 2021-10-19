@@ -310,6 +310,9 @@ vulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
                                     VkImage image,uint32_t width, uint32_t height,
                                     uint32_t mipLevel,VkFormat format,
                                     VkFilter filter) {
+    if(mipLevel == 1){
+        return ;
+    }
     VkFormatProperties formatProperties;
     bool supportsLinearFiltering = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) == 0;
     bool supportCubicFiltering = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT) == 0;
