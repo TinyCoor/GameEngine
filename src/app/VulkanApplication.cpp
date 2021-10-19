@@ -788,8 +788,9 @@ void Application::initScene() {
                 albedoTexturePath,
                 normalTexturePath,
                 aoTexturePath,
+                shadingTexturePath,
                 emissionTexturePath,
-                shadingTexturePath,model_path);
+                model_path);
 }
 
 void Application::shutdownScene() {

@@ -19,8 +19,9 @@ void VulkanRenderScene::init(const std::string& vertShaderFile,
     albedoTexture.loadFromFile(albedoFile);
     normalTexture.loadFromFile(normalFile);
     aoTexture.loadFromFile(aoFile);
-    emissionTexture.loadFromFile(emissionFile);
     shadingTexture.loadFromFile(shadingFile);
+    emissionTexture.loadFromFile(emissionFile);
+
 }
 
 void VulkanRenderScene::shutdown(){

@@ -182,7 +182,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         const VulkanTexture &normalTexture = scene->getNormalTexture();
         const VulkanTexture &aoTexture = scene->getAOTexture();
         const VulkanTexture &shadingTexture = scene->getShadingTexture();
-
+        const VulkanTexture &emissionTexture = scene->getEmissionTexture();
         vulkanUtils::bindUniformBuffer(
                 context,
                 descriptorSets[i],
@@ -222,6 +222,14 @@ void VulkanRender::init(VulkanRenderScene* scene) {
                 4,
                 shadingTexture.getImageView(),
                 shadingTexture.getSampler()
+        );
+
+        vulkanUtils::bindCombinedImageSampler(
+                context,
+                descriptorSets[i],
+                5,
+                emissionTexture.getImageView(),
+                emissionTexture.getSampler()
         );
    }
 
