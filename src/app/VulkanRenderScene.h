@@ -18,6 +18,14 @@ public:
     virtual VulkanMesh loadModel(const std::string& path) =0;
 };
 
+
+
+class RenderMaterial{
+private:
+
+
+};
+
 //class RenderScene{
 //public:
 //    virtual void init(const std::string& vertShaderFile,
@@ -35,12 +43,13 @@ class VulkanRenderScene {
 private:
     VulkanRenderContext context;
     VulkanMesh mesh;
+   // std::vector<std::string> textures;
     VulkanTexture albedoTexture;
     VulkanTexture normalTexture;
     VulkanTexture aoTexture;
     VulkanTexture shadingTexture;
     VulkanTexture emissionTexture;
-
+    VulkanTexture hdrTexture;
     VulkanShader vertShader;
     VulkanShader fragShader;
 public:
@@ -51,6 +60,7 @@ public:
         aoTexture(context),
         shadingTexture(ctx),
         emissionTexture(ctx),
+         hdrTexture(ctx),
         vertShader(context),
         fragShader(context){
    }
@@ -62,13 +72,15 @@ public:
               const std::string& normalFile,
               const std::string& aoFile,
               const std::string& shadingFile,
-              const std::string &emissionFile,
+              const std::string& emissionFile,
+              const std::string& hdrFile,
               const std::string& modelFile);
 
      const VulkanShader& getVertexShader(){return vertShader;}
      const VulkanShader& getFragmentShader() {return fragShader;}
     inline const VulkanTexture &getEmissionTexture() const { return emissionTexture; }
     inline const VulkanTexture &getAlbedoTexture() const { return albedoTexture; }
+    inline const VulkanTexture& getHDRTexture()const{return  hdrTexture;}
      inline const VulkanTexture &getNormalTexture() const { return normalTexture; }
      inline const VulkanTexture &getAOTexture() const { return aoTexture; }
      inline const VulkanTexture &getShadingTexture() const { return shadingTexture; }

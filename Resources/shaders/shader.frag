@@ -13,6 +13,7 @@ layout(binding = 2) uniform sampler2D normalSampler;
 layout(binding = 3) uniform sampler2D aoSampler;
 layout(binding = 4) uniform sampler2D shadingSampler;
 layout(binding = 5) uniform sampler2D emissionSampler;
+layout(binding = 5) uniform sampler2D hdrSampler;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
@@ -179,7 +180,7 @@ void main() {
 	//Diretc  light
 	float dotNL = max(dot(surface.normal,surface.light),0.0);
 	float attenuation = 1.f / dot(lightPos -fragPositionWS,lightPos -fragPositionWS);
-	vec3 light = MicrofacetBRDF(surface, microfacet_material)* attenuation * dotNL;
+	vec3 light = MicrofacetBRDF(surface, microfacet_material)* attenuation *2.0* surface.dotNL;
 
 	//ambient light
 	vec3 ambient =  microfacet_material.albedo * vec3(0.03f) * texture(aoSampler,fragTexCoord).r;
@@ -190,8 +191,8 @@ void main() {
 	color +=texture(emissionSampler,fragTexCoord).rgb;
 
 	//Gramma Correction
-//	color = color / (color+ vec3(1.0));
-//	color = pow(color,vec3(1.0/2.2));
+	color = color / (color+ vec3(1.0));
+	color = pow(color,vec3(1.0/2.2));
 	outColor = vec4(color, 1.0f);
 //	}
 //	else

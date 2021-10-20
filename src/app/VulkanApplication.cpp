@@ -19,6 +19,7 @@ static std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_
 static std::string aoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_AO.jpg)";
 static std::string shadingTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_metalRoughness.jpg)";
 static std::string emissionTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_emissive.jpg)";
+static std::string hdrTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\default_environment.hdr)";
 
 static int maxCombinedImageSamplers = 32;
 static int maxUniformBuffers = 32;
@@ -790,6 +791,7 @@ void Application::initScene() {
                 aoTexturePath,
                 shadingTexturePath,
                 emissionTexturePath,
+                hdrTexturePath,
                 model_path);
 }
 

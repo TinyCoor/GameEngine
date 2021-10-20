@@ -12,6 +12,7 @@ void VulkanRenderScene::init(const std::string& vertShaderFile,
                              const std::string& aoFile,
                              const std::string& shadingFile,
                              const std::string &emissionFile,
+                             const std::string& hdrFile,
                              const std::string& modelFile){
     vertShader.compileFromFile(vertShaderFile,ShaderKind::vertex);
     fragShader.compileFromFile(fragShaderFile,ShaderKind::fragment);
@@ -21,6 +22,7 @@ void VulkanRenderScene::init(const std::string& vertShaderFile,
     aoTexture.loadFromFile(aoFile);
     shadingTexture.loadFromFile(shadingFile);
     emissionTexture.loadFromFile(emissionFile);
+    hdrTexture.loadHDRFromFile(hdrFile);
 
 }
 
@@ -38,6 +40,9 @@ void VulkanRenderScene::shutdown(){
     shadingTexture.clearGPUData();
     emissionTexture.clearGPUData();
     emissionTexture.clearCPUData();
+
+    hdrTexture.clearCPUData();
+    hdrTexture.clearGPUData();
 
     fragShader.clear();
     vertShader.clear();

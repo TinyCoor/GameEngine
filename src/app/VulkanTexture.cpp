@@ -133,7 +133,7 @@ bool VulkanTexture::loadHDRFromFile(const std::string& path) {
         return false;
     }
 
-    int minLevels = 1;
+    mipLevels = 1;
     size_t pixel_size =  channels * sizeof(float);
     size_t size = width *height * pixel_size;
     clearCPUData();

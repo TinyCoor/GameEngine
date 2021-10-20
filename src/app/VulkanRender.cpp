@@ -150,12 +150,12 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     dynamicStateInfo.dynamicStateCount = 2;
     dynamicStateInfo.pDynamicStates = dynamicStates;
 
-    std::array<VkDescriptorSetLayoutBinding, 6> bindings;
+    std::array<VkDescriptorSetLayoutBinding, 7> bindings;
 
     VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     bindings[0] = { 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, stage, nullptr };
 
-    for (uint32_t i = 1; i < 6; i++)
+    for (uint32_t i = 1; i < 7; i++)
         bindings[i] = { i, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, stage, nullptr };
 
     //Create DescriptorSetLayout
@@ -178,11 +178,15 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     VK_CHECK(vkAllocateDescriptorSets(context.device_, &descriptorSetAllocInfo, descriptorSets.data()),"failed to allocate descriptor sets!") ;
 
     for (size_t i = 0; i < imageCount; i++) {
-        const VulkanTexture &albedoTexture = scene->getAlbedoTexture();
-        const VulkanTexture &normalTexture = scene->getNormalTexture();
-        const VulkanTexture &aoTexture = scene->getAOTexture();
-        const VulkanTexture &shadingTexture = scene->getShadingTexture();
-        const VulkanTexture &emissionTexture = scene->getEmissionTexture();
+        std::array<const VulkanTexture*, 6> textures = {
+                &scene->getAlbedoTexture(),
+                &scene->getNormalTexture(),
+                &scene->getAOTexture(),
+                &scene->getShadingTexture(),
+                &scene->getEmissionTexture(),
+                &scene->getHDRTexture()
+        };
+
         vulkanUtils::bindUniformBuffer(
                 context,
                 descriptorSets[i],
@@ -191,47 +195,16 @@ void VulkanRender::init(VulkanRenderScene* scene) {
                 0,
                 sizeof(SharedRenderState)
         );
-
-        vulkanUtils::bindCombinedImageSampler(
-                context,
-                descriptorSets[i],
-                1,
-                albedoTexture.getImageView(),
-                albedoTexture.getSampler()
-        );
-
-        vulkanUtils::bindCombinedImageSampler(
-                context,
-                descriptorSets[i],
-                2,
-                normalTexture.getImageView(),
-                normalTexture.getSampler()
-        );
-
-        vulkanUtils::bindCombinedImageSampler(
-                context,
-                descriptorSets[i],
-                3,
-                aoTexture.getImageView(),
-                aoTexture.getSampler()
-        );
-
-        vulkanUtils::bindCombinedImageSampler(
-                context,
-                descriptorSets[i],
-                4,
-                shadingTexture.getImageView(),
-                shadingTexture.getSampler()
-        );
-
-        vulkanUtils::bindCombinedImageSampler(
-                context,
-                descriptorSets[i],
-                5,
-                emissionTexture.getImageView(),
-                emissionTexture.getSampler()
-        );
-   }
+        for (int j = 0; j < textures.size(); ++j) {
+            vulkanUtils::bindCombinedImageSampler(
+                    context,
+                    descriptorSets[i],
+                    j+1,
+                    textures[j]->getImageView(),
+                    textures[j]->getSampler()
+            );
+        }
+    }
 
     //Pipeline layout
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
