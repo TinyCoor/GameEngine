@@ -69,6 +69,7 @@ public:
                         VkMemoryPropertyFlags properties,
                         VkImage& image,
                         VkDeviceMemory& memory);
+
     static VkImageView createCubeView(const VulkanRenderContext& context,
                                          VkImage image,
                                          uint32_t minLevels,

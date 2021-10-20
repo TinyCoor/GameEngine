@@ -3,9 +3,10 @@
 //
 
 #include "VulkanRender.h"
+#include "VulkanGraphicsPipelineBuilder.h"
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
-#include <iostream>
+
 #include "Macro.h"
 
 
@@ -97,7 +98,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     VkPipelineMultisampleStateCreateInfo multisamplingInfo{};
     multisamplingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisamplingInfo.sampleShadingEnable = VK_FALSE;
-    multisamplingInfo.rasterizationSamples = context.msaaSamples;
+    multisamplingInfo.rasterizationSamples = context.maxMSAASamples;
     multisamplingInfo.minSampleShading = 1.0f; // Optional
     multisamplingInfo.pSampleMask = nullptr; // Optional
     multisamplingInfo.alphaToCoverageEnable = VK_FALSE; // Optional
@@ -220,7 +221,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     //create Vulkan Render Pass
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = swapChainContext.colorFormat;
-    colorAttachment.samples = context.msaaSamples;
+    colorAttachment.samples = context.maxMSAASamples;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -235,7 +236,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
     VkAttachmentDescription depthAttachment{};
     depthAttachment.format = swapChainContext.depthFormat;
-    depthAttachment.samples = context.msaaSamples;
+    depthAttachment.samples = context.maxMSAASamples;
     depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;

@@ -8,7 +8,17 @@ file(GLOB SOURCE ../extern/volk/volk.c
         app/*.h app/*.cpp
         )
 add_executable(niagara
-        ${SOURCE}
+        app/VulkanTexture.cpp
+        app/VulkanUtils.cpp
+        app/VulkanMesh.cpp
+        app/VulkanGraphicsPipelineBuilder.cpp
+        app/VulkanRender.cpp
+        app/VulkanRenderScene.cpp
+        app/VulkanRenderContext.cpp
+        app/VulkanShader.cpp
+        app/VulkanTexture.cpp
+        app/pbrRender.cpp
+        app/VulkanApplication.cpp
         )
 
 

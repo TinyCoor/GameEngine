@@ -17,7 +17,7 @@ VulkanTexture::~VulkanTexture() {
 }
 
 
-void VulkanTexture::uploadToGPU(VkFormat format,size_t size) {
+void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size) {
 
     //TODO Support Other Image Format
     VkDeviceSize imageSize = width * height * size;
@@ -41,7 +41,7 @@ void VulkanTexture::uploadToGPU(VkFormat format,size_t size) {
                                mipLevels,
                                VK_SAMPLE_COUNT_1_BIT,
                                format,
-                               VK_IMAGE_TILING_OPTIMAL,
+                               tiling,
                                VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                image, imageMemory);
@@ -122,7 +122,7 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
     stb_pixels= nullptr;
     //
     clearGPUData();
-    uploadToGPU(VK_FORMAT_R8G8B8A8_UNORM,pixel_size);
+    uploadToGPU(VK_FORMAT_R8G8B8A8_UNORM,VK_IMAGE_TILING_OPTIMAL,pixel_size);
     return true;
 }
 
@@ -149,7 +149,7 @@ bool VulkanTexture::loadHDRFromFile(const std::string& path) {
         case 2: format = VK_FORMAT_R32G32_SFLOAT;break;
         case 3: format= VK_FORMAT_R32G32B32_SFLOAT;break;
     }
-    uploadToGPU(format,pixel_size);
+    uploadToGPU(format,VK_IMAGE_TILING_LINEAR,pixel_size);
 
     return true;
 }

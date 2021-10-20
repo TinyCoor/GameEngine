@@ -23,7 +23,7 @@ public:
     void clearGPUData();
     void clearCPUData();
 private:
-    void uploadToGPU(VkFormat format,size_t size);
+    void uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size);
 private:
     VulkanRenderContext context;
     unsigned char* pixels = nullptr;

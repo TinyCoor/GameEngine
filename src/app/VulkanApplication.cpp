@@ -366,7 +366,7 @@ void Application::initVulkan() {
     context.commandPool = commandPool;
     context.graphicsQueue = graphicsQueue;
     context.presentQueue= presentQueue;
-    context.msaaSamples = vulkanUtils::getMaxUsableSampleCount(context);
+    context.maxMSAASamples = vulkanUtils::getMaxUsableSampleCount(context);
 }
 
 void Application::shutdownVulkan() {
@@ -691,7 +691,7 @@ void Application::initVulkanSwapChain() {
                                swapChainExtent.width,
                                swapChainExtent.height,
                                1,
-                               context.msaaSamples,
+                               context.maxMSAASamples,
                                swapChainImageFormat,
                                VK_IMAGE_TILING_OPTIMAL,
                                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT |VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -716,7 +716,7 @@ void Application::initVulkanSwapChain() {
                                swapChainExtent.width,
                                swapChainExtent.height,
                                1,
-                               context.msaaSamples,
+                               context.maxMSAASamples,
                                depthFormat,
                                VK_IMAGE_TILING_OPTIMAL,
                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,

@@ -13,7 +13,7 @@ struct VulkanRenderContext{
     VkCommandPool commandPool =VK_NULL_HANDLE;
     VkQueue graphicsQueue =VK_NULL_HANDLE;
     VkQueue presentQueue = VK_NULL_HANDLE;
-    VkSampleCountFlagBits msaaSamples;
+    VkSampleCountFlagBits maxMSAASamples;
 };
 
 struct VulkanSwapChainContext{
