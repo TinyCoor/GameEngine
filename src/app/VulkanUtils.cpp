@@ -120,7 +120,7 @@ void vulkanUtils::createImage2D(const VulkanRenderContext &context,
                                 VkFormat format,VkImageTiling tiling,
                                 VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                 VkImage &image, VkDeviceMemory &memory) {
-    //Create Vertex Buffer
+    //Create  Buffer
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -135,6 +135,7 @@ void vulkanUtils::createImage2D(const VulkanRenderContext &context,
     imageInfo.usage = usage;
     imageInfo.samples = numberSample;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.flags = 0;
 
     VK_CHECK(vkCreateImage(context.device_, &imageInfo, nullptr, &image),
              "failed to create textures!");
@@ -150,10 +151,95 @@ void vulkanUtils::createImage2D(const VulkanRenderContext &context,
     VK_CHECK(vkBindImageMemory(context.device_, image, memory, 0),"Bind Buffer VertexBuffer Failed");
 }
 
+VkImageView vulkanUtils::createImage2DView(const VulkanRenderContext& context,
+                                           VkImage image,
+                                           uint32_t mipLevels,
+                                           VkFormat format,
+                                           VkImageAspectFlags aspectFlags
+) {
+    VkImageView textureImageView{};
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = aspectFlags;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = mipLevels;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+    VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
+    return textureImageView;
+}
 
-//TODO FIX
-void
-vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
+void vulkanUtils::createImageCube(const VulkanRenderContext& context,
+                     uint32_t width,
+                     uint32_t height,
+                     uint32_t mipLevel,
+                     VkSampleCountFlagBits numberSample,
+                     VkFormat format,
+                     VkImageTiling tiling,
+                     VkImageUsageFlags usage,
+                     VkMemoryPropertyFlags properties,
+                     VkImage& image,
+                     VkDeviceMemory& memory)
+{
+    //Create  Buffer
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = static_cast<uint32_t>(width);
+    imageInfo.extent.height = static_cast<uint32_t>(height);
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = mipLevel;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = format;
+    imageInfo.tiling = tiling;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = usage;
+    imageInfo.samples = numberSample;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+
+    VK_CHECK(vkCreateImage(context.device_, &imageInfo, nullptr, &image),
+             "failed to create textures!");
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(context.device_, image, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(context,memRequirements.memoryTypeBits, properties);
+    VK_CHECK(vkAllocateMemory(context.device_, &allocInfo, nullptr, &memory) ,"failed to allocate image buffer memory!");
+    VK_CHECK(vkBindImageMemory(context.device_, image, memory, 0),"Bind Buffer  Failed");
+
+}
+
+
+VkImageView vulkanUtils::createCubeView(const VulkanRenderContext& context,
+                                  VkImage image,
+                                  uint32_t mipLevels,
+                                  VkFormat format,
+                                  VkImageAspectFlags aspectFlags)
+{
+    VkImageView textureImageView{};
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = aspectFlags;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = mipLevels;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 6;
+    VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
+    return textureImageView;
+}
+
+
+void vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
                                    VkImage image,
                                    uint32_t mipLevels,
                                    VkFormat format,
@@ -223,6 +309,8 @@ vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
     endSingleTimeCommands(context,commandBuffer);
 }
 
+
+
 void vulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
                                     uint32_t height) {
     auto commandBuffer = beginSingleTimeCommands(context);
@@ -254,26 +342,7 @@ void vulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer
     endSingleTimeCommands(context,commandBuffer);
 }
 
-VkImageView vulkanUtils::createImage2DView(const VulkanRenderContext& context,
-                                           VkImage image,
-                                           uint32_t mipLevels,
-                                           VkFormat format,
-                                           VkImageAspectFlags aspectFlags
-                                          ) {
-    VkImageView textureImageView{};
-    VkImageViewCreateInfo viewInfo{};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = aspectFlags;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = mipLevels;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
-    VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
-    return textureImageView;
-}
+
 
 VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context,
                                        uint32_t mipLevels){

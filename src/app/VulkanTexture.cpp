@@ -143,7 +143,13 @@ bool VulkanTexture::loadHDRFromFile(const std::string& path) {
     stbi_image_free(stb_pixels);
     stb_pixels= nullptr;
     clearGPUData();
-    uploadToGPU(VK_FORMAT_R32_SFLOAT,pixel_size);
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    switch (channels) {
+        case 1:format = VK_FORMAT_R32_SFLOAT;break;
+        case 2: format = VK_FORMAT_R32G32_SFLOAT;break;
+        case 3: format= VK_FORMAT_R32G32B32_SFLOAT;break;
+    }
+    uploadToGPU(format,pixel_size);
 
     return true;
 }

@@ -58,6 +58,23 @@ public:
            VkDeviceMemory& memory
            );
 
+   void createImageCube(const VulkanRenderContext& context,
+                        uint32_t width,
+                        uint32_t height,
+                        uint32_t mipLevel,
+                        VkSampleCountFlagBits numberSample,
+                        VkFormat format,
+                        VkImageTiling tiling,
+                        VkImageUsageFlags usage,
+                        VkMemoryPropertyFlags properties,
+                        VkImage& image,
+                        VkDeviceMemory& memory);
+    static VkImageView createCubeView(const VulkanRenderContext& context,
+                                         VkImage image,
+                                         uint32_t minLevels,
+                                         VkFormat format,
+                                         VkImageAspectFlags aspectFlags
+    );
    static VkImageView createImage2DView(const VulkanRenderContext& context,
                                          VkImage image,
                                          uint32_t minLevels,
