@@ -48,7 +48,7 @@ public:
     inline VkBuffer getIndexBuffer() const { return indexBuffer;}
 
     static VkVertexInputBindingDescription getVertexInputBindingDescription() ;
-    static std::array<VkVertexInputAttributeDescription, 6> getAttributeDescriptions() ;
+    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() ;
 
     bool loadFromFile(const std::string& file);
     void uploadToGPU();
