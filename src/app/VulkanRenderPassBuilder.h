@@ -1,0 +1,16 @@
+//
+// Created by y123456 on 2021/10/21.
+//
+
+#ifndef GAMEENGINE_VULKANRENDERPASSBUILDER_H
+#define GAMEENGINE_VULKANRENDERPASSBUILDER_H
+
+
+
+class VulkanRenderPassBuilder {
+
+};
+
+
+
+#endif //GAMEENGINE_VULKANRENDERPASSBUILDER_H
