@@ -106,6 +106,8 @@ namespace {
         VkDeviceCreateInfo deviceCreateInfo={};
         VkPhysicalDeviceFeatures deviceFeatures ={};
         deviceFeatures.samplerAnisotropy = VK_TRUE;
+        deviceFeatures.sampleRateShading = VK_TRUE;
+
         deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         deviceCreateInfo.pQueueCreateInfos = queuesInfo.data();
         deviceCreateInfo.queueCreateInfoCount = queuesInfo.size();
