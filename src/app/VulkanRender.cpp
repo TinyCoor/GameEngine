@@ -308,6 +308,7 @@ VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {
    // float aspect = 1.0;
 
     SharedRenderState ubo{};
+
     ubo.world = glm::rotate(glm::mat4(1.0f), time * 0.1f * glm::radians(90.0f), up);
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), zero, up);
     ubo.proj = glm::perspective(glm::radians(45.0f), aspect, znear, zfar);

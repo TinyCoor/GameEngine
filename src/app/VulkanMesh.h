@@ -53,6 +53,8 @@ public:
     bool loadFromFile(const std::string& file);
 
     void createSkybox(float size);
+    void createQuad(float size);
+
     void uploadToGPU();
     void clearGPUData();
     void clearCPUData();

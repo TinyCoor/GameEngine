@@ -25,6 +25,7 @@ public:
     inline size_t getWidth() const{return width;}
     inline size_t getHeight() const{return height;}
     inline size_t getNumLayers() const{return layers;}
+    inline size_t getNumMiplevels() const{return mipLevels;}
 
     void clearGPUData();
     void clearCPUData();

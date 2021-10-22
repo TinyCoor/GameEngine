@@ -14,6 +14,8 @@
 class VulkanCubeMapRender {
 private:
     VulkanRenderContext context;
+    VulkanShader renderFragmentShader;
+    VulkanMesh renderQuad;
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
@@ -31,9 +33,10 @@ private:
 
 public:
     VulkanCubeMapRender(VulkanRenderContext& ctx, VulkanSwapChainContext& swapChainCtx)
-                    :context(ctx){}
+                    :context(ctx), renderFragmentShader(ctx),
+                      renderQuad(ctx){}
 
-    void init(VkExtent2D extent);
+    void init(const VulkanTexture& inputTexture,const VulkanTexture& targetTexture);
     void shutdown();
 
     VkCommandBuffer render();

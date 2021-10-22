@@ -141,6 +141,9 @@ public:
             VkSampler sampler
     );
 
+//    static VkDescriptorSet createDescriptorSet(VkDescriptorPool descriptorPool,
+//                                               size_t descriptorCount,
+//                                               VkDescriptorSet* pSetLayouts);
 };
 
 
