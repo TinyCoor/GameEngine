@@ -244,7 +244,7 @@ void VulkanMesh::clearCPUData() {
 void VulkanMesh::createSkybox(float size) {
     clearCPUData();
     clearGPUData();
-
+    size *=0.5;
     vertices.resize(8);
     indices.resize(36);
     vertices[0].position = glm::vec3 (-size ,-size,-size);
@@ -258,16 +258,15 @@ void VulkanMesh::createSkybox(float size) {
     vertices[7].position = glm::vec3 (-size , size, size);
 
     indices={
-          1, 0, 2, 3, 2, 0,
-          5, 1, 6, 2, 6, 1,
-          2, 3, 6, 7, 6, 3,
-          4, 5, 6, 7, 4, 6,
-          0, 1, 4, 5, 4, 1,
-          0, 4, 3, 7, 3, 4,
+        0,  1,  2,  2,  3, 0,
+        1,  5,  6,  6,  2, 1,
+        3,  2,  6,  6,  7, 3,
+        5,  4,  6,  4,  7, 6,
+        1,  0,  4,  4,  5, 1,
+        4,  0,  3,  3,  7, 4,
     };
 
     uploadToGPU();
-
 
 
 }

@@ -65,7 +65,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     //TODO
     VulkanPipelineLayoutBuilder skyboxPipelineLayoutBuilder(context);
     skyboxPipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
-    skyboxPipelineLayout=skyboxPipelineLayoutBuilder.build();
+    skyboxPipelineLayout =skyboxPipelineLayoutBuilder.build();
 
     VulkanGraphicsPipelineBuilder pipelineBuilder(context,pbrPipelineLayout,renderPass);
     //VulkanGraphicsPipelineBuilder pipelineBuilder(context,descriptorSetLayout,renderPass);
@@ -81,10 +81,10 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     pipelineBuilder.addBlendColorAttachment();
     pbrPipeline =  pipelineBuilder.build();
 
-    VulkanGraphicsPipelineBuilder skyboxPipelineBuilder(context,pbrPipelineLayout,renderPass);
+    VulkanGraphicsPipelineBuilder skyboxPipelineBuilder(context,skyboxPipelineLayout,renderPass);
     //VulkanGraphicsPipelineBuilder pipelineBuilder(context,descriptorSetLayout,renderPass);
-    skyboxPipelineBuilder.addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT);
-    skyboxPipelineBuilder.addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT);
+    skyboxPipelineBuilder.addShaderStage(skyboxVertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT);
+    skyboxPipelineBuilder.addShaderStage(skyboxFragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT);
     skyboxPipelineBuilder.addVertexInput(VulkanMesh::getVertexInputBindingDescription(),VulkanMesh::getAttributeDescriptions());
     skyboxPipelineBuilder.setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     skyboxPipelineBuilder.addViewport(viewport);
@@ -94,7 +94,6 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     skyboxPipelineBuilder.setDepthStencilState(true, true, VK_COMPARE_OP_LESS),
     skyboxPipelineBuilder.addBlendColorAttachment();
     skyboxPipeline = skyboxPipelineBuilder.build();
-
 
     // Create uniform buffers
     VkDeviceSize uboSize = sizeof(SharedRenderState);
@@ -218,9 +217,10 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
         {
+            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
+            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
+
             const VulkanMesh &skybox = scene->getSkyboxMesh();
             VkBuffer vertexBuffers[] = {skybox.getVertexBuffer()};
             VkBuffer indexBuffer = skybox.getIndexBuffer();
@@ -248,7 +248,6 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         }
 
         vkCmdEndRenderPass(commandBuffers[i]);
-
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS)
             throw std::runtime_error("Can't record command buffer");
     }
@@ -305,7 +304,7 @@ VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {
 
     const float aspect = swapChainContext.extend.width/(float)swapChainContext.extend.height;
     const float znear = 0.1f;
-    const float zfar = 10.f;
+    const float zfar = 1000.f;
    // float aspect = 1.0;
 
     SharedRenderState ubo{};

@@ -45,6 +45,7 @@ void VulkanRenderScene::shutdown(){
     albedoTexture.clearGPUData();
     normalTexture.clearCPUData();
     normalTexture.clearGPUData();
+
     aoTexture.clearCPUData();
     aoTexture.clearGPUData();
     shadingTexture.clearCPUData();

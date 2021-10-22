@@ -75,7 +75,7 @@ public:
      void init(const std::string& pbrVertShaderFile,
               const std::string& pbrFragShaderFile,
               const std::string& skyboxVertShaderFile,
-              const std::string& skyboxFragmentShaderFilw,
+              const std::string& skyboxFragmentShaderFile,
               const std::string& albedoFile,
               const std::string& normalFile,
               const std::string& aoFile,
@@ -96,7 +96,7 @@ public:
      inline const VulkanTexture &getShadingTexture() const { return shadingTexture; }
 
     inline const VulkanMesh& getMesh() const {return mesh;}
-    inline const VulkanMesh& getSkyboxMesh() const{return mesh;}
+    inline const VulkanMesh& getSkyboxMesh() const{return skyboxMesh;}
 
 
      void shutdown() ;
