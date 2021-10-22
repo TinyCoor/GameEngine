@@ -7,6 +7,8 @@
 
 void VulkanRenderScene::init(const std::string& vertShaderFile,
                              const std::string& fragShaderFile,
+                             const std::string& skyboxVertexShaderFile,
+                             const std::string& skyboxFragmentShaderFIle,
                              const std::string& albedoFile,
                              const std::string& normalFile,
                              const std::string& aoFile,
@@ -14,8 +16,11 @@ void VulkanRenderScene::init(const std::string& vertShaderFile,
                              const std::string &emissionFile,
                              const std::string& hdrFile,
                              const std::string& modelFile){
-    vertShader.compileFromFile(vertShaderFile,ShaderKind::vertex);
-    fragShader.compileFromFile(fragShaderFile,ShaderKind::fragment);
+    pbrVertShader.compileFromFile(vertShaderFile,ShaderKind::vertex);
+    pbrFragShader.compileFromFile(fragShaderFile,ShaderKind::fragment);
+    skyboxVertexShader.compileFromFile(skyboxVertexShaderFile,ShaderKind::vertex);
+    skyboxFragmentShader.compileFromFile(skyboxFragmentShaderFIle,ShaderKind::fragment);
+
     mesh.loadFromFile(modelFile);
     albedoTexture.loadFromFile(albedoFile);
     normalTexture.loadFromFile(normalFile);
@@ -44,7 +49,10 @@ void VulkanRenderScene::shutdown(){
     hdrTexture.clearCPUData();
     hdrTexture.clearGPUData();
 
-    fragShader.clear();
-    vertShader.clear();
+    pbrVertShader.clear();
+    pbrFragShader.clear();
+
+    skyboxVertexShader.clear();
+    skyboxFragmentShader.clear();
 }
 

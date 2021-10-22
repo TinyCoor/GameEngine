@@ -17,11 +17,15 @@ private:
     VulkanRenderContext context;
     VulkanSwapChainContext swapChainContext;
 
-    VkRenderPass renderPass =VK_NULL_HANDLE;
-    VkPipelineLayout pipelineLayout=VK_NULL_HANDLE;
-    VkPipeline graphicsPipeLine = VK_NULL_HANDLE;
+    VkRenderPass renderPass{VK_NULL_HANDLE};
+    VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
+    VkPipelineLayout  pipelineLayout{VK_NULL_HANDLE};
 
-    VkDescriptorSetLayout descriptorSetLayout =VK_NULL_HANDLE;
+    VkDescriptorSetLayout skyboxDescriptorSetLayout{VK_NULL_HANDLE};
+    VkPipelineLayout  skyboxPipelineLayout{VK_NULL_HANDLE};
+
+    VkPipeline pipeline{VK_NULL_HANDLE};
+
     std::vector<VkDescriptorSet> descriptorSets{};
 
     std::vector<VkCommandBuffer> commandBuffers{};

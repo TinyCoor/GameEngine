@@ -14,11 +14,13 @@
 class VulkanGraphicsPipelineBuilder {
 private:
     VulkanRenderContext context;
+    VkRenderPass renderPass {};
+    VkPipelineLayout  pipelineLayout{};
+
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
     std::vector<VkVertexInputBindingDescription> vertexInputBindings;
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributes;
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
-    std::vector<VkDescriptorSetLayoutBinding> descriptorSetLayoutBindings;
 
     std::vector<VkViewport> viewports;
     std::vector<VkRect2D> scissors;
@@ -28,23 +30,15 @@ private:
     VkPipelineMultisampleStateCreateInfo multisamplingState{};
     VkPipelineDepthStencilStateCreateInfo depthStencilState{};
 
-    std::vector<VkAttachmentDescription> renderPassAttachments;
 
-    std::vector<VkAttachmentReference> colorAttachmentReferences;
-    std::vector<VkAttachmentReference> colorAttachmentResolveReferences;
-    VkAttachmentReference depthAttachmentReference{};
-
-    VkRenderPass renderPass{VK_NULL_HANDLE};
-    VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
-    VkPipelineLayout  pipelineLayout{VK_NULL_HANDLE};
-    VkPipeline pipeline{VK_NULL_HANDLE};
+    VkPipeline pipeline{};
 
 public:
-    VulkanGraphicsPipelineBuilder(const VulkanRenderContext& ctx)
-    : context(ctx){}
+    VulkanGraphicsPipelineBuilder(const VulkanRenderContext& ctx,
+                                  VkPipelineLayout  pipelineLayout,
+                                  VkRenderPass renderPass)
+    : context(ctx),pipelineLayout(pipelineLayout),renderPass(renderPass){}
 
-    inline VkRenderPass getRenderPass() const {return renderPass;}
-    inline VkDescriptorSetLayout getDescriptorSetLayout() const{return  descriptorSetLayout;}
     inline VkPipelineLayout  getPipelineLayout() const {return pipelineLayout;}
     inline VkPipeline getPipeline() const {return pipeline;}
 
@@ -78,21 +72,10 @@ public:
             VkColorComponentFlags colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
             );
 
-
-    VulkanGraphicsPipelineBuilder &addDescriptorSetLayoutBinding(
-            uint32_t binding,
-            VkDescriptorType type,
-            VkShaderStageFlags shaderStageFlags
-    );
-
-    VulkanGraphicsPipelineBuilder &addColorAttachment(
-            VkFormat format,
-            VkSampleCountFlagBits msaaSamples
-    );
-
-    VulkanGraphicsPipelineBuilder &addDepthStencilAttachment(
-            VkFormat format,
-            VkSampleCountFlagBits msaaSamples
+    VulkanGraphicsPipelineBuilder &setDepthStencilState(
+            bool depthTest,
+            bool depthWrite,
+            VkCompareOp depthCompareOp
     );
 
     VulkanGraphicsPipelineBuilder &setInputAssemblyState(
@@ -119,13 +102,7 @@ public:
             float minSampleShading =1.0
     );
 
-    VulkanGraphicsPipelineBuilder &setDepthStencilState(
-            bool depthTest,
-            bool depthWrite,
-            VkCompareOp depthCompareOp
-    );
-
-    void build();
+    VkPipeline build();
 };
 
 

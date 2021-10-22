@@ -57,84 +57,6 @@ VulkanGraphicsPipelineBuilder::addBlendColorAttachment(bool blend, VkBlendFactor
     return *this;
 }
 
-VulkanGraphicsPipelineBuilder &
-VulkanGraphicsPipelineBuilder::addDescriptorSetLayoutBinding(uint32_t binding, VkDescriptorType type,
-                                                             VkShaderStageFlags shaderStageFlags) {
-    VkDescriptorSetLayoutBinding descriptorSetLayoutBinding = {};
-    descriptorSetLayoutBinding.binding = binding;
-    descriptorSetLayoutBinding.descriptorType = type;
-    descriptorSetLayoutBinding.descriptorCount = 1;
-    descriptorSetLayoutBinding.stageFlags = shaderStageFlags;
-
-    descriptorSetLayoutBindings.emplace_back(descriptorSetLayoutBinding);
-    return *this;
-}
-
-VulkanGraphicsPipelineBuilder &
-VulkanGraphicsPipelineBuilder::addColorAttachment(VkFormat format, VkSampleCountFlagBits msaaSamples) {
-    // Create render pass
-    VkAttachmentDescription colorAttachment = {};
-    colorAttachment.format = format;
-    colorAttachment.samples = msaaSamples;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    renderPassAttachments.push_back(colorAttachment);
-
-    VkAttachmentReference colorAttachmentReference = {};
-    colorAttachmentReference.attachment = static_cast<uint32_t>(renderPassAttachments.size() - 1);
-    colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    colorAttachmentReferences.push_back(colorAttachmentReference);
-
-    if (msaaSamples == VK_SAMPLE_COUNT_1_BIT)
-        return *this;
-
-    VkAttachmentDescription colorAttachmentResolve = {};
-    colorAttachmentResolve.format = format;
-    colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    renderPassAttachments.push_back(colorAttachmentResolve);
-
-    VkAttachmentReference colorAttachmentResolveReference = {};
-    colorAttachmentResolveReference.attachment = static_cast<uint32_t>(renderPassAttachments.size() - 1);
-    colorAttachmentResolveReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    colorAttachmentResolveReferences.emplace_back(colorAttachmentResolveReference);
-    return *this;
-
-}
-
-VulkanGraphicsPipelineBuilder &
-VulkanGraphicsPipelineBuilder::addDepthStencilAttachment(VkFormat format, VkSampleCountFlagBits msaaSamples) {
-    VkAttachmentDescription depthAttachment = {};
-    depthAttachment.format = format;
-    depthAttachment.samples = msaaSamples;
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    renderPassAttachments.push_back(depthAttachment);
-
-    depthAttachmentReference = {};
-    depthAttachmentReference.attachment = static_cast<uint32_t>(renderPassAttachments.size() - 1);
-    depthAttachmentReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    return *this;
-}
 
 VulkanGraphicsPipelineBuilder &
 VulkanGraphicsPipelineBuilder::setInputAssemblyState(VkPrimitiveTopology topology, bool primitiveRestart) {
@@ -181,27 +103,8 @@ VulkanGraphicsPipelineBuilder::setMultisampleState(VkSampleCountFlagBits msaaSam
     return *this;
 }
 
-VulkanGraphicsPipelineBuilder &
-VulkanGraphicsPipelineBuilder::setDepthStencilState(bool depthTest, bool depthWrite, VkCompareOp depthCompareOp) {
-    // Create depth stencil state
-    depthStencilState = {};
-    depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthStencilState.depthTestEnable = depthTest;
-    depthStencilState.depthWriteEnable = depthWrite;
-    depthStencilState.depthCompareOp = depthCompareOp;
+VkPipeline VulkanGraphicsPipelineBuilder::build() {
 
-    // TODO: no stencil test at the moment
-    depthStencilState.stencilTestEnable = VK_FALSE;
-    depthStencilState.front = {}; // Optional
-    depthStencilState.back = {}; // Optional
-
-    depthStencilState.depthBoundsTestEnable = VK_FALSE;
-    depthStencilState.minDepthBounds = 0.0f; // Optional
-    depthStencilState.maxDepthBounds = 1.0f; // Optional
-    return *this;
-}
-
-void VulkanGraphicsPipelineBuilder::build() {
     VkPipelineVertexInputStateCreateInfo vertexInputState = {};
     vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputState.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputBindings.size());
@@ -227,41 +130,6 @@ void VulkanGraphicsPipelineBuilder::build() {
     colorBlendState.blendConstants[2] = 0.0f;
     colorBlendState.blendConstants[3] = 0.0f;
 
-    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo = {};
-    descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(descriptorSetLayoutBindings.size());
-    descriptorSetLayoutInfo.pBindings = descriptorSetLayoutBindings.data();
-
-    if (vkCreateDescriptorSetLayout(context.device_, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-        throw std::runtime_error("Can't create descriptor set layout");
-
-    // Create pipeline layout
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-    pipelineLayoutInfo.pushConstantRangeCount = 0; // TODO: add support for push constants
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;
-
-    if (vkCreatePipelineLayout(context.device_, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
-        throw std::runtime_error("Can't create pipeline layout");
-
-    VkSubpassDescription subpassInfo = {};
-    subpassInfo.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpassInfo.pDepthStencilAttachment = &depthAttachmentReference;
-    subpassInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachmentReferences.size());
-    subpassInfo.pColorAttachments = colorAttachmentReferences.data();
-    subpassInfo.pResolveAttachments = colorAttachmentResolveReferences.data();
-
-    VkRenderPassCreateInfo renderPassInfo = {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = static_cast<uint32_t>(renderPassAttachments.size());
-    renderPassInfo.pAttachments = renderPassAttachments.data();
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpassInfo;
-
-    if (vkCreateRenderPass(context.device_, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
-        throw std::runtime_error("Can't create render pass");
 
     // Create graphics pipeline
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -281,4 +149,27 @@ void VulkanGraphicsPipelineBuilder::build() {
 
     if (vkCreateGraphicsPipelines(context.device_, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
         throw std::runtime_error("Can't create graphics pipeline");
+
+    return pipeline;
+}
+
+VulkanGraphicsPipelineBuilder &
+VulkanGraphicsPipelineBuilder::setDepthStencilState(bool depthTest, bool depthWrite, VkCompareOp depthCompareOp) {
+
+    // Create depth stencil state
+    depthStencilState = {};
+    depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+    depthStencilState.depthTestEnable = depthTest;
+    depthStencilState.depthWriteEnable = depthWrite;
+    depthStencilState.depthCompareOp = depthCompareOp;
+
+    // TODO: no stencil test at the moment
+    depthStencilState.stencilTestEnable = VK_FALSE;
+    depthStencilState.front = {}; // Optional
+    depthStencilState.back = {}; // Optional
+
+    depthStencilState.depthBoundsTestEnable = VK_FALSE;
+    depthStencilState.minDepthBounds = 0.0f; // Optional
+    depthStencilState.maxDepthBounds = 1.0f; // Optional
+    return *this;
 }

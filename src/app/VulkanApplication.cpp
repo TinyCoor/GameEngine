@@ -13,13 +13,16 @@
 
 const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\shader.vert)";
 const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\shader.frag)";
+const std::string skybox_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\)";
+const std::string skybox_frag_shader_path =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\)";
+
 const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\DamagedHelmet.fbx)";
-static std::string albedoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_albedo.jpg)";
-static std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_normal.jpg)";
-static std::string aoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_AO.jpg)";
-static std::string shadingTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_metalRoughness.jpg)";
-static std::string emissionTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_emissive.jpg)";
-static std::string hdrTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\default_environment.hdr)";
+const std::string albedoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_albedo.jpg)";
+const std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_normal.jpg)";
+const std::string aoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_AO.jpg)";
+const std::string shadingTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_metalRoughness.jpg)";
+const std::string emissionTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_emissive.jpg)";
+const std::string hdrTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\default_environment.hdr)";
 
 static int maxCombinedImageSamplers = 32;
 static int maxUniformBuffers = 32;
@@ -798,6 +801,8 @@ void Application::initScene() {
     scene = new VulkanRenderScene(context);
     scene->init(vertex_shader_path,
                 fragment_shader_path,
+                skybox_shader_path,
+                skybox_frag_shader_path,
                 albedoTexturePath,
                 normalTexturePath,
                 aoTexturePath,

@@ -4,6 +4,9 @@
 
 #include "VulkanRender.h"
 #include "VulkanGraphicsPipelineBuilder.h"
+#include "VulkanDescriptorSetLayoutBuilder.h"
+#include "VulkanPipelineLayoutBuilder.h"
+#include "VulkanRenderPassBuilder.h"
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -12,16 +15,8 @@
 
 void VulkanRender::init(VulkanRenderScene* scene) {
 
-    const VulkanShader& vertShader = scene->getVertexShader();
-    const VulkanShader& fragShader = scene->getFragmentShader();
-
-    VulkanGraphicsPipelineBuilder builder(context);
-    builder.addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT);
-    builder.addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT);
-    builder.addVertexInput(VulkanMesh::getVertexInputBindingDescription(),VulkanMesh::getAttributeDescriptions());
-    builder.setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-
-
+    const VulkanShader& vertShader = scene->getPBRVertexShader();
+    const VulkanShader& fragShader = scene->getPBRFragmentShader();
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -36,29 +31,50 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     scissor.offset = {0, 0};
     scissor.extent = swapChainContext.extend;
 
-    builder.addViewport(viewport);
-    builder.addScissor(scissor);
 
-    builder.setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    builder.setMultisampleState(context.maxMSAASamples, true);
-    builder.setDepthStencilState(true, true, VK_COMPARE_OP_LESS);
-    builder.addBlendColorAttachment();
-
+    VulkanDescriptorSetLayoutBuilder descriptorSetLayoutBuilder(context);
     VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    builder.addDescriptorSetLayoutBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage);
 
-    for (uint32_t i = 1; i < 7; i++)
-        builder.addDescriptorSetLayoutBinding(i, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage);
+    descriptorSetLayout = descriptorSetLayoutBuilder
+            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage)
+            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
+            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
+            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
+            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
+            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
+            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
+            .build();
 
-    builder.addColorAttachment(swapChainContext.colorFormat, context.maxMSAASamples);
-    builder.addDepthStencilAttachment(swapChainContext.depthFormat, context.maxMSAASamples);
 
-    builder.build();
+    VulkanRenderPassBuilder renderPassBuilder(context);
+    renderPassBuilder.addColorAttachment(swapChainContext.colorFormat, context.maxMSAASamples);
+    renderPassBuilder.addColorResolveAttachment(swapChainContext.colorFormat);
+    renderPassBuilder.addDepthStencilAttachment(swapChainContext.depthFormat, context.maxMSAASamples);
+    renderPassBuilder.addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    renderPassBuilder.addColorAttachmentReference(0,0);
+    renderPassBuilder.addColorResolveAttachmentReference(0,1);
+    renderPassBuilder.setDepthStencilAttachment(0,2);
+    renderPass = renderPassBuilder.build();
 
-    renderPass = builder.getRenderPass();
-    descriptorSetLayout = builder.getDescriptorSetLayout();
-    pipelineLayout = builder.getPipelineLayout();
-    graphicsPipeLine = builder.getPipeline();
+    VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
+    pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
+    pipelineLayout = pipelineLayoutBuilder.build();
+
+    VulkanGraphicsPipelineBuilder pipelineBuilder(context,pipelineLayout,renderPass);
+    //VulkanGraphicsPipelineBuilder pipelineBuilder(context,descriptorSetLayout,renderPass);
+    pipelineBuilder.addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT);
+    pipelineBuilder.addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT);
+    pipelineBuilder.addVertexInput(VulkanMesh::getVertexInputBindingDescription(),VulkanMesh::getAttributeDescriptions());
+    pipelineBuilder.setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    pipelineBuilder.addViewport(viewport);
+    pipelineBuilder.addScissor(scissor);
+    pipelineBuilder.setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    pipelineBuilder.setMultisampleState(context.maxMSAASamples, true);
+    pipelineBuilder.setDepthStencilState(true, true, VK_COMPARE_OP_LESS),
+    pipelineBuilder.addBlendColorAttachment();
+    pipeline =  pipelineBuilder.build();
+
+    pipelineLayout = pipelineBuilder.getPipelineLayout();
 
     // Create uniform buffers
     VkDeviceSize uboSize = sizeof(SharedRenderState);
@@ -79,7 +95,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     }
 
     // Create descriptor sets
-    std::vector<VkDescriptorSetLayout> layouts(imageCount, descriptorSetLayout);
+    std::vector<VkDescriptorSetLayout> layouts(imageCount,descriptorSetLayout);
 
     VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
     descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -181,7 +197,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeLine);
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
         vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 
         const VulkanMesh &mesh = scene->getMesh();
@@ -202,7 +218,6 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
 
 void VulkanRender::shutdown() {
-
     for (auto framebuffer : frameBuffers) {
         vkDestroyFramebuffer(context.device_, framebuffer, nullptr);
     }
@@ -217,14 +232,13 @@ void VulkanRender::shutdown() {
     uniformBuffers.clear();
     uniformBuffersMemory.clear();
 
-    VK_DESTROY_OBJECT(vkDestroyDescriptorSetLayout(context.device_,descriptorSetLayout, nullptr), descriptorSetLayout);
-
-    vkDestroyPipeline(context.device_, graphicsPipeLine, nullptr);
-    vkDestroyRenderPass(context.device_, renderPass, nullptr);
+    VK_DESTROY_OBJECT(vkDestroyDescriptorSetLayout(context.device_,descriptorSetLayout, nullptr),descriptorSetLayout);
+    vkDestroyPipeline(context.device_,pipeline, nullptr);
+    vkDestroyRenderPass(context.device_,renderPass, nullptr);
     vkDestroyPipelineLayout(context.device_,pipelineLayout, nullptr);
 
     descriptorSetLayout = VK_NULL_HANDLE;
-    graphicsPipeLine = VK_NULL_HANDLE;
+    pipeline = VK_NULL_HANDLE;
     renderPass = VK_NULL_HANDLE;
     pipelineLayout = VK_NULL_HANDLE;
 }

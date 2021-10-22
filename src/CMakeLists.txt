@@ -19,6 +19,10 @@ add_executable(niagara
         app/VulkanTexture.cpp
         app/pbrRender.cpp
         app/VulkanApplication.cpp
+        app/VulkanDescriptorSetLayoutBuilder.cpp
+        app/VulkanRenderPassBuilder.cpp
+        app/VulkanPipelineLayoutBuilder.cpp
+
         )
 
 

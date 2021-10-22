@@ -41,8 +41,10 @@ private:
 
 class VulkanRenderScene {
 private:
+
     VulkanRenderContext context;
     VulkanMesh mesh;
+
    // std::vector<std::string> textures;
     VulkanTexture albedoTexture;
     VulkanTexture normalTexture;
@@ -50,8 +52,10 @@ private:
     VulkanTexture shadingTexture;
     VulkanTexture emissionTexture;
     VulkanTexture hdrTexture;
-    VulkanShader vertShader;
-    VulkanShader fragShader;
+    VulkanShader pbrVertShader;
+    VulkanShader pbrFragShader;
+    VulkanShader skyboxVertexShader;
+    VulkanShader skyboxFragmentShader;
 public:
    explicit VulkanRenderScene(VulkanRenderContext& ctx)
         :context(ctx), mesh(ctx),
@@ -60,14 +64,17 @@ public:
         aoTexture(context),
         shadingTexture(ctx),
         emissionTexture(ctx),
-         hdrTexture(ctx),
-        vertShader(context),
-        fragShader(context){
-   }
+        hdrTexture(ctx),
+        pbrVertShader(context),
+        pbrFragShader(context), skyboxVertexShader(context),
+        skyboxFragmentShader(context)
+        {}
 
 
-     void init(const std::string& vertShaderFile,
-              const std::string& fragShaderFile,
+     void init(const std::string& pbrVertShaderFile,
+              const std::string& pbrFragShaderFile,
+              const std::string& skyboxVertShaderFile,
+              const std::string& skyboxFragmentShaderFilw,
               const std::string& albedoFile,
               const std::string& normalFile,
               const std::string& aoFile,
@@ -76,11 +83,13 @@ public:
               const std::string& hdrFile,
               const std::string& modelFile);
 
-     const VulkanShader& getVertexShader(){return vertShader;}
-     const VulkanShader& getFragmentShader() {return fragShader;}
-    inline const VulkanTexture &getEmissionTexture() const { return emissionTexture; }
-    inline const VulkanTexture &getAlbedoTexture() const { return albedoTexture; }
-    inline const VulkanTexture& getHDRTexture()const{return  hdrTexture;}
+     inline const VulkanShader& getPBRVertexShader(){return pbrVertShader;}
+     inline const VulkanShader& getPBRFragmentShader() {return pbrFragShader;}
+     inline const VulkanShader& getSkyboxVertexShader(){return skyboxVertexShader;}
+     inline const VulkanShader& getSkyboxFragmentShader() {return skyboxFragmentShader;}
+     inline const VulkanTexture &getEmissionTexture() const { return emissionTexture; }
+     inline const VulkanTexture &getAlbedoTexture() const { return albedoTexture; }
+     inline const VulkanTexture& getHDRTexture()const{return  hdrTexture;}
      inline const VulkanTexture &getNormalTexture() const { return normalTexture; }
      inline const VulkanTexture &getAOTexture() const { return aoTexture; }
      inline const VulkanTexture &getShadingTexture() const { return shadingTexture; }
