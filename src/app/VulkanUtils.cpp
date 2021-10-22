@@ -151,39 +151,11 @@ void vulkanUtils::createImage2D(const VulkanRenderContext &context,
     VK_CHECK(vkBindImageMemory(context.device_, image, memory, 0),"Bind Buffer VertexBuffer Failed");
 }
 
-VkImageView vulkanUtils::createImage2DView(const VulkanRenderContext& context,
-                                           VkImage image,
-                                           uint32_t mipLevels,
-                                           VkFormat format,
-                                           VkImageAspectFlags aspectFlags
-) {
-    VkImageView textureImageView{};
-    VkImageViewCreateInfo viewInfo{};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = aspectFlags;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = mipLevels;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
-    VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
-    return textureImageView;
-}
 
-void vulkanUtils::createImageCube(const VulkanRenderContext& context,
-                     uint32_t width,
-                     uint32_t height,
-                     uint32_t mipLevel,
-                     VkSampleCountFlagBits numberSample,
-                     VkFormat format,
-                     VkImageTiling tiling,
-                     VkImageUsageFlags usage,
-                     VkMemoryPropertyFlags properties,
-                     VkImage& image,
-                     VkDeviceMemory& memory)
-{
+void vulkanUtils::createCubeImage(const VulkanRenderContext &context, uint32_t width, uint32_t height,
+                                  uint32_t mipLevel, VkSampleCountFlagBits numberSample, VkFormat format,
+                                  VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+                                  VkImage &image, VkDeviceMemory &memory) {
     //Create  Buffer
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -217,11 +189,12 @@ void vulkanUtils::createImageCube(const VulkanRenderContext& context,
 }
 
 
-VkImageView vulkanUtils::createCubeView(const VulkanRenderContext& context,
-                                  VkImage image,
-                                  uint32_t mipLevels,
-                                  VkFormat format,
-                                  VkImageAspectFlags aspectFlags)
+VkImageView vulkanUtils::createImageCubeView(const VulkanRenderContext& context,
+                                        VkImage image,
+                                        VkFormat format,
+                                        VkImageAspectFlags aspectFlags,
+                                        uint32_t baseMipLayer,
+                                        uint32_t numMipLevel)
 {
     VkImageView textureImageView{};
     VkImageViewCreateInfo viewInfo{};
@@ -230,10 +203,34 @@ VkImageView vulkanUtils::createCubeView(const VulkanRenderContext& context,
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
     viewInfo.format = format;
     viewInfo.subresourceRange.aspectMask = aspectFlags;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = mipLevels;
+    viewInfo.subresourceRange.baseMipLevel = baseMipLayer;
+    viewInfo.subresourceRange.levelCount = numMipLevel;
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 6;
+    VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
+    return textureImageView;
+}
+
+VkImageView vulkanUtils::createImageView(const VulkanRenderContext& context,
+                                     VkImage image,
+                                     VkFormat format,
+                                     VkImageAspectFlags aspectFlags,
+                                     uint32_t baseMipLayer,
+                                     uint32_t numMipLevel ,
+                                     uint32_t baseLayer,
+                                     uint32_t numLayers)
+{
+    VkImageView textureImageView{};
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = image;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = aspectFlags;
+    viewInfo.subresourceRange.baseMipLevel = baseMipLayer;
+    viewInfo.subresourceRange.levelCount = numMipLevel;
+    viewInfo.subresourceRange.baseArrayLayer = baseLayer;
+    viewInfo.subresourceRange.layerCount = numLayers;
     VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
     return textureImageView;
 }
@@ -241,10 +238,13 @@ VkImageView vulkanUtils::createCubeView(const VulkanRenderContext& context,
 
 void vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
                                    VkImage image,
-                                   uint32_t mipLevels,
                                    VkFormat format,
                                    VkImageLayout oldLayout,
-                                   VkImageLayout newLayout)
+                                   VkImageLayout newLayout,
+                                   uint32_t baseMipLayer,
+                                   uint32_t numMipLevel,
+                                   uint32_t baseLayer ,
+                                   uint32_t numLayers )
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(context);
     VkImageMemoryBarrier barrier{};
@@ -254,10 +254,10 @@ void vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.image = image;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = mipLevels;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
+    barrier.subresourceRange.baseMipLevel =baseMipLayer;
+    barrier.subresourceRange.levelCount = numMipLevel;
+    barrier.subresourceRange.baseArrayLayer = baseLayer;
+    barrier.subresourceRange.layerCount = numLayers;
 
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
@@ -314,7 +314,6 @@ void vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
     );
     endSingleTimeCommands(context,commandBuffer);
 }
-
 
 
 void vulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
@@ -555,3 +554,4 @@ void vulkanUtils::bindCombinedImageSampler(
     // i.e. it's better to collect all descriptor writes before the call
     vkUpdateDescriptorSets(context.device_, 1, &descriptorWrite, 0, nullptr);
 }
+

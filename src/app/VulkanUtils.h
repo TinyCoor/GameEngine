@@ -58,7 +58,7 @@ public:
            VkDeviceMemory& memory
            );
 
-   void createImageCube(const VulkanRenderContext& context,
+  static void createCubeImage(const VulkanRenderContext& context,
                         uint32_t width,
                         uint32_t height,
                         uint32_t mipLevel,
@@ -70,18 +70,23 @@ public:
                         VkImage& image,
                         VkDeviceMemory& memory);
 
-    static VkImageView createCubeView(const VulkanRenderContext& context,
+  static VkImageView createImageCubeView(const VulkanRenderContext& context,
                                          VkImage image,
-                                         uint32_t minLevels,
                                          VkFormat format,
-                                         VkImageAspectFlags aspectFlags
-    );
-   static VkImageView createImage2DView(const VulkanRenderContext& context,
+                                         VkImageAspectFlags aspectFlags,
+                                         uint32_t baseMipLayer =0,
+                                         uint32_t numMipLevel = 1);
+
+
+
+  static VkImageView createImageView(const VulkanRenderContext& context,
                                          VkImage image,
-                                         uint32_t minLevels,
                                          VkFormat format,
-                                         VkImageAspectFlags aspectFlags
-                                         );
+                                         VkImageAspectFlags aspectFlags,
+                                         uint32_t baseMipLayer =0,
+                                         uint32_t numMipLevel =1,
+                                         uint32_t baseLayer  =0,
+                                         uint32_t numLayers  =1);
 
    static void endSingleTimeCommands(const VulkanRenderContext& context,VkCommandBuffer commandBuffer);
 
@@ -91,10 +96,13 @@ public:
 
    static void transitionImageLayout(const VulkanRenderContext& context,
                                      VkImage image,
-                                     uint32_t mipLevels,
                                      VkFormat format,
                                      VkImageLayout oldLayout,
-                                     VkImageLayout newLayout);
+                                     VkImageLayout newLayout ,
+                                     uint32_t baseMipLayer =0,
+                                     uint32_t numMipLevel =1,
+                                     uint32_t baseLayer = 0,
+                                     uint32_t numLayers =1);
 
    static VkSampler createSampler2D(const VulkanRenderContext& context, uint32_t mipLevels);
 

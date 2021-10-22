@@ -14,11 +14,17 @@ public:
     : context(ctx){}
     ~VulkanTexture();
 
+    void createCube(VkFormat format,int w,int h,int numMipLevels);
+
     bool loadHDRFromFile(const std::string& file);
     bool loadFromFile(const std::string& file);
     inline VkImage getImage()const {return image;}
     inline VkImageView getImageView() const { return imageView;}
+    inline VkFormat getImageFormat() const {return imageFormat;}
     inline VkSampler getSampler() const {return imageSampler;}
+    inline size_t getWidth() const{return width;}
+    inline size_t getHeight() const{return height;}
+    inline size_t getNumLayers() const{return layers;}
 
     void clearGPUData();
     void clearCPUData();
@@ -31,7 +37,9 @@ private:
     int height =0;
     int channels =0;
     int mipLevels = 0;
+    int layers=0;
 
+    VkFormat imageFormat {VK_FORMAT_UNDEFINED};
     VkImage image{};
     VkDeviceMemory imageMemory{};
     VkImageView imageView{};

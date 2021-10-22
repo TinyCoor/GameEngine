@@ -21,7 +21,7 @@ const std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_c
 const std::string aoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_AO.jpg)";
 const std::string shadingTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_metalRoughness.jpg)";
 const std::string emissionTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_emissive.jpg)";
-const std::string hdrTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\default_environment.hdr)";
+const std::string hdrTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\environment\umbrellas.hdr)";
 
 static int maxCombinedImageSamplers = 32;
 static int maxUniformBuffers = 32;
@@ -365,12 +365,29 @@ void Application::initVulkan() {
         }
     }
 
+    //create descriptor Pool
+    std::array<VkDescriptorPoolSize,2> descriptorPoolSizes{};
+    descriptorPoolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorPoolSizes[0].descriptorCount = maxUniformBuffers;
+    descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptorPoolSizes[1].descriptorCount = maxCombinedImageSamplers;
+
+    VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
+    descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolCreateInfo.poolSizeCount = descriptorPoolSizes.size();
+    descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
+    descriptorPoolCreateInfo.maxSets = maxCombinedImageSamplers + maxUniformBuffers;;
+    descriptorPoolCreateInfo.flags = 0;
+
+    VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
+
     context.device_ = device;
     context.physicalDevice = physicalDevice;
     context.commandPool = commandPool;
     context.graphicsQueue = graphicsQueue;
     context.presentQueue= presentQueue;
     context.maxMSAASamples = vulkanUtils::getMaxUsableSampleCount(context);
+    context.descriptorPool =descriptorPool;
 }
 
 void Application::shutdownVulkan() {
@@ -457,7 +474,6 @@ void Application::RenderFrame(){
     vulkanUtils::transitionImageLayout(
             context,
             swapChainImages[imageIndex],
-            1,
             swapChainImageFormat,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
@@ -601,7 +617,6 @@ void Application::initRender() {
     swapChainContext.depthFormat= depthFormat;
     swapChainContext.colorFormat = swapChainImageFormat;
     swapChainContext.imageViews = swapChainImageViews;
-    swapChainContext.descriptorPool =descriptorPool;
     swapChainContext.colorImageView = colorImageView;
 
     render = new VulkanRender(context,swapChainContext);
@@ -693,9 +708,8 @@ void Application::initVulkanSwapChain() {
     //
     swapChainImageViews.resize(swapChainImageCount);
     for (int i = 0; i <swapChainImageViews.size() ; ++i) {
-        swapChainImageViews[i] = vulkanUtils::createImage2DView(context,
+        swapChainImageViews[i] = vulkanUtils::createImageView(context,
                                                                 swapChainImages[i],
-                                                                1,
                                                                 swapChainImageFormat,
                                                                 VK_IMAGE_ASPECT_COLOR_BIT);
     }
@@ -712,14 +726,12 @@ void Application::initVulkanSwapChain() {
                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                colorImage, colorImageMemory
     );
-    colorImageView = vulkanUtils::createImage2DView(context,
+    colorImageView = vulkanUtils::createImageView(context,
                                                     colorImage,
-                                                    1,
                                                     swapChainImageFormat,
                                                     VK_IMAGE_ASPECT_COLOR_BIT);
     vulkanUtils::transitionImageLayout(context,
                                        colorImage,
-                                       1,
                                        swapChainImageFormat,
                                        VK_IMAGE_LAYOUT_UNDEFINED,
                                        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -738,33 +750,17 @@ void Application::initVulkanSwapChain() {
                                depthImage, depthImageMemory
     );
 
-    depthImageView = vulkanUtils::createImage2DView(context,
-                                                    depthImage,
-                                                    1,
-                                                    depthFormat,
-                                                    VK_IMAGE_ASPECT_DEPTH_BIT);
+    depthImageView = vulkanUtils::createImageView(context,
+                                                  depthImage,
+                                                  depthFormat,
+                                                  VK_IMAGE_ASPECT_DEPTH_BIT);
 
     vulkanUtils::transitionImageLayout(context,
                                        depthImage,
-                                       1,
                                        depthFormat,
                                        VK_IMAGE_LAYOUT_UNDEFINED,
                                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    //create descriptor Pool
-    std::array<VkDescriptorPoolSize,2> descriptorPoolSizes{};
-    descriptorPoolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorPoolSizes[0].descriptorCount = maxUniformBuffers;
-    descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptorPoolSizes[1].descriptorCount = maxCombinedImageSamplers;
-
-    VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
-    descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    descriptorPoolCreateInfo.poolSizeCount = descriptorPoolSizes.size();
-    descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
-    descriptorPoolCreateInfo.maxSets = maxCombinedImageSamplers + maxUniformBuffers;;
-    descriptorPoolCreateInfo.flags = 0;
-    VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
 }
 
 void Application::shutdownSwapChain() {

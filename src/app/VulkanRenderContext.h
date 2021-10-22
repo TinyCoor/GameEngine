@@ -14,13 +14,14 @@ struct VulkanRenderContext{
     VkQueue graphicsQueue =VK_NULL_HANDLE;
     VkQueue presentQueue = VK_NULL_HANDLE;
     VkSampleCountFlagBits maxMSAASamples;
+    VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
 };
 
 struct VulkanSwapChainContext{
     VkFormat colorFormat;
     VkFormat depthFormat ;
     VkExtent2D extend;
-    VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
+
     std::vector<VkImageView> imageViews;
     VkImageView depthImageView =VK_NULL_HANDLE;
     VkImageView colorImageView;
