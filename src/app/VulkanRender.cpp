@@ -93,7 +93,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     skyboxPipelineBuilder.setMultisampleState(context.maxMSAASamples, true);
     skyboxPipelineBuilder.setDepthStencilState(true, true, VK_COMPARE_OP_LESS),
     skyboxPipelineBuilder.addBlendColorAttachment();
-    skyboxPipeline = pipelineBuilder.build();
+    skyboxPipeline = skyboxPipelineBuilder.build();
 
 
     // Create uniform buffers
@@ -217,18 +217,36 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipeline);
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 
-        const VulkanMesh &mesh = scene->getMesh();
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
+        {
+            const VulkanMesh &skybox = scene->getSkyboxMesh();
+            VkBuffer vertexBuffers[] = {skybox.getVertexBuffer()};
+            VkBuffer indexBuffer = skybox.getIndexBuffer();
+            VkDeviceSize offsets[] = {0};
 
-        VkBuffer vertexBuffers[] = { mesh.getVertexBuffer() };
-        VkBuffer indexBuffer = mesh.getIndexBuffer();
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-        vkCmdDrawIndexed(commandBuffers[i], mesh.getNumIndices(), 1, 0, 0, 0);
+            vkCmdDrawIndexed(commandBuffers[i], skybox.getNumIndices(), 1, 0, 0, 0);
+        }
+
+        {
+            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipeline);
+            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
+
+            const VulkanMesh &mesh = scene->getMesh();
+
+            VkBuffer vertexBuffers[] = { mesh.getVertexBuffer() };
+            VkBuffer indexBuffer = mesh.getIndexBuffer();
+            VkDeviceSize offsets[] = { 0 };
+            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+            vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+            vkCmdDrawIndexed(commandBuffers[i], mesh.getNumIndices(), 1, 0, 0, 0);
+        }
+
         vkCmdEndRenderPass(commandBuffers[i]);
 
         if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS)
@@ -253,8 +271,7 @@ void VulkanRender::shutdown() {
     uniformBuffersMemory.clear();
 
     VK_DESTROY_OBJECT(vkDestroyDescriptorSetLayout(context.device_,descriptorSetLayout, nullptr),descriptorSetLayout);
-    vkDestroyPipeline(context.device_,pbrPipeline, nullptr);
-    pbrPipelineLayout = VK_NULL_HANDLE;
+
 
     vkDestroyRenderPass(context.device_,renderPass, nullptr);
     renderPass = VK_NULL_HANDLE;
@@ -272,9 +289,6 @@ void VulkanRender::shutdown() {
     skyboxPipeline = VK_NULL_HANDLE;
 
     descriptorSetLayout = VK_NULL_HANDLE;
-
-
-
 
 }
 

@@ -38,6 +38,9 @@ void VulkanRenderScene::shutdown(){
     mesh.clearGPUData();
     mesh.clearCPUData();
 
+    skyboxMesh.clearCPUData();
+    skyboxMesh.clearGPUData();
+
     albedoTexture.clearCPUData();
     albedoTexture.clearGPUData();
     normalTexture.clearCPUData();
