@@ -7,6 +7,8 @@ cmake_minimum_required(VERSION 3.12)
 file(GLOB SOURCE ../extern/volk/volk.c
         app/*.h app/*.cpp
         )
+
+
 add_executable(niagara
         app/VulkanTexture.cpp
         app/VulkanUtils.cpp
@@ -22,9 +24,18 @@ add_executable(niagara
         app/VulkanDescriptorSetLayoutBuilder.cpp
         app/VulkanRenderPassBuilder.cpp
         app/VulkanPipelineLayoutBuilder.cpp
-
         )
 
+
+add_executable(GL
+            Graphics/GL/GLApplication.cpp
+            Graphics/GL/GLShader.cpp
+            Graphics/GL/GLMesh.cpp
+            Graphics/GL/GLTexture.cpp
+        )
+target_include_directories(GL PRIVATE ../extern/glfw/include)
+target_link_libraries(GL PRIVATE opengl32 )
+target_link_libraries(GL PRIVATE glfw)
 
 message(STATUS ${ShaderC_LIBRARIES})
 

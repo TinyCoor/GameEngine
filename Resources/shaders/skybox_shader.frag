@@ -17,10 +17,7 @@ layout(binding = 6) uniform sampler2D hdrSampler;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
-layout(location = 2) in vec3 fragTangentWS;
-layout(location = 3) in vec3 fragBinormalWS;
-layout(location = 4) in vec3 fragNormalWS;
-layout(location = 5) in vec3 fragPositionWS;
+layout(location = 2) in vec3 fragPositionOS;
 
 layout(location = 0) out vec4 outColor;
 
@@ -32,7 +29,7 @@ const float iPI = 0.31830988618379f;
 const vec2 invAtan = vec2(0.1591, 0.3183);
 vec2 SampleSphericalMap(vec3 v)
 {
-	vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+	vec2 uv = vec2(atan(v.y, v.x), asin(v.z));
 	uv *= invAtan;
 	uv += 0.5;
 	return uv;
@@ -41,7 +38,7 @@ vec2 SampleSphericalMap(vec3 v)
 void main() {
 	// Ambient light (IBL)
 	// vec3 ambient = microfacet_material.albedo * vec3(0.01f);
-	vec3 color =texture(hdrSampler,SampleSphericalMap(normalize(fragPositionWS))).rgb;
+	vec3 color =texture(hdrSampler,SampleSphericalMap(normalize(fragPositionOS))).rgb;
 
 	// Tonemapping + gamma correction
 	color = color / (color + vec3(1.0));

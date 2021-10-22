@@ -102,7 +102,7 @@ void VulkanTexture::clearCPUData() {
 }
 
 bool  VulkanTexture::loadFromFile(const std::string &path) {
-
+    stbi_set_flip_vertically_on_load(true);
     //TODO Support Other Format
     stbi_uc* stb_pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
     channels  = 4;
@@ -127,6 +127,7 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
 }
 
 bool VulkanTexture::loadHDRFromFile(const std::string& path) {
+    stbi_set_flip_vertically_on_load(true);
     float* stb_pixels = stbi_loadf(path.c_str(), &width, &height, &channels, 0);
     if(!stb_pixels){
         std::cerr<< "load file failed:" << path <<'\n';

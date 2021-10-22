@@ -3,3 +3,12 @@
 //
 
 #include "GLShader.h"
+
+namespace {
+
+}
+
+
+GLShader::GLShader() {
+
+}

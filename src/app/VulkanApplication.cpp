@@ -21,7 +21,7 @@ const std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_c
 const std::string aoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_AO.jpg)";
 const std::string shadingTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_metalRoughness.jpg)";
 const std::string emissionTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_emissive.jpg)";
-const std::string hdrTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\environment\arctic.hdr)";
+const std::string hdrTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\default_environment.hdr)";
 
 static int maxCombinedImageSamplers = 32;
 static int maxUniformBuffers = 32;

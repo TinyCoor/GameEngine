@@ -5,12 +5,9 @@
 #ifndef GAMEENGINE_GLOBJECT_H
 #define GAMEENGINE_GLOBJECT_H
 
-
-
 class GLObject {
 
 };
-
 
 
 #endif //GAMEENGINE_GLOBJECT_H
