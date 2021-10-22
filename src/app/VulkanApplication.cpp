@@ -13,9 +13,8 @@
 
 const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\shader.vert)";
 const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\shader.frag)";
-const std::string skybox_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\)";
-const std::string skybox_frag_shader_path =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\)";
-
+const std::string skybox_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\skybox_Shader.vert)";
+const std::string skybox_frag_shader_path =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\skybox_Shader.frag)";
 const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\DamagedHelmet.fbx)";
 const std::string albedoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_albedo.jpg)";
 const std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_normal.jpg)";

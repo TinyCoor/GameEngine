@@ -29,6 +29,9 @@ void VulkanRenderScene::init(const std::string& vertShaderFile,
     emissionTexture.loadFromFile(emissionFile);
     hdrTexture.loadHDRFromFile(hdrFile);
 
+    skyboxMesh.createSkybox(100.0);
+
+
 }
 
 void VulkanRenderScene::shutdown(){

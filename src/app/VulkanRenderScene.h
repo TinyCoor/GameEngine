@@ -44,6 +44,7 @@ private:
 
     VulkanRenderContext context;
     VulkanMesh mesh;
+    VulkanMesh skyboxMesh;
 
    // std::vector<std::string> textures;
     VulkanTexture albedoTexture;
@@ -58,7 +59,7 @@ private:
     VulkanShader skyboxFragmentShader;
 public:
    explicit VulkanRenderScene(VulkanRenderContext& ctx)
-        :context(ctx), mesh(ctx),
+        :context(ctx), mesh(ctx), skyboxMesh(ctx),
         albedoTexture(ctx),
         normalTexture(context),
         aoTexture(context),
@@ -94,7 +95,8 @@ public:
      inline const VulkanTexture &getAOTexture() const { return aoTexture; }
      inline const VulkanTexture &getShadingTexture() const { return shadingTexture; }
 
-    const VulkanMesh& getMesh() {return mesh;}
+    inline const VulkanMesh& getMesh() const {return mesh;}
+    inline const VulkanMesh& getSkyboxMesh() const{return mesh;}
 
 
      void shutdown() ;

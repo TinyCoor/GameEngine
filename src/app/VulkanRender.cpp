@@ -17,6 +17,8 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
     const VulkanShader& vertShader = scene->getPBRVertexShader();
     const VulkanShader& fragShader = scene->getPBRFragmentShader();
+    const VulkanShader& skyboxVertShader = scene->getSkyboxVertexShader();
+    const VulkanShader& skyboxFragShader = scene->getSkyboxFragmentShader();
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -58,9 +60,14 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
     VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
     pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
-    pipelineLayout = pipelineLayoutBuilder.build();
+    pbrPipelineLayout = pipelineLayoutBuilder.build();
 
-    VulkanGraphicsPipelineBuilder pipelineBuilder(context,pipelineLayout,renderPass);
+    //TODO
+    VulkanPipelineLayoutBuilder skyboxPipelineLayoutBuilder(context);
+    skyboxPipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
+    skyboxPipelineLayout=skyboxPipelineLayoutBuilder.build();
+
+    VulkanGraphicsPipelineBuilder pipelineBuilder(context,pbrPipelineLayout,renderPass);
     //VulkanGraphicsPipelineBuilder pipelineBuilder(context,descriptorSetLayout,renderPass);
     pipelineBuilder.addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT);
     pipelineBuilder.addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -72,9 +79,22 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     pipelineBuilder.setMultisampleState(context.maxMSAASamples, true);
     pipelineBuilder.setDepthStencilState(true, true, VK_COMPARE_OP_LESS),
     pipelineBuilder.addBlendColorAttachment();
-    pipeline =  pipelineBuilder.build();
+    pbrPipeline =  pipelineBuilder.build();
 
-    pipelineLayout = pipelineBuilder.getPipelineLayout();
+    VulkanGraphicsPipelineBuilder skyboxPipelineBuilder(context,pbrPipelineLayout,renderPass);
+    //VulkanGraphicsPipelineBuilder pipelineBuilder(context,descriptorSetLayout,renderPass);
+    skyboxPipelineBuilder.addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT);
+    skyboxPipelineBuilder.addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT);
+    skyboxPipelineBuilder.addVertexInput(VulkanMesh::getVertexInputBindingDescription(),VulkanMesh::getAttributeDescriptions());
+    skyboxPipelineBuilder.setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    skyboxPipelineBuilder.addViewport(viewport);
+    skyboxPipelineBuilder.addScissor(scissor);
+    skyboxPipelineBuilder.setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    skyboxPipelineBuilder.setMultisampleState(context.maxMSAASamples, true);
+    skyboxPipelineBuilder.setDepthStencilState(true, true, VK_COMPARE_OP_LESS),
+    skyboxPipelineBuilder.addBlendColorAttachment();
+    skyboxPipeline = pipelineBuilder.build();
+
 
     // Create uniform buffers
     VkDeviceSize uboSize = sizeof(SharedRenderState);
@@ -197,8 +217,8 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipeline);
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 
         const VulkanMesh &mesh = scene->getMesh();
 
@@ -233,14 +253,29 @@ void VulkanRender::shutdown() {
     uniformBuffersMemory.clear();
 
     VK_DESTROY_OBJECT(vkDestroyDescriptorSetLayout(context.device_,descriptorSetLayout, nullptr),descriptorSetLayout);
-    vkDestroyPipeline(context.device_,pipeline, nullptr);
+    vkDestroyPipeline(context.device_,pbrPipeline, nullptr);
+    pbrPipelineLayout = VK_NULL_HANDLE;
+
     vkDestroyRenderPass(context.device_,renderPass, nullptr);
-    vkDestroyPipelineLayout(context.device_,pipelineLayout, nullptr);
+    renderPass = VK_NULL_HANDLE;
+
+    vkDestroyPipelineLayout(context.device_,pbrPipelineLayout, nullptr);
+    pbrPipelineLayout = VK_NULL_HANDLE;
+
+    vkDestroyPipelineLayout(context.device_,skyboxPipelineLayout, nullptr);
+    skyboxPipelineLayout = VK_NULL_HANDLE;
+
+    vkDestroyPipeline(context.device_,pbrPipeline, nullptr);
+    pbrPipeline = VK_NULL_HANDLE;
+
+    vkDestroyPipeline(context.device_,skyboxPipeline, nullptr);
+    skyboxPipeline = VK_NULL_HANDLE;
 
     descriptorSetLayout = VK_NULL_HANDLE;
-    pipeline = VK_NULL_HANDLE;
-    renderPass = VK_NULL_HANDLE;
-    pipelineLayout = VK_NULL_HANDLE;
+
+
+
+
 }
 
 VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {

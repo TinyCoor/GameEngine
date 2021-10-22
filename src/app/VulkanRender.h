@@ -19,20 +19,23 @@ private:
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
-    VkPipelineLayout  pipelineLayout{VK_NULL_HANDLE};
 
-    VkDescriptorSetLayout skyboxDescriptorSetLayout{VK_NULL_HANDLE};
-    VkPipelineLayout  skyboxPipelineLayout{VK_NULL_HANDLE};
 
-    VkPipeline pipeline{VK_NULL_HANDLE};
+    VkPipeline pbrPipeline{VK_NULL_HANDLE};
+    VkPipelineLayout  pbrPipelineLayout{VK_NULL_HANDLE};
 
-    std::vector<VkDescriptorSet> descriptorSets{};
+    VkPipeline skyboxPipeline{VK_NULL_HANDLE};
+    VkPipelineLayout   skyboxPipelineLayout{VK_NULL_HANDLE};
+
+
 
     std::vector<VkCommandBuffer> commandBuffers{};
     std::vector<VkFramebuffer> frameBuffers{};
 
     std::vector<VkBuffer> uniformBuffers{};
     std::vector<VkDeviceMemory> uniformBuffersMemory{};
+
+    std::vector<VkDescriptorSet> descriptorSets{};
 
 public:
     explicit VulkanRender(VulkanRenderContext& ctx, VulkanSwapChainContext& swapChainCtx)
