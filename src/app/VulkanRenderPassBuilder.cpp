@@ -73,10 +73,13 @@ VulkanRenderPassBuilder &VulkanRenderPassBuilder::addColorAttachmentReference(in
     if(attachmentIndex < 0 || attachmentIndex >= attachments.size()){
         return *this;
     }
+
+    SubpassData& subpass = subpassDatas[subpassIndex];
+
     VkAttachmentReference reference = {};
     reference.attachment = attachmentIndex;
     reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    SubpassData& subpass = subpassDatas[subpassIndex];
+
     subpass.colorAttachmentReferences.emplace_back(reference);
 
     return *this;
@@ -110,12 +113,15 @@ VulkanRenderPassBuilder &VulkanRenderPassBuilder::setDepthStencilAttachment(int 
     if(attachmentIndex < 0 || attachmentIndex >= attachments.size()){
         return *this;
     }
-    SubpassData& subpass = subpassDatas[subpassIndex];
+    SubpassData& data = subpassDatas[subpassIndex];
+    if(data.depthStencilAttachmentReference == nullptr){
+        data.depthStencilAttachmentReference = new VkAttachmentReference();
+    }
 
-    VkAttachmentReference reference{};
-    reference.attachment = attachmentIndex;
-    reference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    subpass.depthStencilAttachmentReference = reference;
+    *(data.depthStencilAttachmentReference) = {};
+    data.depthStencilAttachmentReference->attachment = attachmentIndex;
+    data.depthStencilAttachmentReference->layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
     return *this;
 }
 
@@ -123,7 +129,7 @@ VulkanRenderPassBuilder &VulkanRenderPassBuilder::setDepthStencilAttachment(int 
 VkRenderPass VulkanRenderPassBuilder::build() {
     for (int i = 0; i < subpassDatas.size(); ++i) {
         SubpassData &data = subpassDatas[i];
-        infos[i].pDepthStencilAttachment = &data.depthStencilAttachmentReference;
+        infos[i].pDepthStencilAttachment = data.depthStencilAttachmentReference;
         infos[i].colorAttachmentCount = data.colorAttachmentReferences.size();
         infos[i].pColorAttachments = data.colorAttachmentReferences.data();
         infos[i].pResolveAttachments = data.colorAttachmentResolveReferences.data();

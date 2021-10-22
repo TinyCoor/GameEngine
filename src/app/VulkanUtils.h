@@ -83,6 +83,7 @@ public:
                                          VkImage image,
                                          VkFormat format,
                                          VkImageAspectFlags aspectFlags,
+                                         VkImageViewType viewType,
                                          uint32_t baseMipLayer =0,
                                          uint32_t numMipLevel =1,
                                          uint32_t baseLayer  =0,

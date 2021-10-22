@@ -2,8 +2,7 @@
 // Created by y123456 on 2021/10/10.
 //
 
-#ifndef GAMEENGINE_VULKANRENDER_H
-#define GAMEENGINE_VULKANRENDER_H
+#pragma once
 
 #include "VulkanRenderScene.h"
 #include "VulkanRenderContext.h"
@@ -15,6 +14,7 @@ class VulkanCubeMapRender {
 private:
     VulkanRenderContext context;
     VulkanShader renderFragmentShader;
+    VulkanShader renderVertexShader;
     VulkanMesh renderQuad;
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
@@ -32,15 +32,12 @@ private:
 
 
 public:
-    VulkanCubeMapRender(VulkanRenderContext& ctx, VulkanSwapChainContext& swapChainCtx)
+    VulkanCubeMapRender(VulkanRenderContext& ctx)
                     :context(ctx), renderFragmentShader(ctx),
-                      renderQuad(ctx){}
+                      renderQuad(ctx), renderVertexShader(ctx){}
 
     void init(const VulkanTexture& inputTexture,const VulkanTexture& targetTexture);
     void shutdown();
 
-    VkCommandBuffer render();
+    void render();
 };
-
-
-#endif //GAMEENGINE_VULKANRENDER_H

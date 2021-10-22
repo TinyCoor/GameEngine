@@ -114,6 +114,7 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size
                                               image,
                                               imageFormat,
                                               VK_IMAGE_ASPECT_COLOR_BIT,
+                                               VK_IMAGE_VIEW_TYPE_2D,
                                               0,mipLevels,0,layers);
     imageSampler= vulkanUtils::createSampler2D(context,mipLevels);
 
@@ -202,8 +203,8 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
     height = h;
     mipLevels = numMipLevels;
     layers = 6;
-    imageFormat=format;
-    channels  = deduceChannels(format) ;//??
+    imageFormat = format;
+    channels  = deduceChannels(format) ;
     VkImageTiling tiling = deduceTiling(format);
 
     vulkanUtils::createCubeImage(
@@ -212,7 +213,7 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
             VK_SAMPLE_COUNT_1_BIT,
             format,
             tiling,
-            VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             image,
             imageMemory
@@ -231,8 +232,14 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
 
 
 
-    imageView =vulkanUtils::createImageView(context,image,format,VK_IMAGE_ASPECT_COLOR_BIT,0,mipLevels,0,layers);
+    imageView =vulkanUtils::createImageView(context,
+                                            image,
+                                            format,
+                                            VK_IMAGE_ASPECT_COLOR_BIT,
+                                            VK_IMAGE_VIEW_TYPE_CUBE,
+                                            0,
+                                            mipLevels,
+                                            0,layers);
     imageSampler= vulkanUtils::createSampler2D(context,mipLevels);
-
 }
 

@@ -7,13 +7,33 @@
 #include "VulkanDescriptorSetLayoutBuilder.h"
 #include "VulkanPipelineLayoutBuilder.h"
 #include "VulkanRenderPassBuilder.h"
+#include "VulkanCubemapRender.h"
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
-
 #include "Macro.h"
 
 
 void VulkanRender::init(VulkanRenderScene* scene) {
+    const VulkanTexture& hdrTexture = scene->getHDRTexture();
+    //TODO FIX bug in this area
+    renderCubemap.createCube(VK_FORMAT_R8G8B8A8_UNORM,
+                             1024,
+                             1024,
+                             1);
+    {
+        VulkanCubeMapRender cubeMapRender(context);
+        cubeMapRender.init(hdrTexture,renderCubemap);
+        cubeMapRender.render();
+
+        vulkanUtils::transitionImageLayout(context,
+                                           renderCubemap.getImage(),
+                                           renderCubemap.getImageFormat(),
+                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                           0,renderCubemap.getNumMiplevels(),
+                                           0,renderCubemap.getNumLayers());
+
+    }
 
     const VulkanShader& vertShader = scene->getPBRVertexShader();
     const VulkanShader& fragShader = scene->getPBRFragmentShader();
@@ -135,7 +155,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
                         &scene->getAOTexture(),
                         &scene->getShadingTexture(),
                         &scene->getEmissionTexture(),
-                        &scene->getHDRTexture()
+                        &scene->getHDRTexture(),
                 };
 
         vulkanUtils::bindUniformBuffer(

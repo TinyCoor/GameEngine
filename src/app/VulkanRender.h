@@ -16,6 +16,7 @@ class VulkanRender {
 private:
     VulkanRenderContext context;
     VulkanSwapChainContext swapChainContext;
+    VulkanTexture renderCubemap;
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
@@ -28,7 +29,6 @@ private:
     VkPipelineLayout   skyboxPipelineLayout{VK_NULL_HANDLE};
 
 
-
     std::vector<VkCommandBuffer> commandBuffers{};
     std::vector<VkFramebuffer> frameBuffers{};
 
@@ -39,7 +39,7 @@ private:
 
 public:
     explicit VulkanRender(VulkanRenderContext& ctx, VulkanSwapChainContext& swapChainCtx)
-                    :context(ctx),swapChainContext(swapChainCtx){
+                    :context(ctx),swapChainContext(swapChainCtx), renderCubemap(ctx){
     }
 
     void init(VulkanRenderScene* scene);

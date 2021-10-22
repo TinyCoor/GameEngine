@@ -10,7 +10,9 @@
 #include "Macro.h"
 
 
-const std::string renderCubemapShaderPath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shader\skybox_shader.frag)";
+const std::string renderCubemapShaderPath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\cubemap.frag)";
+const std::string renderCubemapVertexShaderPath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\cubemap.vert)";
+
 
 struct CubemapFaceOrientationData{
     glm::mat3 faces[6];
@@ -18,8 +20,10 @@ struct CubemapFaceOrientationData{
 
 void VulkanCubeMapRender::init(const VulkanTexture& inputTexture,const VulkanTexture& targetTexture) {
     //  VulkanTexture* inputHDR= nullptr;
+    renderVertexShader.compileFromFile(renderCubemapVertexShaderPath,ShaderKind::vertex);
     renderFragmentShader.compileFromFile(renderCubemapShaderPath,ShaderKind::fragment);
-    VkImageView targetView = targetTexture.getImageView();
+    renderQuad.createQuad(2.0f);
+
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -34,8 +38,6 @@ void VulkanCubeMapRender::init(const VulkanTexture& inputTexture,const VulkanTex
     scissor.extent.width = targetTexture.getWidth();
     scissor.extent.height= targetTexture.getHeight();
 
-
-
     VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VulkanDescriptorSetLayoutBuilder descriptorSetLayoutBuilder(context);
@@ -46,18 +48,17 @@ void VulkanCubeMapRender::init(const VulkanTexture& inputTexture,const VulkanTex
 
 
     VulkanRenderPassBuilder renderPassBuilder(context);
-    renderPassBuilder.addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS);
     renderPassBuilder.addColorAttachment(targetTexture.getImageFormat(),VK_SAMPLE_COUNT_1_BIT);
+    renderPassBuilder.addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS);
     renderPassBuilder.addColorAttachmentReference(0,0);
-
     renderPass = renderPassBuilder.build();
 
     VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
     pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
     pbrPipelineLayout = pipelineLayoutBuilder.build();
 
-
     VulkanGraphicsPipelineBuilder pipelineBuilder(context,pbrPipelineLayout,renderPass);
+    pipelineBuilder.addShaderStage(renderVertexShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT );
     pipelineBuilder.addShaderStage(renderFragmentShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT);
     pipelineBuilder.addVertexInput(VulkanMesh::getVertexInputBindingDescription(),VulkanMesh::getAttributeDescriptions());
     pipelineBuilder.setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
@@ -65,7 +66,7 @@ void VulkanCubeMapRender::init(const VulkanTexture& inputTexture,const VulkanTex
     pipelineBuilder.addScissor(scissor);
     pipelineBuilder.setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
     pipelineBuilder.setMultisampleState(VK_SAMPLE_COUNT_1_BIT);
-    pipelineBuilder.setDepthStencilState(true, true, VK_COMPARE_OP_LESS),
+    pipelineBuilder.setDepthStencilState(false, false, VK_COMPARE_OP_LESS),
     pipelineBuilder.addBlendColorAttachment();
     pbrPipeline =  pipelineBuilder.build();
 
@@ -198,6 +199,12 @@ void VulkanCubeMapRender::shutdown() {
     renderFragmentShader.clear();
 }
 
-VkCommandBuffer VulkanCubeMapRender::render() {
-    return commandBuffer;
+void VulkanCubeMapRender::render() {
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount=1;
+    submitInfo.pCommandBuffers =&commandBuffer;
+
+    vkQueueSubmit(context.graphicsQueue,1,&submitInfo,VK_NULL_HANDLE);
+    vkQueueWaitIdle(context.graphicsQueue);
 }

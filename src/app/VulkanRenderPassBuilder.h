@@ -10,7 +10,7 @@ class VulkanRenderPassBuilder {
     struct SubpassData{
         std::vector<VkAttachmentReference> colorAttachmentReferences;
         std::vector<VkAttachmentReference> colorAttachmentResolveReferences;
-        VkAttachmentReference depthStencilAttachmentReference{};
+        VkAttachmentReference* depthStencilAttachmentReference{nullptr};
     };
     std::vector<SubpassData> subpassDatas;
     std::vector<VkSubpassDescription> infos{};
