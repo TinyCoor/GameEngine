@@ -16,8 +16,6 @@ private:
     VulkanMesh renderQuad;
     VkImageView faceViews[6];
 
-    VulkanShader renderVertex;
-    VulkanShader renderFrag;
 
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
@@ -36,16 +34,13 @@ private:
 
 public:
     VulkanCubeMapRender(VulkanRenderContext& ctx)
-                    :context(ctx),renderQuad(ctx),
-                     renderVertex(ctx), renderFrag(ctx){}
+                    :context(ctx),renderQuad(ctx){}
 
     void init(const VulkanShader &vertShader,
               const VulkanShader &fragShader,
               const VulkanTexture& inputTexture,
               const VulkanTexture& targetTexture);
 
-    void init(const VulkanTexture& inputTexture,
-              const VulkanTexture& targetTexture);
     void shutdown();
 
     void render();

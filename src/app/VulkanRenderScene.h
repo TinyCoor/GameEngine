@@ -13,11 +13,6 @@
 #include <string>
 #include "VulkanShader.h"
 
-class IModelLoader{
-public:
-    virtual VulkanMesh loadModel(const std::string& path) =0;
-};
-
 
 
 class RenderMaterial{
@@ -25,19 +20,6 @@ private:
 
 
 };
-
-//class RenderScene{
-//public:
-//    virtual void init(const std::string& vertShaderFile,
-//                      const std::string& fragShaderFile,
-//                      const std::string& textureFile,
-//                      const std::string& modelFile)=0;
-//    virtual VkShaderModule getVertexShader()  =0;
-//    virtual VkShaderModule getFragmentShader()  =0;
-//    virtual VulkanTexture getTexture() =0;
-//    virtual VulkanMesh getMesh() =0;
-//    virtual void shutdown() = 0;
-//};
 
 class VulkanRenderScene {
 private:

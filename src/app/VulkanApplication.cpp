@@ -392,6 +392,9 @@ void Application::initVulkan() {
 
 void Application::shutdownVulkan() {
 
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+    descriptorPool = VK_NULL_HANDLE;
+
     vkDestroyCommandPool(device,commandPool, nullptr);
     commandPool = VK_NULL_HANDLE;
 
@@ -460,6 +463,7 @@ void Application::RenderFrame(){
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
     vkResetFences(device,1,&inFlightFences[currentFrame]);
+
     VK_CHECK(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]),"failed to submit draw command buffer!");
     VkPresentInfoKHR presentInfo{};
     VkSwapchainKHR swapChains[] = {swapchain};
