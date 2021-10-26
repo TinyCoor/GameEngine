@@ -377,7 +377,7 @@ void Application::initVulkan() {
     descriptorPoolCreateInfo.poolSizeCount = descriptorPoolSizes.size();
     descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
     descriptorPoolCreateInfo.maxSets = maxCombinedImageSamplers + maxUniformBuffers;;
-    descriptorPoolCreateInfo.flags = 0;
+    descriptorPoolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
 

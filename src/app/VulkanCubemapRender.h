@@ -13,14 +13,17 @@
 class VulkanCubeMapRender {
 private:
     VulkanRenderContext context;
-    VulkanShader renderFragmentShader;
-    VulkanShader renderVertexShader;
     VulkanMesh renderQuad;
+    VkImageView faceViews[6];
+
+    VulkanShader renderVertex;
+    VulkanShader renderFrag;
+
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
-    VkPipeline pbrPipeline{VK_NULL_HANDLE};
-    VkPipelineLayout  pbrPipelineLayout{VK_NULL_HANDLE};
+    VkPipeline pipeline{VK_NULL_HANDLE};
+    VkPipelineLayout  pipelineLayout{VK_NULL_HANDLE};
 
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
     VkFramebuffer frameBuffer{VK_NULL_HANDLE};
@@ -33,10 +36,16 @@ private:
 
 public:
     VulkanCubeMapRender(VulkanRenderContext& ctx)
-                    :context(ctx), renderFragmentShader(ctx),
-                      renderQuad(ctx), renderVertexShader(ctx){}
+                    :context(ctx),renderQuad(ctx),
+                     renderVertex(ctx), renderFrag(ctx){}
 
-    void init(const VulkanTexture& inputTexture,const VulkanTexture& targetTexture);
+    void init(const VulkanShader &vertShader,
+              const VulkanShader &fragShader,
+              const VulkanTexture& inputTexture,
+              const VulkanTexture& targetTexture);
+
+    void init(const VulkanTexture& inputTexture,
+              const VulkanTexture& targetTexture);
     void shutdown();
 
     void render();

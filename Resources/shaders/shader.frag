@@ -13,7 +13,8 @@ layout(binding = 2) uniform sampler2D normalSampler;
 layout(binding = 3) uniform sampler2D aoSampler;
 layout(binding = 4) uniform sampler2D shadingSampler;
 layout(binding = 5) uniform sampler2D emissionSampler;
-layout(binding = 6) uniform sampler2D hdrSampler;
+layout(binding = 6) uniform samplerCube environmentSampler;
+layout(binding = 7) uniform samplerCube diffuseIrradianceSampler;
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
@@ -54,23 +55,14 @@ vec3 lerp(vec3 a, vec3 b, float t)
 	return a * (1.0f - t) + b * t;
 }
 
-//////////////// Equirectangular world
-
-const vec2 invAtan = vec2(0.1591, 0.3183);
-vec2 SampleSphericalMap(vec3 v)
-{
-	vec2 uv = vec2(atan(v.y, v.x), asin(v.z));
-	uv *= invAtan;
-	uv += 0.5;
-	return uv;
-}
-
 //////////////// Microfacet world
+
 struct MicrofacetMaterial
 {
 	vec3 albedo;
 	float roughness;
 	float metalness;
+	vec3 f0;
 };
 
 float D_GGX(Surface surface, float roughness)
@@ -95,12 +87,15 @@ vec3 F_Shlick(Surface surface, vec3 f0)
 	return f0 + (vec3(1.0f, 1.0f, 1.0f) - f0) * pow(1.0f - surface.dotHV, 5);
 }
 
+vec3 F_Shlick(float cosTheta, vec3 f0, float roughness)
+{
+	return f0 + (max(vec3(1.0 - roughness), f0) - f0) * pow(1.0f - cosTheta, 5);
+}
+
 vec3 MicrofacetBRDF(Surface surface, MicrofacetMaterial material)
 {
-	vec3 f0 = lerp(vec3(0.04f), material.albedo, material.metalness);
-
 	float D = D_GGX(surface, material.roughness);
-	vec3 F = F_Shlick(surface, f0);
+	vec3 F = F_Shlick(surface, material.f0);
 	float G_normalized = G_SmithGGX_Normalized(surface, material.roughness);
 
 	vec3 specular_reflection = D * F * G_normalized;
@@ -145,22 +140,24 @@ void main() {
 	microfacet_material.albedo = texture(albedoSampler, fragTexCoord).rgb;
 	microfacet_material.roughness = texture(shadingSampler, fragTexCoord).g;
 	microfacet_material.metalness = texture(shadingSampler, fragTexCoord).b;
+	microfacet_material.f0 = lerp(vec3(0.04f), microfacet_material.albedo, microfacet_material.metalness);
 
 	// Direct light
 	float attenuation = 1.0f / dot(lightPos - fragPositionWS, lightPos - fragPositionWS);
 
 	vec3 light = MicrofacetBRDF(surface, microfacet_material) * attenuation * 2.0f * surface.dotNL;
 
-	// Ambient light (IBL)
-	// vec3 ambient = microfacet_material.albedo * vec3(0.01f);
-	vec3 ambient = MicrofacetBRDF(ibl, microfacet_material) * texture(hdrSampler, SampleSphericalMap(ibl.light)).rgb;
+	// Ambient light (diffuse IBL)
+	vec3 ambient = texture(diffuseIrradianceSampler, ibl.light).rgb;
 	ambient *= texture(aoSampler, fragTexCoord).r;
+	ambient *= (1.0f - F_Shlick(ibl.dotNV, microfacet_material.f0, microfacet_material.roughness));
 
 	// Result
 	vec3 color = ambient;
-	// color += light;
-	// color += texture(emissionSampler, fragTexCoord).rgb;
+	color += light;
+	color += texture(emissionSampler, fragTexCoord).rgb;
 
+	// TODO: move to separate pass
 	// Tonemapping + gamma correction
 	color = color / (color + vec3(1.0));
 	color = pow(color, vec3(1.0/2.2));

@@ -274,23 +274,22 @@ void VulkanMesh::createSkybox(float size) {
 void VulkanMesh::createQuad(float size) {
     clearCPUData();
     clearGPUData();
-    size *=0.5;
+    float halfSize = size * 0.5f;
     vertices.resize(4);
     indices.resize(6);
-    vertices[0].position = glm::vec3 (-size ,-size,1.0);
-    vertices[1].position = glm::vec3 ( size ,-size,1.0);
-    vertices[2].position = glm::vec3 ( size , size,1.0);
-    vertices[3].position = glm::vec3 (-size , size,1.0);
 
+    vertices[0].position = glm::vec3(-halfSize, -halfSize, 0.0f);
+    vertices[1].position = glm::vec3( halfSize, -halfSize, 0.0f);
+    vertices[2].position = glm::vec3( halfSize,  halfSize, 0.0f);
+    vertices[3].position = glm::vec3(-halfSize,  halfSize, 0.0f);
 
-    vertices[0].uv = glm::vec2 (0.0f,0.f);
-    vertices[1].uv = glm::vec2 (1.0f,0.f);
-    vertices[2].uv = glm::vec2 (1.0f,1.f);
-    vertices[3].uv = glm::vec2 (0.0f,1.f);
+    vertices[0].uv = glm::vec2(0.0f, 0.0f);
+    vertices[1].uv = glm::vec2(1.0f, 0.0f);
+    vertices[2].uv = glm::vec2(1.0f, 1.0f);
+    vertices[3].uv = glm::vec2(0.0f, 1.0f);
 
-
-    indices={
-            0,  1,  2,  2,  3, 0,
+    indices = {
+            1, 0, 2, 3, 2, 0,
     };
 
     uploadToGPU();

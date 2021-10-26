@@ -7,38 +7,88 @@
 #include "VulkanDescriptorSetLayoutBuilder.h"
 #include "VulkanPipelineLayoutBuilder.h"
 #include "VulkanRenderPassBuilder.h"
-#include "VulkanCubemapRender.h"
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Macro.h"
 
+static std::string commonCubeVertexShaderPath = "C:\\Users\\y123456\\Desktop\\Programming\\c_cpp\\GameEngine\\Resources\\shaders\\common.vert";
+static std::string hdriToCubeFragmentShaderPath = "C:\\Users\\y123456\\Desktop\\Programming\\c_cpp\\GameEngine\\Resources\\shaders\\hdriToCube.frag";
+static std::string diffuseIrradianceFragmentShaderPath = "C:\\Users\\y123456\\Desktop\\Programming\\c_cpp\\GameEngine\\Resources\\shaders\\diffuseIrrandiance.frag";
 
 void VulkanRender::init(VulkanRenderScene* scene) {
-    const VulkanTexture& hdrTexture = scene->getHDRTexture();
-    //TODO FIX bug in this area
-    renderCubemap.createCube(VK_FORMAT_R8G8B8A8_UNORM,
-                             1024,
-                             1024,
-                             1);
+
+    commonCubeVertexShader.compileFromFile(commonCubeVertexShaderPath, ShaderKind::vertex);
+    hdriToCubeFragmentShader.compileFromFile(hdriToCubeFragmentShaderPath, ShaderKind::fragment);
+    diffuseIrradianceFragmentShader.compileFromFile(diffuseIrradianceFragmentShaderPath, ShaderKind::fragment);
+
+    environmentCubemap.createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
+    diffuseIrradianceCubemap.createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 1024, 1024, 1);
+
+
     {
-        VulkanCubeMapRender cubeMapRender(context);
-        cubeMapRender.init(hdrTexture,renderCubemap);
-        cubeMapRender.render();
+        vulkanUtils::transitionImageLayout(
+                context,
+                environmentCubemap.getImage(),
+                environmentCubemap.getImageFormat(),
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                0, environmentCubemap.getNumMiplevels(),
+                0, environmentCubemap.getNumLayers()
+        );
 
-        vulkanUtils::transitionImageLayout(context,
-                                           renderCubemap.getImage(),
-                                           renderCubemap.getImageFormat(),
-                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                           VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                           0,renderCubemap.getNumMiplevels(),
-                                           0,renderCubemap.getNumLayers());
+        hdriToCubeRenderer.init(
+                commonCubeVertexShader,
+                hdriToCubeFragmentShader,
+                scene->getHDRTexture(),
+                environmentCubemap
+        );
+        hdriToCubeRenderer.render();
 
+        vulkanUtils::transitionImageLayout(
+                context,
+                environmentCubemap.getImage(),
+                environmentCubemap.getImageFormat(),
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                0, environmentCubemap.getNumMiplevels(),
+                0, environmentCubemap.getNumLayers()
+        );
     }
+
+//    {
+//        vulkanUtils::transitionImageLayout(
+//                context,
+//                diffuseIrradianceCubemap.getImage(),
+//                diffuseIrradianceCubemap.getImageFormat(),
+//                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+//                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+//                0, diffuseIrradianceCubemap.getNumMiplevels(),
+//                0, diffuseIrradianceCubemap.getNumLayers()
+//        );
+//
+//        diffuseIrradianceRenderer.init(
+//                commonCubeVertexShader,
+//                diffuseIrradianceFragmentShader,
+//                environmentCubemap,
+//                diffuseIrradianceCubemap
+//        );
+//        diffuseIrradianceRenderer.render();
+//
+//        vulkanUtils::transitionImageLayout(
+//                context,
+//                diffuseIrradianceCubemap.getImage(),
+//                diffuseIrradianceCubemap.getImageFormat(),
+//                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+//                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+//                0, diffuseIrradianceCubemap.getNumMiplevels(),
+//                0, diffuseIrradianceCubemap.getNumLayers()
+//        );
+//    }
 
     const VulkanShader& vertShader = scene->getPBRVertexShader();
     const VulkanShader& fragShader = scene->getPBRFragmentShader();
-    const VulkanShader& skyboxVertShader = scene->getSkyboxVertexShader();
-    const VulkanShader& skyboxFragShader = scene->getSkyboxFragmentShader();
+    const VulkanShader &skyboxVertexShader = scene->getSkyboxVertexShader();
+    const VulkanShader &skyboxFragmentShader = scene->getSkyboxFragmentShader();
 
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -65,6 +115,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
+            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
             .build();
 
 
@@ -78,14 +129,14 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     renderPassBuilder.setDepthStencilAttachment(0,2);
     renderPass = renderPassBuilder.build();
 
+    VulkanPipelineLayoutBuilder skyboxPipelineLayoutBuilder(context);
+    skyboxPipelineLayout = skyboxPipelineLayoutBuilder
+            .addDescriptorSetLayout(descriptorSetLayout)
+            .build();
+
     VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
     pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
     pbrPipelineLayout = pipelineLayoutBuilder.build();
-
-    //TODO
-    VulkanPipelineLayoutBuilder skyboxPipelineLayoutBuilder(context);
-    skyboxPipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
-    skyboxPipelineLayout =skyboxPipelineLayoutBuilder.build();
 
     VulkanGraphicsPipelineBuilder pipelineBuilder(context,pbrPipelineLayout,renderPass);
     //VulkanGraphicsPipelineBuilder pipelineBuilder(context,descriptorSetLayout,renderPass);
@@ -101,23 +152,22 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     pipelineBuilder.addBlendColorAttachment();
     pbrPipeline =  pipelineBuilder.build();
 
-    VulkanGraphicsPipelineBuilder skyboxPipelineBuilder(context,skyboxPipelineLayout,renderPass);
-    //VulkanGraphicsPipelineBuilder pipelineBuilder(context,descriptorSetLayout,renderPass);
-    skyboxPipelineBuilder.addShaderStage(skyboxVertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT);
-    skyboxPipelineBuilder.addShaderStage(skyboxFragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT);
-    skyboxPipelineBuilder.addVertexInput(VulkanMesh::getVertexInputBindingDescription(),VulkanMesh::getAttributeDescriptions());
-    skyboxPipelineBuilder.setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    skyboxPipelineBuilder.addViewport(viewport);
-    skyboxPipelineBuilder.addScissor(scissor);
-    skyboxPipelineBuilder.setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    skyboxPipelineBuilder.setMultisampleState(context.maxMSAASamples, true);
-    skyboxPipelineBuilder.setDepthStencilState(true, true, VK_COMPARE_OP_LESS),
-    skyboxPipelineBuilder.addBlendColorAttachment();
-    skyboxPipeline = skyboxPipelineBuilder.build();
+    VulkanGraphicsPipelineBuilder skyboxPipelineBuilder(context, pbrPipelineLayout, renderPass);
+    skyboxPipeline = skyboxPipelineBuilder
+            .addShaderStage(skyboxVertexShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
+            .addShaderStage(skyboxFragmentShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addVertexInput(VulkanMesh::getVertexInputBindingDescription(), VulkanMesh::getAttributeDescriptions())
+            .setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+            .addViewport(viewport)
+            .addScissor(scissor)
+            .setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE)
+            .setMultisampleState(context.maxMSAASamples, true)
+            .setDepthStencilState(true, true, VK_COMPARE_OP_LESS)
+            .addBlendColorAttachment()
+            .build();
 
     // Create uniform buffers
     VkDeviceSize uboSize = sizeof(SharedRenderState);
-
     uint32_t imageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
     uniformBuffers.resize(imageCount);
     uniformBuffersMemory.resize(imageCount);
@@ -155,7 +205,8 @@ void VulkanRender::init(VulkanRenderScene* scene) {
                         &scene->getAOTexture(),
                         &scene->getShadingTexture(),
                         &scene->getEmissionTexture(),
-                        &scene->getHDRTexture(),
+                        &environmentCubemap //,
+                        //&diffuseIrradianceCubemap,
                 };
 
         vulkanUtils::bindUniformBuffer(
@@ -236,28 +287,25 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
 
         {
-            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
-            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
-
             const VulkanMesh &skybox = scene->getSkyboxMesh();
-            VkBuffer vertexBuffers[] = {skybox.getVertexBuffer()};
-            VkBuffer indexBuffer = skybox.getIndexBuffer();
-            VkDeviceSize offsets[] = {0};
 
+            VkBuffer vertexBuffers[] = { skybox.getVertexBuffer() };
+            VkBuffer indexBuffer = skybox.getIndexBuffer();
+            VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
             vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
             vkCmdDrawIndexed(commandBuffers[i], skybox.getNumIndices(), 1, 0, 0, 0);
         }
 
+        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipeline);
+        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
         {
-            vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipeline);
-            vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
-
             const VulkanMesh &mesh = scene->getMesh();
-
             VkBuffer vertexBuffers[] = { mesh.getVertexBuffer() };
             VkBuffer indexBuffer = mesh.getIndexBuffer();
             VkDeviceSize offsets[] = { 0 };
@@ -275,6 +323,17 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
 
 void VulkanRender::shutdown() {
+    commonCubeVertexShader.clear();
+
+    hdriToCubeFragmentShader.clear();
+    hdriToCubeRenderer.shutdown();
+
+    diffuseIrradianceFragmentShader.clear();
+    diffuseIrradianceRenderer.shutdown();
+
+    environmentCubemap.clearGPUData();
+    diffuseIrradianceCubemap.clearGPUData();
+
     for (auto framebuffer : frameBuffers) {
         vkDestroyFramebuffer(context.device_, framebuffer, nullptr);
     }
@@ -298,20 +357,18 @@ void VulkanRender::shutdown() {
     vkDestroyPipelineLayout(context.device_,pbrPipelineLayout, nullptr);
     pbrPipelineLayout = VK_NULL_HANDLE;
 
-    vkDestroyPipelineLayout(context.device_,skyboxPipelineLayout, nullptr);
-    skyboxPipelineLayout = VK_NULL_HANDLE;
 
     vkDestroyPipeline(context.device_,pbrPipeline, nullptr);
     pbrPipeline = VK_NULL_HANDLE;
 
-    vkDestroyPipeline(context.device_,skyboxPipeline, nullptr);
-    skyboxPipeline = VK_NULL_HANDLE;
-
     descriptorSetLayout = VK_NULL_HANDLE;
+
 
 }
 
 VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {
+
+
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float,std::chrono::seconds::period>(currentTime-startTime).count();
@@ -319,25 +376,25 @@ VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {
     VkBuffer uniformBuffer = uniformBuffers[imageIndex];
     VkDeviceMemory uniformBufferMemory = uniformBuffersMemory[imageIndex];
 
-    const glm::vec3& up = {0.f,0.f,1.f};
-    const glm::vec3& zero = {0.f,0.f,0.f};
+    const glm::vec3 &up = {0.0f, 0.0f, 1.0f};
+    const glm::vec3 &zero = {0.0f, 0.0f, 0.0f};
 
-    const float aspect = swapChainContext.extend.width/(float)swapChainContext.extend.height;
-    const float znear = 0.1f;
-    const float zfar = 1000.f;
-   // float aspect = 1.0;
+    const float aspect = swapChainContext.extend.width / (float) swapChainContext.extend.height;
+    const float zNear = 0.1f;
+    const float zFar = 1000.0f;
+    const float rotationSpeed = 0.1f;
 
-    SharedRenderState ubo{};
+    SharedRenderState *ubo = nullptr;
+    vkMapMemory(context.device_, uniformBufferMemory, 0, sizeof(SharedRenderState), 0, reinterpret_cast<void**>(&ubo));
 
-    ubo.world = glm::rotate(glm::mat4(1.0f), time * 0.1f * glm::radians(90.0f), up);
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), zero, up);
-    ubo.proj = glm::perspective(glm::radians(45.0f), aspect, znear, zfar);
-    ubo.cameraPos = glm::vec3(2.0f, 2.0f, 2.0f);
-    ubo.proj[1][1] *= -1;
+    const glm::vec3 &cameraPos = glm::vec3(2.0f, 2.0f, 2.0f);
 
-    void* data_uniform = nullptr;
-    vkMapMemory(context.device_, uniformBufferMemory, 0, sizeof(ubo), 0, &data_uniform);
-    memcpy(data_uniform, &ubo, sizeof(ubo));
+    ubo->world = glm::rotate(glm::mat4(1.0f), time * rotationSpeed * glm::radians(90.0f), up);
+    ubo->view = glm::lookAt(cameraPos, zero, up);
+    ubo->proj = glm::perspective(glm::radians(60.0f), aspect, zNear, zFar);
+    ubo->proj[1][1] *= -1;
+    ubo->cameraPos = cameraPos;
+
     vkUnmapMemory(context.device_, uniformBufferMemory);
 
     return commandBuffers[imageIndex];
