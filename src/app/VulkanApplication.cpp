@@ -11,10 +11,10 @@
 #include <algorithm>
 #include <functional>
 
-const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\shader.vert)";
-const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\shader.frag)";
-const std::string skybox_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\skybox_Shader.vert)";
-const std::string skybox_frag_shader_path =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\skybox_Shader.frag)";
+const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\pbr.vert)";
+const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\pbr.frag)";
+const std::string skybox_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\skybox_shader.vert)";
+const std::string skybox_frag_shader_path =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\skybox_shader.frag)";
 const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\DamagedHelmet.fbx)";
 const std::string albedoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_albedo.jpg)";
 const std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_normal.jpg)";
@@ -35,8 +35,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     std::cerr << "Validation layer: " << pCallbackData->pMessage << std::endl;
     return VK_FALSE;
 }
-
-
 
 namespace {
 
@@ -386,7 +384,7 @@ void Application::initVulkan() {
     context.commandPool = commandPool;
     context.graphicsQueue = graphicsQueue;
     context.presentQueue= presentQueue;
-    context.maxMSAASamples = vulkanUtils::getMaxUsableSampleCount(context);
+    context.maxMSAASamples = VulkanUtils::getMaxUsableSampleCount(context);
     context.descriptorPool =descriptorPool;
 }
 
@@ -465,6 +463,7 @@ void Application::RenderFrame(){
     vkResetFences(device,1,&inFlightFences[currentFrame]);
 
     VK_CHECK(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]),"failed to submit draw command buffer!");
+
     VkPresentInfoKHR presentInfo{};
     VkSwapchainKHR swapChains[] = {swapchain};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -475,7 +474,7 @@ void Application::RenderFrame(){
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr; // Optional
 
-    vulkanUtils::transitionImageLayout(
+    VulkanUtils::transitionImageLayout(
             context,
             swapChainImages[imageIndex],
             swapChainImageFormat,
@@ -712,7 +711,7 @@ void Application::initVulkanSwapChain() {
     //
     swapChainImageViews.resize(swapChainImageCount);
     for (int i = 0; i <swapChainImageViews.size() ; ++i) {
-        swapChainImageViews[i] = vulkanUtils::createImageView(context,
+        swapChainImageViews[i] = VulkanUtils::createImageView(context,
                                                                 swapChainImages[i],
                                                                 swapChainImageFormat,
                                                                 VK_IMAGE_ASPECT_COLOR_BIT,
@@ -720,7 +719,7 @@ void Application::initVulkanSwapChain() {
     }
 
     //Create Color Image ImageView
-    vulkanUtils::createImage2D(context,
+    VulkanUtils::createImage2D(context,
                                swapChainExtent.width,
                                swapChainExtent.height,
                                1,
@@ -731,12 +730,12 @@ void Application::initVulkanSwapChain() {
                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                colorImage, colorImageMemory
     );
-    colorImageView = vulkanUtils::createImageView(context,
+    colorImageView = VulkanUtils::createImageView(context,
                                                     colorImage,
                                                     swapChainImageFormat,
                                                     VK_IMAGE_ASPECT_COLOR_BIT,
                                                     VK_IMAGE_VIEW_TYPE_2D);
-    vulkanUtils::transitionImageLayout(context,
+    VulkanUtils::transitionImageLayout(context,
                                        colorImage,
                                        swapChainImageFormat,
                                        VK_IMAGE_LAYOUT_UNDEFINED,
@@ -744,7 +743,7 @@ void Application::initVulkanSwapChain() {
 
     //Create Depth Buffer
     depthFormat = selectOptimalDepthFormat();
-    vulkanUtils::createImage2D(context,
+    VulkanUtils::createImage2D(context,
                                swapChainExtent.width,
                                swapChainExtent.height,
                                1,
@@ -756,13 +755,13 @@ void Application::initVulkanSwapChain() {
                                depthImage, depthImageMemory
     );
 
-    depthImageView = vulkanUtils::createImageView(context,
+    depthImageView = VulkanUtils::createImageView(context,
                                                   depthImage,
                                                   depthFormat,
                                                   VK_IMAGE_ASPECT_DEPTH_BIT,
                                                   VK_IMAGE_VIEW_TYPE_2D);
 
-    vulkanUtils::transitionImageLayout(context,
+    VulkanUtils::transitionImageLayout(context,
                                        depthImage,
                                        depthFormat,
                                        VK_IMAGE_LAYOUT_UNDEFINED,

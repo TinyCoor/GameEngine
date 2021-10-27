@@ -22,7 +22,7 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
    renderQuad.createQuad(2.0f);
 
     for (int i = 0; i < 6; ++i) {
-        faceViews[i]=vulkanUtils::createImageView(
+        faceViews[i]=VulkanUtils::createImageView(
                 context,
                 targetTexture.getImage(),
                 targetTexture.getImageFormat(),
@@ -101,7 +101,7 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
 
 
     VkDeviceSize uboSize =sizeof(CubemapFaceOrientationData);
-    vulkanUtils::createBuffer(
+    VulkanUtils::createBuffer(
             context,
             uboSize,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -177,7 +177,7 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
 
     vkUnmapMemory(context.device_, uniformBuffersMemory);
 
-    vulkanUtils::bindUniformBuffer(
+    VulkanUtils::bindUniformBuffer(
             context,
             descriptorSet,
             0,
@@ -186,13 +186,19 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
             uboSize
     );
 
-    vulkanUtils::bindCombinedImageSampler(
+    VulkanUtils::bindCombinedImageSampler(
             context,
             descriptorSet,
             1,
             inputTexture.getImageView(),
             inputTexture.getSampler()
     );
+
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = 0;
+    VK_CHECK(vkCreateFence(context.device_, &fenceInfo, nullptr, &fence) ,"Can't create fence");
 
     // Record command buffers
     VkCommandBufferBeginInfo beginInfo = {};
@@ -263,6 +269,9 @@ void VulkanCubeMapRender::shutdown() {
 
     vkDestroyPipeline(context.device_,pipeline, nullptr);
     pipeline = VK_NULL_HANDLE;
+
+    vkDestroyFence(context.device_, fence, nullptr);
+    fence = VK_NULL_HANDLE;
     renderQuad.clearGPUData();
     renderQuad.clearCPUData();
 }
@@ -273,6 +282,9 @@ void VulkanCubeMapRender::render() {
     submitInfo.commandBufferCount=1;
     submitInfo.pCommandBuffers =&commandBuffer;
 
-    vkQueueSubmit(context.graphicsQueue,1,&submitInfo,VK_NULL_HANDLE);
-    vkQueueWaitIdle(context.graphicsQueue);
+    VK_CHECK( vkQueueSubmit(context.graphicsQueue,1,&submitInfo,fence),"Submit Queue Failed");
+
+    VK_CHECK(vkWaitForFences(context.device_, 1, &fence, VK_TRUE, 100000000000),"Can't wait for a fence");
+
+   // vkQueueWaitIdle(context.graphicsQueue);
 }

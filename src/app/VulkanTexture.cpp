@@ -45,14 +45,14 @@ static int deducePixelSize(VkFormat format){
 }
 static VkImageTiling deduceTiling(VkFormat format){
     switch (format) {
-        case VK_FORMAT_R16_SFLOAT: return VK_IMAGE_TILING_LINEAR;
-        case VK_FORMAT_R16G16_SFLOAT: return VK_IMAGE_TILING_LINEAR;
-        case VK_FORMAT_R16G16B16_SFLOAT: return  VK_IMAGE_TILING_LINEAR;
-        case VK_FORMAT_R16G16B16A16_SFLOAT: return  VK_IMAGE_TILING_LINEAR;
-        case VK_FORMAT_R32_SFLOAT: return VK_IMAGE_TILING_LINEAR;
-        case VK_FORMAT_R32G32_SFLOAT: return VK_IMAGE_TILING_LINEAR;
-        case VK_FORMAT_R32G32B32_SFLOAT: return  VK_IMAGE_TILING_LINEAR;
-        case VK_FORMAT_R32G32B32A32_SFLOAT: return  VK_IMAGE_TILING_LINEAR;
+        case VK_FORMAT_R16_SFLOAT: return VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R16G16_SFLOAT: return VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R16G16B16_SFLOAT: return  VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R16G16B16A16_SFLOAT: return  VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R32_SFLOAT: return VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R32G32_SFLOAT: return VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R32G32B32_SFLOAT: return  VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R32G32B32A32_SFLOAT: return  VK_IMAGE_TILING_OPTIMAL;
         case VK_FORMAT_R8G8B8A8_UNORM: return VK_IMAGE_TILING_OPTIMAL;
         default:{
             throw std::runtime_error("not support");
@@ -74,7 +74,7 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size
 
     VkBuffer stagingBuffer{};
     VkDeviceMemory stagingBufferMemory{};
-    vulkanUtils:: createBuffer(context,imageSize,
+    VulkanUtils:: createBuffer(context,imageSize,
                                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                stagingBuffer,
@@ -85,7 +85,7 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size
     memcpy(data, pixels, static_cast<size_t>(imageSize));
     vkUnmapMemory(context.device_, stagingBufferMemory);
 
-    vulkanUtils::createImage2D(context,width,
+    VulkanUtils::createImage2D(context,width,
                                height,
                                mipLevels,
                                VK_SAMPLE_COUNT_1_BIT,
@@ -96,22 +96,22 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size
                                image, imageMemory);
 
     //Prepare the image for transfer
-    vulkanUtils::transitionImageLayout(context,image,imageFormat,
+    VulkanUtils::transitionImageLayout(context,image,imageFormat,
                                        VK_IMAGE_LAYOUT_UNDEFINED,
                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                        0,mipLevels);
 
     // copt to gpu
-    vulkanUtils::copyBufferToImage(context,
+    VulkanUtils::copyBufferToImage(context,
                                    stagingBuffer,image,
                                    width,height);
 
     //Generate mipmaps on GPU
-    vulkanUtils::generateImage2DMipMaps(context,image,width,height,mipLevels,
+    VulkanUtils::generateImage2DMipMaps(context,image,width,height,mipLevels,
                                         imageFormat,VK_FILTER_LINEAR);
 
     //Prepare the image for shader access
-    vulkanUtils::transitionImageLayout(context, image,
+    VulkanUtils::transitionImageLayout(context, image,
                                        imageFormat,
                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -122,13 +122,13 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size
     vkFreeMemory(context.device_, stagingBufferMemory, nullptr);
 
     //create ImageView
-    imageView =vulkanUtils::createImageView(context,
+    imageView =VulkanUtils::createImageView(context,
                                               image,
                                               imageFormat,
                                               VK_IMAGE_ASPECT_COLOR_BIT,
                                                VK_IMAGE_VIEW_TYPE_2D,
                                               0,mipLevels,0,layers);
-    imageSampler= vulkanUtils::createSampler2D(context,mipLevels);
+    imageSampler= VulkanUtils::createSampler2D(context,mipLevels);
 
 }
 
@@ -205,7 +205,7 @@ bool VulkanTexture::loadHDRFromFile(const std::string& path) {
         case 3: format= VK_FORMAT_R32G32B32_SFLOAT;break;
     }
 
-    uploadToGPU(format,VK_IMAGE_TILING_LINEAR,pixel_size);
+    uploadToGPU(format,VK_IMAGE_TILING_OPTIMAL,pixel_size);
     return true;
 }
 
@@ -219,7 +219,7 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
     channels  = deduceChannels(format) ;
     VkImageTiling tiling = deduceTiling(format);
 
-    vulkanUtils::createCubeImage(
+    VulkanUtils::createCubeImage(
             context,
             width,height,mipLevels,
             VK_SAMPLE_COUNT_1_BIT,
@@ -232,7 +232,7 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
             );
 
     //Prepare the image for transfer
-    vulkanUtils::transitionImageLayout(context,
+    VulkanUtils::transitionImageLayout(context,
                                        image,
                                        format,
                                        VK_IMAGE_LAYOUT_UNDEFINED,
@@ -244,13 +244,13 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
 
 
 
-    imageView =vulkanUtils::createImageView(context,
+    imageView =VulkanUtils::createImageView(context,
                                             image,
                                             format,
                                             VK_IMAGE_ASPECT_COLOR_BIT,
                                             VK_IMAGE_VIEW_TYPE_CUBE,
                                             0,mipLevels,
                                             0,layers);
-    imageSampler= vulkanUtils::createSampler2D(context,mipLevels);
+    imageSampler= VulkanUtils::createSampler2D(context,mipLevels);
 }
 

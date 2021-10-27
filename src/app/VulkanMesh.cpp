@@ -47,14 +47,14 @@ void VulkanMesh::createVertexBuffer() {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
-    vulkanUtils::createBuffer(context,bufferSize,
+    VulkanUtils::createBuffer(context,bufferSize,
                               VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                               vertexBuffer,
                               vertexBufferMemory);
 
 
-    vulkanUtils::createBuffer(context,bufferSize,
+    VulkanUtils::createBuffer(context,bufferSize,
                               VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                               stagingBuffer,
@@ -65,7 +65,7 @@ void VulkanMesh::createVertexBuffer() {
     memcpy(data, vertices.data(), bufferSize);
     vkUnmapMemory(context.device_, stagingBufferMemory);
 
-    vulkanUtils::copyBuffer(context,stagingBuffer,vertexBuffer,bufferSize);
+    VulkanUtils::copyBuffer(context,stagingBuffer,vertexBuffer,bufferSize);
 
     vkDestroyBuffer(context.device_,stagingBuffer, nullptr);
     vkFreeMemory(context.device_, stagingBufferMemory, nullptr);
@@ -78,13 +78,13 @@ void VulkanMesh::createIndexBuffer() {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
 
-    vulkanUtils::createBuffer(context,bufferSize,
+    VulkanUtils::createBuffer(context,bufferSize,
                               VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                               indexBuffer,
                               indexBufferMemory);
 
-    vulkanUtils:: createBuffer(context,bufferSize,
+    VulkanUtils:: createBuffer(context,bufferSize,
                                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                                stagingBuffer,
@@ -95,7 +95,7 @@ void VulkanMesh::createIndexBuffer() {
     memcpy(data,indices.data(), bufferSize);
     vkUnmapMemory(context.device_, stagingBufferMemory);
 
-    vulkanUtils::copyBuffer(context,stagingBuffer,indexBuffer,bufferSize);
+    VulkanUtils::copyBuffer(context,stagingBuffer,indexBuffer,bufferSize);
 
     vkDestroyBuffer(context.device_,stagingBuffer, nullptr);
     vkFreeMemory(context.device_, stagingBufferMemory, nullptr);

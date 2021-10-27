@@ -27,6 +27,8 @@ private:
     VkFramebuffer frameBuffer{VK_NULL_HANDLE};
     VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
 
+    VkFence fence {VK_NULL_HANDLE};
+
     VkBuffer uniformBuffer{VK_NULL_HANDLE};
     VkDeviceMemory uniformBuffersMemory{VK_NULL_HANDLE};
 

@@ -8,8 +8,9 @@
 #include <stdexcept>
 #include <fstream>
 #include <stb_image.h>
+#include <cassert>
 
-void vulkanUtils::createBuffer(const VulkanRenderContext& context,
+void VulkanUtils::createBuffer(const VulkanRenderContext& context,
                                VkDeviceSize size,
                                VkBufferUsageFlags usageFlags,
                                VkMemoryPropertyFlags memoryFlags,
@@ -38,7 +39,7 @@ void vulkanUtils::createBuffer(const VulkanRenderContext& context,
 
 
 
-uint32_t vulkanUtils::findMemoryType(const VulkanRenderContext& context,
+uint32_t VulkanUtils::findMemoryType(const VulkanRenderContext& context,
                                      uint32_t typeFilter,
                                      VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
@@ -52,7 +53,7 @@ uint32_t vulkanUtils::findMemoryType(const VulkanRenderContext& context,
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void vulkanUtils::copyBuffer(const VulkanRenderContext& context,
+void VulkanUtils::copyBuffer(const VulkanRenderContext& context,
                              VkBuffer srcBuffer,
                              VkBuffer dstBuffer,
                              VkDeviceSize size) {
@@ -67,7 +68,7 @@ void vulkanUtils::copyBuffer(const VulkanRenderContext& context,
     endSingleTimeCommands(context,commandBuffer);
 }
 
-std::vector<char> vulkanUtils::readFile(const std::string& filename){
+std::vector<char> VulkanUtils::readFile(const std::string& filename){
     std::ifstream file(filename,std::ios::ate | std::ios::binary);
     if(!file.is_open()){
         throw std::runtime_error("open file failed: "+ filename);
@@ -81,21 +82,8 @@ std::vector<char> vulkanUtils::readFile(const std::string& filename){
     return buffer;
 }
 
-void vulkanUtils::endSingleTimeCommands(const VulkanRenderContext& context,VkCommandBuffer commandBuffer) {
-    vkEndCommandBuffer(commandBuffer);
 
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer;
-
-    vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(context.graphicsQueue);
-
-    vkFreeCommandBuffers(context.device_, context.commandPool, 1, &commandBuffer);
-}
-
-VkCommandBuffer vulkanUtils::beginSingleTimeCommands(const VulkanRenderContext& context) {
+VkCommandBuffer VulkanUtils::beginSingleTimeCommands(const VulkanRenderContext& context) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -104,6 +92,7 @@ VkCommandBuffer vulkanUtils::beginSingleTimeCommands(const VulkanRenderContext& 
 
     VkCommandBuffer commandBuffer;
     vkAllocateCommandBuffers(context.device_, &allocInfo, &commandBuffer);
+    assert(commandBuffer !=VK_NULL_HANDLE);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -115,7 +104,7 @@ VkCommandBuffer vulkanUtils::beginSingleTimeCommands(const VulkanRenderContext& 
 }
 
 
-void vulkanUtils::createImage2D(const VulkanRenderContext &context,
+void VulkanUtils::createImage2D(const VulkanRenderContext &context,
                                 uint32_t width, uint32_t height,  uint32_t mipLevel, VkSampleCountFlagBits numberSample,
                                 VkFormat format,VkImageTiling tiling,
                                 VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
@@ -152,7 +141,7 @@ void vulkanUtils::createImage2D(const VulkanRenderContext &context,
 }
 
 
-void vulkanUtils::createCubeImage(const VulkanRenderContext &context, uint32_t width, uint32_t height,
+void VulkanUtils::createCubeImage(const VulkanRenderContext &context, uint32_t width, uint32_t height,
                                   uint32_t mipLevel, VkSampleCountFlagBits numberSample, VkFormat format,
                                   VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                   VkImage &image, VkDeviceMemory &memory) {
@@ -189,7 +178,7 @@ void vulkanUtils::createCubeImage(const VulkanRenderContext &context, uint32_t w
 }
 
 
-VkImageView vulkanUtils::createImageCubeView(const VulkanRenderContext& context,
+VkImageView VulkanUtils::createImageCubeView(const VulkanRenderContext& context,
                                         VkImage image,
                                         VkFormat format,
                                         VkImageAspectFlags aspectFlags,
@@ -211,7 +200,7 @@ VkImageView vulkanUtils::createImageCubeView(const VulkanRenderContext& context,
     return textureImageView;
 }
 
-VkImageView vulkanUtils::createImageView(const VulkanRenderContext& context,
+VkImageView VulkanUtils::createImageView(const VulkanRenderContext& context,
                                      VkImage image,
                                      VkFormat format,
                                      VkImageAspectFlags aspectFlags,
@@ -227,6 +216,7 @@ VkImageView vulkanUtils::createImageView(const VulkanRenderContext& context,
     viewInfo.image = image;
     viewInfo.viewType = viewType;
     viewInfo.format = format;
+    viewInfo.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
     viewInfo.subresourceRange.aspectMask = aspectFlags;
     viewInfo.subresourceRange.baseMipLevel = baseMipLayer;
     viewInfo.subresourceRange.levelCount = numMipLevel;
@@ -238,7 +228,7 @@ VkImageView vulkanUtils::createImageView(const VulkanRenderContext& context,
 }
 
 
-void vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
+void VulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
                                    VkImage image,
                                    VkFormat format,
                                    VkImageLayout oldLayout,
@@ -319,13 +309,6 @@ void vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
 
         srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    }else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-    {
-        barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-        srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     }
     else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
     {
@@ -365,7 +348,7 @@ void vulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
 }
 
 
-void vulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
+void VulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
                                     uint32_t height) {
     auto commandBuffer = beginSingleTimeCommands(context);
 
@@ -398,7 +381,7 @@ void vulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer
 
 
 
-VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context,
+VkSampler VulkanUtils::createSampler2D(const VulkanRenderContext& context,
                                        uint32_t mipLevels){
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -424,12 +407,12 @@ VkSampler vulkanUtils::createSampler2D(const VulkanRenderContext& context,
 }
 
 
-bool vulkanUtils::hasStencilComponent(VkFormat format){
+bool VulkanUtils::hasStencilComponent(VkFormat format){
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
 void
-vulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
+VulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
                                     VkImage image,uint32_t width, uint32_t height,
                                     uint32_t mipLevel,VkFormat format,
                                     VkFilter filter) {
@@ -518,7 +501,7 @@ vulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
 }
 
 
-VkSampleCountFlagBits vulkanUtils::getMaxUsableSampleCount(const VulkanRenderContext& context) {
+VkSampleCountFlagBits VulkanUtils::getMaxUsableSampleCount(const VulkanRenderContext& context) {
     VkPhysicalDeviceProperties physicalDeviceProperties;
     vkGetPhysicalDeviceProperties(context.physicalDevice, &physicalDeviceProperties);
 
@@ -536,7 +519,7 @@ VkSampleCountFlagBits vulkanUtils::getMaxUsableSampleCount(const VulkanRenderCon
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-VkShaderModule vulkanUtils::createShaderModule(const VulkanRenderContext& context,
+VkShaderModule VulkanUtils::createShaderModule(const VulkanRenderContext& context,
                                          uint32_t * code,
                                          uint32_t size){
     VkShaderModuleCreateInfo shaderInfo={};
@@ -549,7 +532,7 @@ VkShaderModule vulkanUtils::createShaderModule(const VulkanRenderContext& contex
 }
 
 
-void vulkanUtils::bindUniformBuffer(
+void VulkanUtils::bindUniformBuffer(
         const VulkanRenderContext &context,
         VkDescriptorSet descriptorSet,
         int binding,
@@ -577,7 +560,7 @@ void vulkanUtils::bindUniformBuffer(
     vkUpdateDescriptorSets(context.device_, 1, &descriptorWrite, 0, nullptr);
 }
 
-void vulkanUtils::bindCombinedImageSampler(
+void VulkanUtils::bindCombinedImageSampler(
         const VulkanRenderContext &context,
         VkDescriptorSet descriptorSet,
         int binding,
@@ -604,3 +587,28 @@ void vulkanUtils::bindCombinedImageSampler(
     vkUpdateDescriptorSets(context.device_, 1, &descriptorWrite, 0, nullptr);
 }
 
+void VulkanUtils::endSingleTimeCommands(const VulkanRenderContext& context,VkCommandBuffer commandBuffer)
+{
+    vkEndCommandBuffer(commandBuffer);
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = 0;
+
+    VkFence fence{};
+    VK_CHECK(vkCreateFence(context.device_,&fenceInfo, nullptr,&fence),"Create Fence Failed\n");
+
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    VK_CHECK( vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, fence),"failed to submit command buffer");
+
+    VK_CHECK(vkWaitForFences(context.device_,1,&fence,VK_TRUE,10000000000),"Wait for Fence failed");
+
+    //vkQueueWaitIdle(context.graphicsQueue);
+    vkDestroyFence(context.device_,fence, nullptr);
+
+    vkFreeCommandBuffers(context.device_, context.commandPool, 1, &commandBuffer);
+}

@@ -21,11 +21,11 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     hdriToCubeFragmentShader.compileFromFile(hdriToCubeFragmentShaderPath, ShaderKind::fragment);
     diffuseIrradianceFragmentShader.compileFromFile(diffuseIrradianceFragmentShaderPath, ShaderKind::fragment);
 
-    environmentCubemap.createCube(VK_FORMAT_R8G8B8A8_UNORM, 256, 256, 1);
-    diffuseIrradianceCubemap.createCube(VK_FORMAT_R8G8B8A8_UNORM, 256, 256, 1);
+    environmentCubemap.createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
+    diffuseIrradianceCubemap.createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
 
     {
-        vulkanUtils::transitionImageLayout(
+        VulkanUtils::transitionImageLayout(
                 context,
                 environmentCubemap.getImage(),
                 environmentCubemap.getImageFormat(),
@@ -43,7 +43,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         );
         hdriToCubeRenderer.render();
 
-        vulkanUtils::transitionImageLayout(
+        VulkanUtils::transitionImageLayout(
                 context,
                 environmentCubemap.getImage(),
                 environmentCubemap.getImageFormat(),
@@ -56,7 +56,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
 
     {
-        vulkanUtils::transitionImageLayout(
+        VulkanUtils::transitionImageLayout(
                 context,
                 diffuseIrradianceCubemap.getImage(),
                 diffuseIrradianceCubemap.getImageFormat(),
@@ -74,7 +74,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         );
         diffuseIrradianceRenderer.render();
 
-        vulkanUtils::transitionImageLayout(
+        VulkanUtils::transitionImageLayout(
                 context,
                 diffuseIrradianceCubemap.getImage(),
                 diffuseIrradianceCubemap.getImageFormat(),
@@ -174,7 +174,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     uniformBuffersMemory.resize(imageCount);
 
     for (size_t i = 0; i < imageCount; i++) {
-        vulkanUtils::createBuffer(
+        VulkanUtils::createBuffer(
                 context,
                 uboSize,
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -210,7 +210,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
                         &diffuseIrradianceCubemap,
                 };
 
-        vulkanUtils::bindUniformBuffer(
+        VulkanUtils::bindUniformBuffer(
                 context,
                 descriptorSets[i],
                 0,
@@ -220,7 +220,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         );
 
         for (int k = 0; k < textures.size(); k++)
-            vulkanUtils::bindCombinedImageSampler(
+            VulkanUtils::bindCombinedImageSampler(
                     context,
                     descriptorSets[i],
                     k + 1,
