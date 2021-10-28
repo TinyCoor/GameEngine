@@ -11,9 +11,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Macro.h"
 
-static std::string commonCubeVertexShaderPath = "C:\\Users\\y123456\\Desktop\\Programming\\c_cpp\\GameEngine\\Resources\\shaders\\common.vert";
-static std::string hdriToCubeFragmentShaderPath = "C:\\Users\\y123456\\Desktop\\Programming\\c_cpp\\GameEngine\\Resources\\shaders\\hdriToCube.frag";
-static std::string diffuseIrradianceFragmentShaderPath = "C:\\Users\\y123456\\Desktop\\Programming\\c_cpp\\GameEngine\\Resources\\shaders\\diffuseIrrandiance.frag";
+#include <imgui.h>
+#include <imgui_impl_vulkan.h>
+
+static std::string commonCubeVertexShaderPath = "C:\\Users\\y123456\\Desktop\\Programming\\c_cpp\\GameEngine\\assets\\shaders\\common.vert";
+static std::string hdriToCubeFragmentShaderPath = "C:\\Users\\y123456\\Desktop\\Programming\\c_cpp\\GameEngine\\assets\\shaders\\hdriToCube.frag";
+static std::string diffuseIrradianceFragmentShaderPath = "C:\\Users\\y123456\\Desktop\\Programming\\c_cpp\\GameEngine\\assets\\shaders\\diffuseIrrandiance.frag";
 
 void VulkanRender::init(VulkanRenderScene* scene) {
 
@@ -130,16 +133,11 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     renderPassBuilder.setDepthStencilAttachment(0,2);
     renderPass = renderPassBuilder.build();
 
-    VulkanPipelineLayoutBuilder skyboxPipelineLayoutBuilder(context);
-    skyboxPipelineLayout = skyboxPipelineLayoutBuilder
-            .addDescriptorSetLayout(descriptorSetLayout)
-            .build();
-
     VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
     pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
-    pbrPipelineLayout = pipelineLayoutBuilder.build();
+    pipelineLayout = pipelineLayoutBuilder.build();
 
-    VulkanGraphicsPipelineBuilder pipelineBuilder(context,pbrPipelineLayout,renderPass);
+    VulkanGraphicsPipelineBuilder pipelineBuilder(context,pipelineLayout,renderPass);
     //VulkanGraphicsPipelineBuilder pipelineBuilder(context,descriptorSetLayout,renderPass);
     pipelineBuilder.addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT);
     pipelineBuilder.addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -153,7 +151,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     pipelineBuilder.addBlendColorAttachment();
     pbrPipeline =  pipelineBuilder.build();
 
-    VulkanGraphicsPipelineBuilder skyboxPipelineBuilder(context, pbrPipelineLayout, renderPass);
+    VulkanGraphicsPipelineBuilder skyboxPipelineBuilder(context, pipelineLayout, renderPass);
     skyboxPipeline = skyboxPipelineBuilder
             .addShaderStage(skyboxVertexShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
             .addShaderStage(skyboxFragmentShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -162,13 +160,13 @@ void VulkanRender::init(VulkanRenderScene* scene) {
             .addViewport(viewport)
             .addScissor(scissor)
             .setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE)
-            .setMultisampleState(context.maxMSAASamples, true)
+            .setMultisampleState(context.maxMSAASamples,true)
             .setDepthStencilState(true, true, VK_COMPARE_OP_LESS)
             .addBlendColorAttachment()
             .build();
 
     // Create uniform buffers
-    VkDeviceSize uboSize = sizeof(SharedRenderState);
+    VkDeviceSize uboSize = sizeof(RenderState);
     uint32_t imageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
     uniformBuffers.resize(imageCount);
     uniformBuffersMemory.resize(imageCount);
@@ -216,7 +214,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
                 0,
                 uniformBuffers[i],
                 0,
-                sizeof(SharedRenderState)
+                sizeof(RenderState)
         );
 
         for (int k = 0; k < textures.size(); k++)
@@ -253,7 +251,6 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
     // Create command buffers
     commandBuffers.resize(imageCount);
-
     VkCommandBufferAllocateInfo allocateInfo = {};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocateInfo.commandPool = context.commandPool;
@@ -263,67 +260,46 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     if (vkAllocateCommandBuffers(context.device_, &allocateInfo, commandBuffers.data()) != VK_SUCCESS)
         throw std::runtime_error("Can't create command buffers");
 
-    // Record command buffers
-    for (size_t i = 0; i < commandBuffers.size(); i++) {
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-        beginInfo.pInheritanceInfo = nullptr; // Optional
+    // Init ImGui bindings for Vulkan
+    {
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.Instance = context.instance;
+        init_info.PhysicalDevice = context.physicalDevice;
+        init_info.Device = context.device_;
+        init_info.QueueFamily = context.graphicsQueueFamily;
+        init_info.Queue = context.graphicsQueue;
+        init_info.DescriptorPool = context.descriptorPool;
+        init_info.MSAASamples = context.maxMSAASamples;
+        init_info.MinImageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
+        init_info.ImageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
+        init_info.Allocator = nullptr;
 
-        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS)
-            throw std::runtime_error("Can't begin recording command buffer");
+        //TODO Fix Bug
+        ImGui_ImplVulkan_Init(&init_info, renderPass);
 
-        VkRenderPassBeginInfo renderPassInfo = {};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = frameBuffers[i];
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = swapChainContext.extend;
+        VulkanRenderContext imGuiContext = {};
+        imGuiContext.commandPool = context.commandPool;
+        imGuiContext.descriptorPool = context.descriptorPool;
+        imGuiContext.device_ = context.device_;
+        imGuiContext.graphicsQueue = context.graphicsQueue;
+        imGuiContext.maxMSAASamples = context.maxMSAASamples;
+        imGuiContext.physicalDevice = context.physicalDevice;
+        imGuiContext.presentQueue = context.presentQueue;
 
-        std::array<VkClearValue, 3> clearValues = {};
-        clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
-        clearValues[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
-        clearValues[2].depthStencil = {1.0f, 0};
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
-
-        {
-            const VulkanMesh &skybox = scene->getSkyboxMesh();
-
-            VkBuffer vertexBuffers[] = { skybox.getVertexBuffer() };
-            VkBuffer indexBuffer = skybox.getIndexBuffer();
-            VkDeviceSize offsets[] = { 0 };
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdDrawIndexed(commandBuffers[i], skybox.getNumIndices(), 1, 0, 0, 0);
-        }
-
-        vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipeline);
-        vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipelineLayout, 0, 1, &descriptorSets[i], 0, nullptr);
-        {
-            const VulkanMesh &mesh = scene->getMesh();
-            VkBuffer vertexBuffers[] = { mesh.getVertexBuffer() };
-            VkBuffer indexBuffer = mesh.getIndexBuffer();
-            VkDeviceSize offsets[] = { 0 };
-            vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdDrawIndexed(commandBuffers[i], mesh.getNumIndices(), 1, 0, 0, 0);
-        }
-
-        vkCmdEndRenderPass(commandBuffers[i]);
-        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS)
-            throw std::runtime_error("Can't record command buffer");
+        VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(imGuiContext);
+        ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
+        VulkanUtils::endSingleTimeCommands(imGuiContext, imGuiCommandBuffer);
     }
 }
 
 
 void VulkanRender::shutdown() {
+    //Shut down imGui
+    ImGui_ImplVulkan_Shutdown();
+    vkDestroyRenderPass(context.device_,imGuiRenderPass, nullptr);
+
+    imGuiRenderPass= VK_NULL_HANDLE;
+
     commonCubeVertexShader.clear();
 
     hdriToCubeFragmentShader.clear();
@@ -355,14 +331,12 @@ void VulkanRender::shutdown() {
     vkDestroyRenderPass(context.device_,renderPass, nullptr);
     renderPass = VK_NULL_HANDLE;
 
-    vkDestroyPipelineLayout(context.device_,pbrPipelineLayout, nullptr);
-    pbrPipelineLayout = VK_NULL_HANDLE;
+    vkDestroyPipelineLayout(context.device_,pipelineLayout, nullptr);
+    pipelineLayout = VK_NULL_HANDLE;
 
     vkDestroyPipeline(context.device_,pbrPipeline, nullptr);
     pbrPipeline = VK_NULL_HANDLE;
 
-    vkDestroyPipelineLayout(context.device_,skyboxPipelineLayout, nullptr);
-    skyboxPipelineLayout = VK_NULL_HANDLE;
 
     vkDestroyPipeline(context.device_,skyboxPipeline, nullptr);
     skyboxPipeline = VK_NULL_HANDLE;
@@ -373,37 +347,125 @@ void VulkanRender::shutdown() {
 
 }
 
-VkCommandBuffer VulkanRender::render(uint32_t imageIndex) {
-
-
+void VulkanRender::update(const VulkanRenderScene *scene) {
+    // Render state
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float,std::chrono::seconds::period>(currentTime-startTime).count();
 
-    VkBuffer uniformBuffer = uniformBuffers[imageIndex];
-    VkDeviceMemory uniformBufferMemory = uniformBuffersMemory[imageIndex];
+    const float rotationSpeed = 0.1f;
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     const glm::vec3 &up = {0.0f, 0.0f, 1.0f};
     const glm::vec3 &zero = {0.0f, 0.0f, 0.0f};
-    const glm::vec3 &cameraPos = glm::vec3(2.0f, 2.0f, 2.0f);
 
     const float aspect = swapChainContext.extend.width / (float) swapChainContext.extend.height;
     const float zNear = 0.1f;
     const float zFar = 1000.0f;
-    const float rotationSpeed = 0.1f;
 
-    SharedRenderState *ubo = nullptr;
-    vkMapMemory(context.device_, uniformBufferMemory, 0, sizeof(SharedRenderState), 0, reinterpret_cast<void**>(&ubo));
+    const glm::vec3 &cameraPos = glm::vec3(2.0f, 2.0f, 2.0f);
+    const glm::mat4 &rotation = glm::rotate(glm::mat4(1.0f), time * rotationSpeed * glm::radians(90.0f), up);
 
+    state.world = glm::mat4(1.0f);
+    state.view = glm::lookAt(cameraPos, zero, up) * rotation;
+    state.proj = glm::perspective(glm::radians(60.0f), aspect, zNear, zFar);
+    state.proj[1][1] *= -1;
+    state.cameraPosWS = glm::vec3(glm::vec4(cameraPos, 1.0f) * rotation);
 
+    // ImGui
+    static float f = 0.0f;
+    static int counter = 0;
+    static bool show_demo_window = false;
+    static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    ubo->world = glm::rotate(glm::mat4(1.0f), time * rotationSpeed * glm::radians(90.0f), up);
-    ubo->view = glm::lookAt(cameraPos, zero, up);
-    ubo->proj = glm::perspective(glm::radians(60.0f), aspect, zNear, zFar);
-    ubo->proj[1][1] *= -1;
-    ubo->cameraPos = cameraPos;
+    if (show_demo_window)
+        ImGui::ShowDemoWindow(&show_demo_window);
 
+    ImGui::Begin("Material Parameters");
+
+    ImGui::Checkbox("Demo Window", &show_demo_window);
+
+    ImGui::SliderFloat("Lerp User Material", &state.lerpUserValues, 0.0f, 1.0f);
+    ImGui::SliderFloat("Metalness", &state.userMetalness, 0.0f, 1.0f);
+    ImGui::SliderFloat("Roughness", &state.userRoughness, 0.0f, 1.0f);
+
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::End();
+
+}
+
+VkCommandBuffer VulkanRender::render(const VulkanRenderScene *scene, uint32_t imageIndex) {
+    VkCommandBuffer commandBuffer = commandBuffers[imageIndex];
+    VkFramebuffer frameBuffer = frameBuffers[imageIndex];
+    VkDescriptorSet descriptorSet = descriptorSets[imageIndex];
+    VkBuffer uniformBuffer = uniformBuffers[imageIndex];
+    VkDeviceMemory uniformBufferMemory = uniformBuffersMemory[imageIndex];
+
+    void *ubo = nullptr;
+    vkMapMemory(context.device_, uniformBufferMemory, 0, sizeof(RenderState), 0, &ubo);
+    memcpy(ubo, &state, sizeof(RenderState));
     vkUnmapMemory(context.device_, uniformBufferMemory);
 
-    return commandBuffers[imageIndex];
+    if (vkResetCommandBuffer(commandBuffer, 0) != VK_SUCCESS)
+        throw std::runtime_error("Can't reset command buffer");
+
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    beginInfo.pInheritanceInfo = nullptr; // Optional
+
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
+        throw std::runtime_error("Can't begin recording command buffer");
+
+    VkRenderPassBeginInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.framebuffer = frameBuffer;
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = swapChainContext.extend;
+
+    std::array<VkClearValue, 3> clearValues = {};
+    clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    clearValues[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    clearValues[2].depthStencil = {1.0f, 0};
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+    {
+        const VulkanMesh &skybox = scene->getSkyboxMesh();
+
+        VkBuffer vertexBuffers[] = { skybox.getVertexBuffer() };
+        VkBuffer indexBuffer = skybox.getIndexBuffer();
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(commandBuffer, skybox.getNumIndices(), 1, 0, 0, 0);
+    }
+
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipeline);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+    {
+        const VulkanMesh &mesh = scene->getMesh();
+
+        VkBuffer vertexBuffers[] = { mesh.getVertexBuffer() };
+        VkBuffer indexBuffer = mesh.getIndexBuffer();
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+        vkCmdDrawIndexed(commandBuffer, mesh.getNumIndices(), 1, 0, 0, 0);
+    }
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+
+    vkCmdEndRenderPass(commandBuffer);
+
+    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
+        throw std::runtime_error("Can't record command buffer");
+
+    return commandBuffer;
 }

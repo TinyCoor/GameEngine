@@ -11,12 +11,7 @@
 #include <vector>
 #include "VulkanRenderContext.h"
 
-struct SharedRenderState{
-    glm::mat4 world;
-    glm::mat4 view;
-    glm::mat4 proj;
-    glm::vec3 cameraPos;
-};
+
 
 
 ///GPU顶点数据

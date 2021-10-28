@@ -14,13 +14,6 @@
 #include "VulkanShader.h"
 
 
-
-class RenderMaterial{
-private:
-
-
-};
-
 class VulkanRenderScene {
 private:
 

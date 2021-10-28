@@ -7,8 +7,17 @@
 #include "VulkanRender.h"
 #include "volk.h"
 #include <vector>
+#include <optional>
 
 class GLFWwindow;
+
+struct QueueFamilyIndices{
+    std::optional<uint32_t> graphicsFamily{std::nullopt};
+    std::optional<uint32_t> presentFamily{std::nullopt};
+    inline bool isComplete()const{
+        return graphicsFamily.has_value() && presentFamily.has_value();
+    }
+};
 
 struct SwapchainSupportedDetails {
     VkSurfaceCapabilitiesKHR capabilities;
@@ -47,10 +56,14 @@ private:
     void initScene();
     void shutdownScene();
 
+    void initImGui();
+    void shutdownImGui();
+
     void initRender();
     void shutdownRender();
 
     void mainLoop();
+    void update();
     void RenderFrame();
     void shutdownWindow();
 
@@ -91,6 +104,9 @@ private:
     VkImageView colorImageView;
     VkDeviceMemory colorImageMemory;
 
+    //TODO move ImmGUI Render
+    VulkanRenderContext imGuiContext;
+    VkRenderPass imGuiRenderPass{VK_NULL_HANDLE};
 
     //SwapChain
     VkImage depthImage;

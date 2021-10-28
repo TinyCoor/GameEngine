@@ -251,8 +251,6 @@ void VulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
     barrier.subresourceRange.baseArrayLayer = baseLayer;
     barrier.subresourceRange.layerCount = numLayers;
 
-    VkPipelineStageFlags srcStage;
-    VkPipelineStageFlags dstStage;
     if(newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL){
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         if (hasStencilComponent(format)) {
@@ -261,6 +259,9 @@ void VulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
     }else {
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     }
+
+    VkPipelineStageFlags srcStage;
+    VkPipelineStageFlags dstStage;
 
     if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
     {
@@ -317,13 +318,6 @@ void VulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
 
         srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
         dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    }	else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-    {
-        barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-        barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-        dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     }
     else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
     {
@@ -335,6 +329,7 @@ void VulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
     }
     else
         throw std::runtime_error("Unsupported layout transition");
+
 
     vkCmdPipelineBarrier(
             commandBuffer,
@@ -585,6 +580,8 @@ void VulkanUtils::bindCombinedImageSampler(
     // TODO: not optimal, probably should be refactored to a Binder class,
     // i.e. it's better to collect all descriptor writes before the call
     vkUpdateDescriptorSets(context.device_, 1, &descriptorWrite, 0, nullptr);
+
+    //
 }
 
 void VulkanUtils::endSingleTimeCommands(const VulkanRenderContext& context,VkCommandBuffer commandBuffer)
@@ -598,17 +595,12 @@ void VulkanUtils::endSingleTimeCommands(const VulkanRenderContext& context,VkCom
     VkFence fence{};
     VK_CHECK(vkCreateFence(context.device_,&fenceInfo, nullptr,&fence),"Create Fence Failed\n");
 
-
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
     VK_CHECK( vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, fence),"failed to submit command buffer");
-
     VK_CHECK(vkWaitForFences(context.device_,1,&fence,VK_TRUE,10000000000),"Wait for Fence failed");
-
-    //vkQueueWaitIdle(context.graphicsQueue);
     vkDestroyFence(context.device_,fence, nullptr);
-
     vkFreeCommandBuffers(context.device_, context.commandPool, 1, &commandBuffer);
 }

@@ -277,14 +277,13 @@ void VulkanCubeMapRender::shutdown() {
 }
 
 void VulkanCubeMapRender::render() {
+
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount=1;
     submitInfo.pCommandBuffers =&commandBuffer;
 
     VK_CHECK( vkQueueSubmit(context.graphicsQueue,1,&submitInfo,fence),"Submit Queue Failed");
-
     VK_CHECK(vkWaitForFences(context.device_, 1, &fence, VK_TRUE, 100000000000),"Can't wait for a fence");
 
-   // vkQueueWaitIdle(context.graphicsQueue);
 }

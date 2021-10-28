@@ -1,7 +1,6 @@
 //
 // Created by y123456 on 2021/10/11.
 //
-
 #include "VulkanApplication.h"
 #include<iostream>
 #include <set>
@@ -10,18 +9,23 @@
 #include <GLFW/glfw3native.h>
 #include <algorithm>
 #include <functional>
+#include "VulkanRenderPassBuilder.h"
 
-const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\pbr.vert)";
-const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\pbr.frag)";
-const std::string skybox_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\skybox_shader.vert)";
-const std::string skybox_frag_shader_path =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\shaders\skybox_shader.frag)";
-const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\models\DamagedHelmet.fbx)";
-const std::string albedoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_albedo.jpg)";
-const std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_normal.jpg)";
-const std::string aoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_AO.jpg)";
-const std::string shadingTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_metalRoughness.jpg)";
-const std::string emissionTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\Default_emissive.jpg)";
-const std::string hdrTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\Resources\textures\environment\umbrellas.hdr)";
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
+
+const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\shaders\pbr.vert)";
+const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\shaders\pbr.frag)";
+const std::string skybox_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\shaders\skybox.vert)";
+const std::string skybox_frag_shader_path =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\shaders\skybox.frag)";
+const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\models\SciFiHelmet.gltf)";
+const std::string albedoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\SciFiHelmet_BaseColor.png)";
+const std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\SciFiHelmet_Normal.png)";
+const std::string aoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\SciFiHelmet_AmbientOcclusion.png)";
+const std::string shadingTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\SciFiHelmet_MetallicRoughness.png)";
+const std::string emissionTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\Default_emissive.jpg)";
+const std::string hdrTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\environment\umbrellas.hdr)";
 
 static int maxCombinedImageSamplers = 32;
 static int maxUniformBuffers = 32;
@@ -83,7 +87,7 @@ namespace {
         static float queuePriority = 1.0;
         std::vector<VkDeviceQueueCreateInfo> queuesInfo;
         // VkDeviceQueueCreateInfo queueCreateInfo ={};
-        std::set<uint32_t > uniqueQueueFamilies={ indices.graphicsFamily.second,indices.presentFamily.second};
+        std::set<uint32_t > uniqueQueueFamilies={ indices.graphicsFamily.value(),indices.presentFamily.value()};
 
         for (uintptr_t queueFamilyIndex :uniqueQueueFamilies) {
             VkDeviceQueueCreateInfo info = {};
@@ -157,12 +161,14 @@ void Application::initWindow() {
 
 void Application::run(){
     initWindow();
+    initImGui();
     initVulkan();
     initVulkanSwapChain();
     initScene();
     initRender();
-    mainLoop();
 
+    mainLoop();
+    shutdownImGui();
     shutdownWindow();
     shutdownScene();
     shutdownRender();
@@ -287,6 +293,7 @@ bool Application::checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurface
 
     return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
 }
+
 void Application::initVulkan() {
 
     VK_CHECK( volkInitialize(),"can not init volk help lib");
@@ -331,18 +338,18 @@ void Application::initVulkan() {
     volkLoadDevice(device);
 
     //Get Logical Device
-    vkGetDeviceQueue(device,indices.graphicsFamily.second,0,&graphicsQueue);
+    vkGetDeviceQueue(device,indices.graphicsFamily.value(),0,&graphicsQueue);
     TH_WITH_MSG(graphicsQueue == VK_NULL_HANDLE,"Get graphics queue from logical device failed\n");
 
-    vkGetDeviceQueue(device,indices.presentFamily.second,0,&presentQueue);
+    vkGetDeviceQueue(device,indices.presentFamily.value(),0,&presentQueue);
     TH_WITH_MSG(presentQueue == VK_NULL_HANDLE,"Get present queue from logical device failed\n");
 
 
-    //
+    ////
     VkCommandPoolCreateInfo commandPoolInfo{};
     commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.second;
-    commandPoolInfo.flags = 0; // Optional
+    commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.value();
+    commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
     VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool),"failed to create command pool!");
 
     //Create Sync Object
@@ -379,9 +386,12 @@ void Application::initVulkan() {
 
     VK_CHECK(vkCreateDescriptorPool(device, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
 
+    context.instance =instance;
     context.device_ = device;
     context.physicalDevice = physicalDevice;
     context.commandPool = commandPool;
+    context.graphicsQueueFamily= indices.graphicsFamily.value();
+    context.presentQueueFamily = indices.presentFamily.value();
     context.graphicsQueue = graphicsQueue;
     context.presentQueue= presentQueue;
     context.maxMSAASamples = VulkanUtils::getMaxUsableSampleCount(context);
@@ -422,6 +432,24 @@ void Application::shutdownVulkan() {
 
 }
 
+void Application::initImGui() {
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForVulkan(window,true);
+
+}
+
+void Application::shutdownImGui() {
+
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+
+}
+
 void Application::shutdownWindow() {
     glfwDestroyWindow(window);
     window = nullptr;
@@ -429,29 +457,33 @@ void Application::shutdownWindow() {
 
 void Application::RenderFrame(){
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-    vkResetFences(device, 1, &inFlightFences[currentFrame]);
-    uint32_t imageIndex =0;
 
-   VkResult result = vkAcquireNextImageKHR(
-           device,
-           swapchain,
-           std::numeric_limits<uint64_t>::max(),
-           imageAvailableSemaphores[currentFrame],VK_NULL_HANDLE,&imageIndex);
+    uint32_t imageIndex = 0;
+    VkResult result = vkAcquireNextImageKHR(
+            device,
+            swapchain,
+            std::numeric_limits<uint64_t>::max(),
+            imageAvailableSemaphores[currentFrame],
+            VK_NULL_HANDLE,
+            &imageIndex
+    );
 
-   if(result == VK_ERROR_OUT_OF_DATE_KHR){
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
         recreateSwapChain();
         return;
-   }else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR ){
-       throw std::runtime_error("can not recreate swap chain");
-   }
+    }
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        throw std::runtime_error("Can't aquire swap chain image");
 
-    VkCommandBuffer commandBuffer = render->render(imageIndex);
+    VkCommandBuffer commandBuffer = render->render(scene, imageIndex);
 
-    VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
-    VkSubmitInfo submitInfo{};
+    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+
+    VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
@@ -460,12 +492,15 @@ void Application::RenderFrame(){
     submitInfo.pCommandBuffers = &commandBuffer;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
-    vkResetFences(device,1,&inFlightFences[currentFrame]);
 
-    VK_CHECK(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]),"failed to submit draw command buffer!");
+    vkResetFences(device, 1, &inFlightFences[currentFrame]);
+    //TODO Maybe this is a hardware error
+    auto res = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
+//    if ( res != VK_SUCCESS || res == VK_ERROR_DEVICE_LOST)
+//        throw std::runtime_error("Can't submit command buffer");
 
-    VkPresentInfoKHR presentInfo{};
     VkSwapchainKHR swapChains[] = {swapchain};
+    VkPresentInfoKHR presentInfo = {};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pWaitSemaphores = signalSemaphores;
@@ -483,23 +518,34 @@ void Application::RenderFrame(){
     );
 
     result = vkQueuePresentKHR(presentQueue, &presentInfo);
-    if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || frameBufferResized){
-        frameBufferResized  =false;
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || frameBufferResized)
+    {
+        frameBufferResized = false;
         recreateSwapChain();
-    }else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR ){
-        throw std::runtime_error("can not recreate swap chain");
     }
+    else if (result != VK_SUCCESS)
+        throw std::runtime_error("Can't aquire swap chain image");
 
     currentFrame = (currentFrame + 1) % MAX_FRAME_IN_FLIGHT;
 }
-
+void Application::update()
+{
+    render->update(scene);
+}
 void Application::mainLoop() {
     if(!window)
         return;
 
     while (!glfwWindowShouldClose(window)){
-        glfwPollEvents();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        update();
+
+        ImGui::Render();
+
         RenderFrame();
+        glfwPollEvents();
     }
 
     vkDeviceWaitIdle(device);
@@ -514,13 +560,13 @@ QueueFamilyIndices Application::fetchFamilyIndices(VkPhysicalDevice physical_dev
     for (int i = 0; i< queueFamilies.size();++i) {
 
         if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            indices.graphicsFamily = std::make_pair(true,i);
+            indices.graphicsFamily = std::make_optional(i);
         }
 
         VkBool32  presentSupport= false;
         vkGetPhysicalDeviceSurfaceSupportKHR(physical_device,i,surface,&presentSupport);
         if(queueFamilies[i].queueCount > 0 && presentSupport){
-            indices.presentFamily = std::make_pair(true,i);
+            indices.presentFamily = std::make_optional(i);
         }
         if(indices.isComplete()){
             break;
@@ -677,8 +723,8 @@ void Application::initVulkanSwapChain() {
     swapChainInfo.imageArrayLayers= 1;
     swapChainInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    std::vector<uint32_t> familiesQueues ={indices.graphicsFamily.second,indices.presentFamily.second};
-    if(indices.graphicsFamily.second != indices.presentFamily.second){
+    std::vector<uint32_t> familiesQueues ={indices.graphicsFamily.value(),indices.presentFamily.value()};
+    if(indices.graphicsFamily.value() != indices.presentFamily.value()){
         swapChainInfo.imageSharingMode =VK_SHARING_MODE_CONCURRENT;
         swapChainInfo.queueFamilyIndexCount = 2;
         swapChainInfo.pQueueFamilyIndices = familiesQueues.data();

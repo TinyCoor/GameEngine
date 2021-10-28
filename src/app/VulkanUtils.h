@@ -8,13 +8,7 @@
 #include<vector>
 #include <string>
 
-struct QueueFamilyIndices{
-    std::pair<bool,uint32_t> graphicsFamily;
-    std::pair<bool,uint32_t> presentFamily{std::make_pair(false,0)};
-    bool isComplete()const{
-        return graphicsFamily.first && presentFamily.first;
-    }
-};
+
 
 struct VulkanRenderContext;
 
