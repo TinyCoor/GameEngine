@@ -6,32 +6,17 @@
 #define GAMEENGINE_GLTEXTURE_H
 #include "GLObject.h"
 
-class Texture2D{
-    static int pos;
-    static GLHANDLE CreateTexture(){
-        GLHANDLE  handle;
-        glGenTextures(1,&handle);
-        return handle;
-    }
 
-    static std::string GetName(){
-        return "Texture2D";
-    }
 
-    static void Bind(GLHANDLE handle){
-        glBindTexture(handle,GL_TEXTURE0 + pos);
-    }
-
-    static void copyToGPU(GLHANDLE handle){
-
-    }
-
-};
+//TODO TextureCubeMap
 
 template<typename CreatePolicy>
 class GLTexture: public GLObject{
 public:
     GLTexture(): GLObject(CreatePolicy::CreateTexture(),CreatePolicy::GetName()){}
+
+
+    bool loadFromFile(const std::string& path);
 
     void Bind(){
         CreatePolicy::Bind(this->handle);
