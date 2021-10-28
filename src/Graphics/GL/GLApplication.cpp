@@ -3,14 +3,16 @@
 //
 
 #include <GLFW/glfw3.h>
+#include "GLApplication.h"
 #include <iostream>
 
+const int width =1920;
+const int height = 1080;
 
+void GLApplication::initGLFW(){
 
-int main() {
     glfwSetErrorCallback([](int error, const char *message) {
         std::cerr << message << "\n";
-
     });
     if (!glfwInit()) exit(EXIT_FAILURE);
 
@@ -18,7 +20,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow *window = glfwCreateWindow(800, 600, "Hello,OpenGL", nullptr, nullptr);
+    window = glfwCreateWindow(width, height, "Hello,OpenGL", nullptr, nullptr);
     if (window == nullptr) {
         std::cerr << "Create GLFW Window Failed\n";
         glfwTerminate();
@@ -30,11 +32,17 @@ int main() {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         }
     });
+}
 
-    while (true){
+void GLApplication::shutdownGLFW() {
+    glfwDestroyWindow(window);
+    glfwTerminate();
+}
 
+void GLApplication::display() {
+    while (glfwWindowShouldClose(window)){
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
-
-
-
 }

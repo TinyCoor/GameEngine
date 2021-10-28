@@ -34,16 +34,6 @@ add_executable(niagara
         )
 
 
-add_executable(GL
-            Graphics/GL/GLApplication.cpp
-            Graphics/GL/GLShader.cpp
-            Graphics/GL/GLMesh.cpp
-            Graphics/GL/GLTexture.cpp
-        )
-target_include_directories(GL PRIVATE ../extern/glfw/include)
-target_link_libraries(GL PRIVATE opengl32 )
-target_link_libraries(GL PRIVATE glfw)
-
 message(STATUS ${ShaderC_LIBRARIES})
 
 add_compile_definitions(VK_USE_PLATFORM_WIN32)
@@ -62,4 +52,6 @@ target_link_libraries(niagara PRIVATE glfw)
 target_link_libraries(niagara PRIVATE assimp)
 target_link_libraries(niagara PRIVATE shaderc_shared)
 target_link_libraries(niagara PRIVATE opengl32 volk )
+
+add_subdirectory(Graphics/GL)
 

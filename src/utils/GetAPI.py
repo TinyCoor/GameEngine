@@ -109,13 +109,13 @@ def generateStub(func):
     if not funcName in WrapFuncs:
         return
     funcArgs = args[1].split(",")
-    call = funcName + "(";
+    call = funcName + "("
     allArgs = []
     for arg in funcArgs:
-        argTypeName = arg.strip().split(" ");
+        argTypeName = arg.strip().split(" ")
         argFullTypeName = " ".join(argTypeName[:-1])
         if len(argFullTypeName) > 0:
-            allArgs.append([argFullTypeName, argTypeName[-1]]);
+            allArgs.append([argFullTypeName, argTypeName[-1]])
         if argTypeName[-1][-1] == ")":
             if argTypeName[-1] == "void)":
                 call = call + ")"
@@ -131,7 +131,7 @@ def generateStub(func):
     for a in allArgs:
         guardString = guardString + typeNameToFormatter(a[0]) + ", "
     if len(allArgs) > 0: guardString = guardString[:-2]
-    guardString = guardString + ")\\n\"";
+    guardString = guardString + ")\\n\""
     for a in allArgs:
         guardString = guardString + ", " + argNameToConverter(a[0], a[1])
     if len(allArgs) > 0:
@@ -140,11 +140,11 @@ def generateStub(func):
         print("	printf(\""+funcName+"()\\n\");")
     if returnType == "void":
         print("	apiHook."+call + ";")
-        print("	" + CheckErrorFunc);
+        print("	" + CheckErrorFunc)
     else:
         print("	"+returnType + " const r = apiHook." + call + ";")
-        print("	" + CheckErrorFunc);
-        print("	return r;");
+        print("	" + CheckErrorFunc)
+        print("	return r;")
     print("}")
     print("")
 
@@ -163,58 +163,58 @@ def main():
     print("")
     print("namespace")
     print("{")
-    print("	GL4API apiHook;");
+    print("	GL4API apiHook;")
     print("} // namespace")
     print("")
-    print("using PFNGETGLPROC = void* (const char*);");
+    print("using PFNGETGLPROC = void* (const char*);")
     print("")
     print("#define E2S( en ) Enum2String( en ).c_str()")
     print("extern std::string Enum2String( GLenum e );")
     print("")
-    lines = open("glcorearb.h").readlines()
+    lines = open("../Graphics/GL/glcorearb.h").readlines()
     for l in lines:
         if l[0:5:] == "GLAPI":
             generateStub(l.strip())
 
     print("#define INJECT(S) api->S = &GLTracer_##S;")
     print("")
-    print("void InjectAPITracer4(GL4API* api)");
+    print("void InjectAPITracer4(GL4API* api)")
     print("{")
     print("	apiHook = *api;")
     Hooks = []
     for l in lines:
         if l[0:5:] == "GLAPI":
-            func = l.strip();
+            func = l.strip()
             args = func.split("(")
             funcName = args[0].split()[3]
             if (funcName in WrapFuncs) and (funcName != "glGetError"):
                 Hooks.append("	INJECT(" + funcName + ");")
-    Hooks.sort();
+    Hooks.sort()
     for f in Hooks:
         print(f)
     print("}")
     print("")
     print("#define LOAD_GL_FUNC(func) api->func = ( decltype(api->func) )GetGLProc(#func);")
     print("")
-    print("void GetAPI4(GL4API* api, PFNGETGLPROC GetGLProc)");
+    print("void GetAPI4(GL4API* api, PFNGETGLPROC GetGLProc)")
     print("{")
     Funcs = []
     for l in lines:
         if l[0:5:] == "GLAPI":
-            func = l.strip();
+            func = l.strip()
             args = func.split("(")
             funcName = args[0].split()[3]
             if funcName in WrapFuncs:
                 Funcs.append("	LOAD_GL_FUNC(" + funcName + ");")
-    Funcs.sort();
+    Funcs.sort()
     for f in Funcs:
         print(f)
     print("}")
     print("")
     # generate API struct
-    out = open( "GLAPI.h", "wt" )
+    out = open("../Graphics/GL/GLAPI.h", "wt")
     for line in WrapFuncs:
-        line.strip();
+        line.strip()
         if str.find( line, "//" ) == 0 or line == "": continue
         typeName = "PFN" + line.upper() + "PROC"
         NumTabs = 17 - int( len(typeName) / 3 )

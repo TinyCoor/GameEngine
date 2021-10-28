@@ -5,6 +5,7 @@
 #ifndef GAMEENGINE_GLSHADER_H
 #define GAMEENGINE_GLSHADER_H
 #include<string>
+#include "GLObject.h"
 
 enum class ShaderKind{
     vertex =0,
@@ -16,14 +17,17 @@ enum class ShaderKind{
 };
 
 
-class GLShader {
+class GLShader : public  GLObject{
 public:
-    GLShader();
+    GLShader(ShaderKind type);
 
-    bool loadFromFile(const std::string,ShaderKind type);
+    bool compileFromFile(const std::string& path);
 
 private:
-    unsigned int handle;
+     bool GetCompileError();
+
+private:
+    ShaderKind type;
 };
 
 
