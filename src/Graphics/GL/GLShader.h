@@ -17,11 +17,15 @@ enum class ShaderKind{
 };
 
 
+
+
 class GLShader : public  GLObject{
 public:
     GLShader(ShaderKind type);
 
     bool compileFromFile(const std::string& path);
+
+    inline ShaderKind GetShaderType(){ return type;}
 
 private:
      bool GetCompileError();

@@ -4,6 +4,8 @@
 
 #include <GLFW/glfw3.h>
 #include "GLApplication.h"
+#include "imgui.h"
+
 #include <iostream>
 
 const int width =1920;
@@ -39,10 +41,28 @@ void GLApplication::shutdownGLFW() {
     glfwTerminate();
 }
 
-void GLApplication::display() {
-    while (glfwWindowShouldClose(window)){
+bool GLApplication::render() {
+    while (!glfwWindowShouldClose(window)){
+        glfwPollEvents();
 
         glfwSwapBuffers(window);
-        glfwPollEvents();
     }
+}
+
+void GLApplication::run() {
+    initGLFW();
+    initImGui();
+    render();
+    shutdownImGui();
+    shutdownGLFW();
+
+}
+
+void GLApplication::initImGui() {
+
+
+}
+
+void GLApplication::shutdownImGui() {
+
 }

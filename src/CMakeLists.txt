@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.12)
-
-
-#aux_source_directory(./ SRC)
-file(GLOB SOURCE
-        ../extern/volk/volk.c
-        app/*.h app/*.cpp
-        )
+find_package(Vulkan REQUIRED)
+if (Vulkan_FOUND)
+    message(STATUS "Find Vulkan")
+    message(STATUS ${Vulkan_INCLUDE_DIRS} )
+    include_directories(${Vulkan_INCLUDE_DIRS})
+endif ()
 
 add_executable(niagara
         app/VulkanTexture.cpp
@@ -31,7 +30,7 @@ add_executable(niagara
         ../extern/imgui/imgui_demo.cpp
         ../extern/imgui/backends/imgui_impl_glfw.cpp
         ../extern/imgui/backends/imgui_impl_vulkan.cpp
-        )
+        app/config.cpp app/config.h app/ResourceManager.cpp app/ResourceManager.h)
 
 
 message(STATUS ${ShaderC_LIBRARIES})

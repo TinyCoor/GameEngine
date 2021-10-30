@@ -5,18 +5,22 @@
 #ifndef GAMEENGINE_GLAPPLICATION_H
 #define GAMEENGINE_GLAPPLICATION_H
 
-#endif //GAMEENGINE_GLAPPLICATION_H
 
 class GLFWwindow;
 class GLApplication{
 public:
+    void run();
+private:
     void initGLFW();
+    void initImGui();
 
-    void display();
+    void shutdownImGui();
+    bool render();
 
     void shutdownGLFW();
 
 private:
-
     GLFWwindow* window;
 };
+
+#endif //GAMEENGINE_GLAPPLICATION_H

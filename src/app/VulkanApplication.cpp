@@ -9,23 +9,11 @@
 #include <GLFW/glfw3native.h>
 #include <algorithm>
 #include <functional>
-#include "VulkanRenderPassBuilder.h"
+#include "VulkanUtils.h"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
 
-const std::string vertex_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\shaders\pbr.vert)";
-const std::string fragment_shader_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\shaders\pbr.frag)";
-const std::string skybox_shader_path = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\shaders\skybox.vert)";
-const std::string skybox_frag_shader_path =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\shaders\skybox.frag)";
-const std::string model_path= R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\models\SciFiHelmet.gltf)";
-const std::string albedoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\SciFiHelmet_BaseColor.png)";
-const std::string normalTexturePath =R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\SciFiHelmet_Normal.png)";
-const std::string aoTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\SciFiHelmet_AmbientOcclusion.png)";
-const std::string shadingTexturePath = R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\SciFiHelmet_MetallicRoughness.png)";
-const std::string emissionTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\Default_emissive.jpg)";
-const std::string hdrTexturePath =  R"(C:\Users\y123456\Desktop\Programming\c_cpp\GameEngine\assets\textures\environment\umbrellas.hdr)";
 
 static int maxCombinedImageSamplers = 32;
 static int maxUniformBuffers = 32;
@@ -86,7 +74,6 @@ namespace {
     std::vector<VkDeviceQueueCreateInfo> createDeviceQueueCreateInfo(QueueFamilyIndices& indices){
         static float queuePriority = 1.0;
         std::vector<VkDeviceQueueCreateInfo> queuesInfo;
-        // VkDeviceQueueCreateInfo queueCreateInfo ={};
         std::set<uint32_t > uniqueQueueFamilies={ indices.graphicsFamily.value(),indices.presentFamily.value()};
 
         for (uintptr_t queueFamilyIndex :uniqueQueueFamilies) {
@@ -109,7 +96,7 @@ namespace {
         VkDevice device;
         VkDeviceCreateInfo deviceCreateInfo={};
         VkPhysicalDeviceFeatures deviceFeatures ={};
-        deviceFeatures.samplerAnisotropy = VK_TRUE;
+        deviceFeatures.samplerAnisotropy = VK_FALSE;
         deviceFeatures.sampleRateShading = VK_TRUE;
 
         deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -846,17 +833,7 @@ void Application::shutdownSwapChain() {
 
 void Application::initScene() {
     scene = new VulkanRenderScene(context);
-    scene->init(vertex_shader_path,
-                fragment_shader_path,
-                skybox_shader_path,
-                skybox_frag_shader_path,
-                albedoTexturePath,
-                normalTexturePath,
-                aoTexturePath,
-                shadingTexturePath,
-                emissionTexturePath,
-                hdrTexturePath,
-                model_path);
+    scene->init();
 }
 
 void Application::shutdownScene() {

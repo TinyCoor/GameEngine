@@ -6,6 +6,7 @@
 
 #include "VulkanRenderScene.h"
 #include "VulkanRenderContext.h"
+#include "VulkanMesh.h"
 #include <string>
 #include <vector>
 #include <stdexcept>
@@ -13,9 +14,8 @@
 class VulkanCubeMapRender {
 private:
     VulkanRenderContext context;
-    VulkanMesh renderQuad;
+    std::shared_ptr<VulkanMesh> renderQuad;
     VkImageView faceViews[6];
-
 
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
@@ -36,12 +36,12 @@ private:
 
 public:
     VulkanCubeMapRender(VulkanRenderContext& ctx)
-                    :context(ctx),renderQuad(ctx){}
+                    :context(ctx),renderQuad(new VulkanMesh(ctx)){}
 
-    void init(const VulkanShader &vertShader,
-              const VulkanShader &fragShader,
-              const VulkanTexture& inputTexture,
-              const VulkanTexture& targetTexture);
+    void init(std::shared_ptr <VulkanShader> vertShader,
+              std::shared_ptr <VulkanShader> fragShader,
+              std::shared_ptr <VulkanTexture> inputTexture,
+              std::shared_ptr <VulkanTexture> targetTexture);
 
     void shutdown();
 

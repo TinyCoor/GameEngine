@@ -9,7 +9,6 @@
 #include <string>
 
 
-
 struct VulkanRenderContext;
 
 class VulkanUtils {

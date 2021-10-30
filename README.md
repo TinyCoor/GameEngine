@@ -1,4 +1,4 @@
-
+PreRequired VulkanSDK Installed
 https://github.com/w23
 git submodule add https://github.com/glfw/glfw
 git clone uri  --recursive

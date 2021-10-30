@@ -16,6 +16,7 @@ public:
 
     VulkanDescriptorSetLayoutBuilder& addDescriptorBinding(VkDescriptorType type,
                                                              VkShaderStageFlags shaderStageFlags);
+
     inline  VkDescriptorSetLayout& getDescriptorSetLayout(){return descriptorSetLayout;}
 
 

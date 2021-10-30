@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_TEXTURECUBEMAP_H
 #define GAMEENGINE_TEXTURECUBEMAP_H
-
+#include "GLObject.h"
 /**
  * This is Used to Cubemap 立方体贴图
  * 简称 skybox

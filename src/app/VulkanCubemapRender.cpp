@@ -8,27 +8,29 @@
 #include "VulkanDescriptorSetLayoutBuilder.h"
 #include "VulkanPipelineLayoutBuilder.h"
 #include "VulkanRenderPassBuilder.h"
+#include "VulkanUtils.h"
 #include "Macro.h"
+#include "VulkanTexture.h"
 
 struct CubemapFaceOrientationData{
     glm::mat4 faces[6];
 };
 
-void VulkanCubeMapRender::init(const VulkanShader &vertShader,
-                               const VulkanShader &fragShader,
-                               const VulkanTexture& inputTexture,
-                               const VulkanTexture& targetTexture) {
+void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
+                               std::shared_ptr <VulkanShader> fragShader,
+                               std::shared_ptr <VulkanTexture> inputTexture,
+                               std::shared_ptr <VulkanTexture> targetTexture) {
     //  VulkanTexture* inputHDR= nullptr;
-   renderQuad.createQuad(2.0f);
+   renderQuad->createQuad(2.0f);
 
     for (int i = 0; i < 6; ++i) {
         faceViews[i]=VulkanUtils::createImageView(
                 context,
-                targetTexture.getImage(),
-                targetTexture.getImageFormat(),
+                targetTexture->getImage(),
+                targetTexture->getImageFormat(),
                 VK_IMAGE_ASPECT_COLOR_BIT,
                 VK_IMAGE_VIEW_TYPE_2D,
-                0,targetTexture.getNumMiplevels(),
+                0,targetTexture->getNumMiplevels(),
                 i,1
                 );
     }
@@ -37,16 +39,16 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)targetTexture.getWidth();
-    viewport.height = (float)targetTexture.getHeight();
+    viewport.width = (float)targetTexture->getWidth();
+    viewport.height = (float)targetTexture->getHeight();
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     //create scissor
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent.width = targetTexture.getWidth();
-    scissor.extent.height= targetTexture.getHeight();
+    scissor.extent.width = targetTexture->getWidth();
+    scissor.extent.height= targetTexture->getHeight();
 
     VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
@@ -59,12 +61,12 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
 
     VulkanRenderPassBuilder renderPassBuilder(context);
     renderPass = renderPassBuilder
-            .addColorAttachment(targetTexture.getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
-            .addColorAttachment(targetTexture.getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
-            .addColorAttachment(targetTexture.getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
-            .addColorAttachment(targetTexture.getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
-            .addColorAttachment(targetTexture.getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
-            .addColorAttachment(targetTexture.getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
+            .addColorAttachment(targetTexture->getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
+            .addColorAttachment(targetTexture->getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
+            .addColorAttachment(targetTexture->getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
+            .addColorAttachment(targetTexture->getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
+            .addColorAttachment(targetTexture->getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
+            .addColorAttachment(targetTexture->getImageFormat(), VK_SAMPLE_COUNT_1_BIT)
             .addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
             .addColorAttachmentReference(0, 0)
             .addColorAttachmentReference(0, 1)
@@ -82,8 +84,8 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
 
     VulkanGraphicsPipelineBuilder pipelineBuilder(context,pipelineLayout,renderPass);
     pipeline = pipelineBuilder
-            .addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
-            .addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addShaderStage(vertShader->getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
+            .addShaderStage(fragShader->getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
             .addVertexInput(VulkanMesh::getVertexInputBindingDescription(), VulkanMesh::getAttributeDescriptions())
             .setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
             .addViewport(viewport)
@@ -126,8 +128,8 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
     framebufferInfo.renderPass = renderPass;
     framebufferInfo.attachmentCount = 6;
     framebufferInfo.pAttachments = faceViews;
-    framebufferInfo.width = targetTexture.getWidth();
-    framebufferInfo.height =targetTexture.getHeight();
+    framebufferInfo.width = targetTexture->getWidth();
+    framebufferInfo.height =targetTexture->getHeight();
     framebufferInfo.layers = 1;
     VK_CHECK(vkCreateFramebuffer(context.device_, &framebufferInfo, nullptr, &frameBuffer),"Can't create framebuffer");
 
@@ -190,8 +192,8 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
             context,
             descriptorSet,
             1,
-            inputTexture.getImageView(),
-            inputTexture.getSampler()
+            inputTexture->getImageView(),
+            inputTexture->getSampler()
     );
 
 
@@ -213,8 +215,8 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
     renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = frameBuffer;
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent.width = targetTexture.getWidth();
-    renderPassInfo.renderArea.extent.height = targetTexture.getHeight();
+    renderPassInfo.renderArea.extent.width = targetTexture->getWidth();
+    renderPassInfo.renderArea.extent.height = targetTexture->getHeight();
 
     VkClearValue clearValues[6];
     for (int i = 0; i < 6; i++)
@@ -230,12 +232,12 @@ void VulkanCubeMapRender::init(const VulkanShader &vertShader,
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
-    VkBuffer vertexBuffers[] = {renderQuad.getVertexBuffer()};
-    VkBuffer indexBuffer = renderQuad.getIndexBuffer();
+    VkBuffer vertexBuffers[] = {renderQuad->getVertexBuffer()};
+    VkBuffer indexBuffer = renderQuad->getIndexBuffer();
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexed(commandBuffer, renderQuad.getNumIndices(), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, renderQuad->getNumIndices(), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
     VK_CHECK(vkEndCommandBuffer(commandBuffer),"Can't record command buffer");
@@ -272,8 +274,8 @@ void VulkanCubeMapRender::shutdown() {
 
     vkDestroyFence(context.device_, fence, nullptr);
     fence = VK_NULL_HANDLE;
-    renderQuad.clearGPUData();
-    renderQuad.clearCPUData();
+    renderQuad->clearGPUData();
+    renderQuad->clearCPUData();
 }
 
 void VulkanCubeMapRender::render() {

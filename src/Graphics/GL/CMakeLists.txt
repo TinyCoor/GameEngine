@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.12)
 #aux_source_directory(./ SRC)
 
 add_executable(OpenGL
-            GLApplication.cpp
+
+        GLApplication.cpp
             GLShader.cpp
             GLMesh.cpp
             GLBuffer.hpp
@@ -12,11 +13,21 @@ add_executable(OpenGL
             GLProgram.cpp
             Texture2D.cpp
             TextureCubeMap.cpp
-        )
+            main.cpp
+            glad.c
+            ../../../extern/imgui/imgui.cpp
+           ../../../extern/imgui/imgui_draw.cpp
+           ../../../extern/imgui/imgui_widgets.cpp
+           ../../../extern/imgui/backends/imgui_impl_glfw.cpp
+            ../../../extern/imgui/backends/imgui_impl_opengl3.cpp
+        ImGuiRender.cpp ImGuiRender.h)
 
+target_include_directories(niagara PRIVATE ../../../extern/volk)
+target_include_directories(OpenGL PRIVATE  ../../../extern/glfw/include)
+target_include_directories(OpenGL PRIVATE  ../../../extern/glm)
+target_include_directories(OpenGL PRIVATE  ../../../extern/imgui/backends)
+target_include_directories(OpenGL PRIVATE  ../../../extern/imgui)
 
-target_include_directories(OpenGL PRIVATE ../extern/glfw/include)
-target_include_directories(OpenGL PRIVATE ../extern/glm)
 target_link_libraries(OpenGL PRIVATE opengl32 )
 target_link_libraries(OpenGL PRIVATE glfw)
 

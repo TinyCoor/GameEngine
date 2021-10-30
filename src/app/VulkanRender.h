@@ -8,9 +8,11 @@
 #include "VulkanRenderScene.h"
 #include "VulkanRenderContext.h"
 #include "VulkanCubemapRender.h"
+#include "VulkanTexture.h"
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <glm/glm.hpp>
 
 struct RenderState{
     glm::mat4 world;
@@ -27,18 +29,13 @@ private:
     VulkanRenderContext context;
     VulkanSwapChainContext swapChainContext;
 
-    //TODO
-    VulkanShader commonCubeVertexShader;
-
-    VulkanShader hdriToCubeFragmentShader;
     VulkanCubeMapRender hdriToCubeRenderer;
 
-    VulkanShader diffuseIrradianceFragmentShader;
+
     VulkanCubeMapRender diffuseIrradianceRenderer;
 
-    VulkanTexture environmentCubemap;
-    VulkanTexture diffuseIrradianceCubemap;
-
+    std::shared_ptr< VulkanTexture> environmentCubemap;
+    std::shared_ptr <VulkanTexture> diffuseIrradianceCubemap;
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
@@ -62,19 +59,16 @@ private:
 public:
     explicit VulkanRender(VulkanRenderContext& ctx, VulkanSwapChainContext& swapChainCtx)
                     :context(ctx),swapChainContext(swapChainCtx)
-                    ,commonCubeVertexShader(context)
-                    , hdriToCubeFragmentShader(context)
                     , hdriToCubeRenderer(context)
-                    , diffuseIrradianceFragmentShader(context)
                     , diffuseIrradianceRenderer(context)
-                    , environmentCubemap(context)
-                    , diffuseIrradianceCubemap(context){
+                    , environmentCubemap(new VulkanTexture(ctx))
+                    , diffuseIrradianceCubemap(new VulkanTexture(ctx)){
     }
 
     void init(VulkanRenderScene* scene);
 
     void update(const VulkanRenderScene *scene);
-    VkCommandBuffer render(const VulkanRenderScene *scene, uint32_t imageIndex);
+    VkCommandBuffer render(VulkanRenderScene *scene, uint32_t imageIndex);
 
     void shutdown();
 };
