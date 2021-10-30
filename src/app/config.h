@@ -36,18 +36,18 @@ namespace config{
 
 
     static std::vector< const char*> meshes={
-            "model/SciFiHelmet.gltf",
+            "../../assets/models/SciFiHelmet.gltf",
     };
 
 
     static std::vector< const char*> shaders={
-            "shaders/pbr.vert",
-            "shaders/pbr.frag",
-            "shaders/skybox.vert",
-            "shaders/skybox.frag",
-            "shaders/common.vert",
-            "shaders/hdriToCube.frag",
-            "shaders/diffuseIrrandiance.frag",
+            "../../assets/shaders/pbr.vert",
+            "../../assets/shaders/pbr.frag",
+            "../../assets/shaders/skybox.vert",
+            "../../assets/shaders/skybox.frag",
+            "../../assets/shaders/common.vert",
+            "../../assets/shaders/hdriToCube.frag",
+            "../../assets/shaders/diffuseIrrandiance.frag",
     };
 
     static std::vector< ShaderKind> shaderKinds={
@@ -61,15 +61,14 @@ namespace config{
     };
 
     static std::vector< const char*> textures={
-            "textures/SciFiHelmet_BaseColor.png",
-            "textures/SciFiHelmet_Normal.png",
-            "textures/SciFiHelmet_AmbientOcclusion.png",
-            "textures/SciFiHelmet_MetallicRoughness.png",
-            "textures/Default_emissive.jpg",
-            "textures/environment/umbrellas.hdr",
+            "../../assets/textures/SciFiHelmet_BaseColor.png",
+            "../../assets/textures/SciFiHelmet_Normal.png",
+            "../../assets/textures/SciFiHelmet_AmbientOcclusion.png",
+            "../../assets/textures/SciFiHelmet_MetallicRoughness.png",
+            "../../assets/textures/Default_emissive.jpg",
     };
 
-    static const char* hdrTexture= "textures/environment/umbrellas.hdr";
+    static const char* hdrTexture= "../../assets/textures/environment/umbrellas.hdr";
 }
 
 
