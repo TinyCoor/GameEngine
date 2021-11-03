@@ -27,6 +27,7 @@ enum class ShaderKind{
 class VulkanShader {
 public:
     explicit VulkanShader(const VulkanRenderContext& ctx): context(ctx){}
+    ~VulkanShader();
 
     bool compileFromFile(const std::string& path,ShaderKind kind);
 

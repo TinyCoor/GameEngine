@@ -15,71 +15,8 @@
 #include "VulkanUtils.h"
 
 
+
 void VulkanRender::init(VulkanRenderScene* scene) {
-    environmentCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
-    diffuseIrradianceCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
-
-    {
-        VulkanUtils::transitionImageLayout(
-                context,
-                environmentCubemap->getImage(),
-                environmentCubemap->getImageFormat(),
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                0, environmentCubemap->getNumMiplevels(),
-                0, environmentCubemap->getNumLayers()
-        );
-
-        hdriToCubeRenderer.init(
-                scene->getCubeVertexShader(),
-                scene->getHDRToCubeFragmentShader(),
-                scene->getHDRTexture(),
-                environmentCubemap
-        );
-        hdriToCubeRenderer.render();
-
-        VulkanUtils::transitionImageLayout(
-                context,
-                environmentCubemap->getImage(),
-                environmentCubemap->getImageFormat(),
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                0, environmentCubemap->getNumMiplevels(),
-                0, environmentCubemap->getNumLayers()
-        );
-    }
-
-
-    {
-        VulkanUtils::transitionImageLayout(
-                context,
-                diffuseIrradianceCubemap->getImage(),
-                diffuseIrradianceCubemap->getImageFormat(),
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                0, diffuseIrradianceCubemap->getNumMiplevels(),
-                0, diffuseIrradianceCubemap->getNumLayers()
-        );
-
-        diffuseIrradianceRenderer.init(
-                scene->getCubeVertexShader(),
-                scene->getDiffuseToIrridanceShader(),
-                environmentCubemap,
-                diffuseIrradianceCubemap
-        );
-        diffuseIrradianceRenderer.render();
-
-        VulkanUtils::transitionImageLayout(
-                context,
-                diffuseIrradianceCubemap->getImage(),
-                diffuseIrradianceCubemap->getImageFormat(),
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                0, diffuseIrradianceCubemap->getNumMiplevels(),
-                0, diffuseIrradianceCubemap->getNumLayers()
-        );
-    }
-
 
     std::shared_ptr<VulkanShader> vertShader = scene->getPBRVertexShader();
     std::shared_ptr<VulkanShader> fragShader = scene->getPBRFragmentShader();
@@ -187,17 +124,17 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     if (vkAllocateDescriptorSets(context.device_, &descriptorSetAllocInfo, descriptorSets.data()) != VK_SUCCESS)
         throw std::runtime_error("Can't allocate descriptor sets");
 
+    initEnvironment(scene);
+
     for (size_t i = 0; i < imageCount; i++)
     {
-        std::array<std::shared_ptr<VulkanTexture>, 7> textures =
+        std::array<std::shared_ptr<VulkanTexture>, 5> textures =
                 {
                         scene->getAlbedoTexture(),
                         scene->getNormalTexture(),
                         scene->getAOTexture(),
                         scene->getShadingTexture(),
                         scene->getEmissionTexture(),
-                        environmentCubemap,
-                        diffuseIrradianceCubemap,
                 };
 
         VulkanUtils::bindUniformBuffer(
@@ -249,48 +186,45 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocateInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
-    if (vkAllocateCommandBuffers(context.device_, &allocateInfo, commandBuffers.data()) != VK_SUCCESS)
-        throw std::runtime_error("Can't create command buffers");
+    VK_CHECK(vkAllocateCommandBuffers(context.device_, &allocateInfo, commandBuffers.data()),"Can't create command buffers");
 
-    // Init ImGui bindings for Vulkan
-    {
-        ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = context.instance;
-        init_info.PhysicalDevice = context.physicalDevice;
-        init_info.Device = context.device_;
-        init_info.QueueFamily = context.graphicsQueueFamily;
-        init_info.Queue = context.graphicsQueue;
-        init_info.DescriptorPool = context.descriptorPool;
-        init_info.MSAASamples = context.maxMSAASamples;
-        init_info.MinImageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
-        init_info.ImageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
-        init_info.Allocator = nullptr;
-
-        //TODO Fix Bug In this Function VkCreateSampler Cause Segmentation
-        ImGui_ImplVulkan_Init(&init_info, renderPass);
-
-        VulkanRenderContext imGuiContext = {};
-        imGuiContext.commandPool = context.commandPool;
-        imGuiContext.descriptorPool = context.descriptorPool;
-        imGuiContext.device_ = context.device_;
-        imGuiContext.graphicsQueue = context.graphicsQueue;
-        imGuiContext.maxMSAASamples = context.maxMSAASamples;
-        imGuiContext.physicalDevice = context.physicalDevice;
-        imGuiContext.presentQueue = context.presentQueue;
-
-        VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(imGuiContext);
-        ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
-        VulkanUtils::endSingleTimeCommands(imGuiContext, imGuiCommandBuffer);
-    }
+//    // Init ImGui bindings for Vulkan
+//    {
+//        ImGui_ImplVulkan_InitInfo init_info = {};
+//        init_info.Instance = context.instance;
+//        init_info.PhysicalDevice = context.physicalDevice;
+//        init_info.Device = context.device_;
+//        init_info.QueueFamily = context.graphicsQueueFamily;
+//        init_info.Queue = context.graphicsQueue;
+//        init_info.DescriptorPool = context.descriptorPool;
+//        init_info.MSAASamples = context.maxMSAASamples;
+//        init_info.MinImageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
+//        init_info.ImageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
+//        init_info.Allocator = nullptr;
+//
+//        //TODO Fix Bug In this Function VkCreateSampler Cause Segmentation
+//        ImGui_ImplVulkan_Init(&init_info, renderPass);
+//
+//        VulkanRenderContext imGuiContext = {};
+//        imGuiContext.commandPool = context.commandPool;
+//        imGuiContext.descriptorPool = context.descriptorPool;
+//        imGuiContext.device_ = context.device_;
+//        imGuiContext.graphicsQueue = context.graphicsQueue;
+//        imGuiContext.maxMSAASamples = context.maxMSAASamples;
+//        imGuiContext.physicalDevice = context.physicalDevice;
+//        imGuiContext.presentQueue = context.presentQueue;
+//
+//        VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(imGuiContext);
+//        ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
+//        VulkanUtils::endSingleTimeCommands(imGuiContext, imGuiCommandBuffer);
+//    }
 }
 
 
 void VulkanRender::shutdown() {
     //Shut down imGui
-    ImGui_ImplVulkan_Shutdown();
-    vkDestroyRenderPass(context.device_,imGuiRenderPass, nullptr);
+//    ImGui_ImplVulkan_Shutdown();
 
-    imGuiRenderPass= VK_NULL_HANDLE;
 
     hdriToCubeRenderer.shutdown();
     diffuseIrradianceRenderer.shutdown();
@@ -359,24 +293,24 @@ void VulkanRender::update(const VulkanRenderScene *scene) {
     state.cameraPosWS = glm::vec3(glm::vec4(cameraPos, 1.0f) * rotation);
 
     // ImGui
-    static float f = 0.0f;
-    static int counter = 0;
-    static bool show_demo_window = false;
-    static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+//    static float f = 0.0f;
+//    static int counter = 0;
+//    static bool show_demo_window = false;
+//    static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    if (show_demo_window)
-        ImGui::ShowDemoWindow(&show_demo_window);
-
-    ImGui::Begin("Material Parameters");
-
-    ImGui::Checkbox("Demo Window", &show_demo_window);
-
-    ImGui::SliderFloat("Lerp User Material", &state.lerpUserValues, 0.0f, 1.0f);
-    ImGui::SliderFloat("Metalness", &state.userMetalness, 0.0f, 1.0f);
-    ImGui::SliderFloat("Roughness", &state.userRoughness, 0.0f, 1.0f);
-
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::End();
+//    if (show_demo_window)
+//        ImGui::ShowDemoWindow(&show_demo_window);
+//
+//    ImGui::Begin("Material Parameters");
+//
+//    ImGui::Checkbox("Demo Window", &show_demo_window);
+//
+//    ImGui::SliderFloat("Lerp User Material", &state.lerpUserValues, 0.0f, 1.0f);
+//    ImGui::SliderFloat("Metalness", &state.userMetalness, 0.0f, 1.0f);
+//    ImGui::SliderFloat("Roughness", &state.userRoughness, 0.0f, 1.0f);
+//
+//    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+//    ImGui::End();
 
 }
 
@@ -447,7 +381,7 @@ VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, uint32_t imageInd
         vkCmdDrawIndexed(commandBuffer, mesh->getNumIndices(), 1, 0, 0, 0);
     }
 
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+//    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -455,4 +389,93 @@ VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, uint32_t imageInd
         throw std::runtime_error("Can't record command buffer");
 
     return commandBuffer;
+}
+
+void VulkanRender::initEnvironment(VulkanRenderScene* scene){
+    environmentCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
+    diffuseIrradianceCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
+
+    setEnvironment(scene,currentEnvironment);
+}
+
+void VulkanRender::setEnvironment(VulkanRenderScene *scene, int index) {
+    {
+        VulkanUtils::transitionImageLayout(
+                context,
+                environmentCubemap->getImage(),
+                environmentCubemap->getImageFormat(),
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                0, environmentCubemap->getNumMiplevels(),
+                0, environmentCubemap->getNumLayers()
+        );
+
+        hdriToCubeRenderer.init(
+                scene->getCubeVertexShader(),
+                scene->getHDRToCubeFragmentShader(),
+                scene->getHDRTexture(index),
+                environmentCubemap
+        );
+        hdriToCubeRenderer.render();
+
+        VulkanUtils::transitionImageLayout(
+                context,
+                environmentCubemap->getImage(),
+                environmentCubemap->getImageFormat(),
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                0, environmentCubemap->getNumMiplevels(),
+                0, environmentCubemap->getNumLayers()
+        );
+    }
+
+
+    {
+        VulkanUtils::transitionImageLayout(
+                context,
+                diffuseIrradianceCubemap->getImage(),
+                diffuseIrradianceCubemap->getImageFormat(),
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                0, diffuseIrradianceCubemap->getNumMiplevels(),
+                0, diffuseIrradianceCubemap->getNumLayers()
+        );
+
+        diffuseIrradianceRenderer.init(
+                scene->getCubeVertexShader(),
+                scene->getDiffuseToIrridanceShader(),
+                environmentCubemap,
+                diffuseIrradianceCubemap
+        );
+        diffuseIrradianceRenderer.render();
+
+        VulkanUtils::transitionImageLayout(
+                context,
+                diffuseIrradianceCubemap->getImage(),
+                diffuseIrradianceCubemap->getImageFormat(),
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                0, diffuseIrradianceCubemap->getNumMiplevels(),
+                0, diffuseIrradianceCubemap->getNumLayers()
+        );
+    }
+
+    std::array<std::shared_ptr<VulkanTexture>, 2> textures ={
+                    environmentCubemap,
+                    diffuseIrradianceCubemap,
+    };
+
+    int imageCount = swapChainContext.imageViews.size();
+    for (int i = 0; i <imageCount ; ++i) {
+        for (int k = 0; k < textures.size(); k++)
+            VulkanUtils::bindCombinedImageSampler(
+                    context,
+                    descriptorSets[i],
+                    k + 6,
+                    textures[k]->getImageView(),
+                    textures[k]->getSampler()
+            );
+    }
+
+
 }

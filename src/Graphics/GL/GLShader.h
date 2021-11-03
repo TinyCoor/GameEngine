@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_GLSHADER_H
 #define GAMEENGINE_GLSHADER_H
-#include<string>
+#include <string>
 #include "GLObject.h"
 
 enum class ShaderKind{
@@ -15,8 +15,6 @@ enum class ShaderKind{
     tessellation_control,
     tessellation_evaluation,
 };
-
-
 
 
 class GLShader : public  GLObject{

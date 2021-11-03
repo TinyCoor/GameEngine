@@ -16,7 +16,6 @@ public:
 
     void createCube(VkFormat format,int w,int h,int numMipLevels);
 
-    bool loadHDRFromFile(const std::string& file);
     bool loadFromFile(const std::string& file);
     inline VkImage getImage()const {return image;}
     inline VkImageView getImageView() const { return imageView;}

@@ -12,48 +12,59 @@
 
 static int deduceChannels(VkFormat format){
     switch (format) {
-        case VK_FORMAT_R16_SFLOAT: return 1;
-        case VK_FORMAT_R16G16_SFLOAT: return 2;
-        case VK_FORMAT_R16G16B16_SFLOAT: return 3;
-        case VK_FORMAT_R16G16B16A16_SFLOAT: return 4;
-        case VK_FORMAT_R32_SFLOAT: return 1;
-        case VK_FORMAT_R32G32_SFLOAT: return 2;
-        case VK_FORMAT_R32G32B32_SFLOAT:return 3;
-        case VK_FORMAT_R32G32B32A32_SFLOAT: return 4;
-        case VK_FORMAT_R8G8B8A8_UNORM: return 4;
+        case VK_FORMAT_R8_UNORM:                    return 1;
+        case VK_FORMAT_R8G8_UNORM:                  return 2;
+        case VK_FORMAT_R8G8B8_UNORM:                return 3;
+        case VK_FORMAT_R8G8B8A8_UNORM:              return 4;
+        case VK_FORMAT_R16_SFLOAT:                  return 1;
+        case VK_FORMAT_R16G16_SFLOAT:               return 2;
+        case VK_FORMAT_R16G16B16_SFLOAT:            return 3;
+        case VK_FORMAT_R16G16B16A16_SFLOAT:         return 4;
+        case VK_FORMAT_R32_SFLOAT:                  return 1;
+        case VK_FORMAT_R32G32_SFLOAT:               return 2;
+        case VK_FORMAT_R32G32B32_SFLOAT:            return 3;
+        case VK_FORMAT_R32G32B32A32_SFLOAT:         return 4;
         default:{
-           throw std::runtime_error("not support");
+           throw std::runtime_error("deduceChannels: not support");
         }
     }
 }
 
-static int deducePixelSize(VkFormat format){
-    switch (format) {
-        case VK_FORMAT_R16_SFLOAT: return 2;
-        case VK_FORMAT_R16G16_SFLOAT: return 4;
-        case VK_FORMAT_R16G16B16_SFLOAT: return 6;
-        case VK_FORMAT_R16G16B16A16_SFLOAT: return 8;
-        case VK_FORMAT_R32_SFLOAT: return sizeof(float);
-        case VK_FORMAT_R32G32_SFLOAT: return sizeof(float) *2;
-        case VK_FORMAT_R32G32B32_SFLOAT:return sizeof(float) *3;
-        case VK_FORMAT_R32G32B32A32_SFLOAT: return sizeof(float) *4;
-        case VK_FORMAT_R8G8B8A8_UNORM: return 4;
-        default:{
-            throw std::runtime_error("not support");
+static VkFormat deduceFormat(size_t pixel_size,int channels){
+    if(pixel_size == sizeof(stbi_uc)){
+        switch (channels) {
+            case 1:             return VK_FORMAT_R8_UNORM;
+            case 2:             return VK_FORMAT_R8G8_UNORM;
+            case 3:             return VK_FORMAT_R8G8B8_UNORM;
+            case 4:             return VK_FORMAT_R8G8B8A8_UNORM;
         }
     }
+
+    if(pixel_size == sizeof(float)){
+        switch (channels) {
+            case 1:             return VK_FORMAT_R32_SFLOAT;
+            case 2:             return VK_FORMAT_R32G32_SFLOAT;
+            case 3:             return VK_FORMAT_R32G32B32_SFLOAT;
+            case 4:             return VK_FORMAT_R32G32B32A32_SFLOAT;
+        }
+    }
+    return VK_FORMAT_UNDEFINED;
 }
+
 static VkImageTiling deduceTiling(VkFormat format){
     switch (format) {
-        case VK_FORMAT_R16_SFLOAT: return VK_IMAGE_TILING_OPTIMAL;
-        case VK_FORMAT_R16G16_SFLOAT: return VK_IMAGE_TILING_OPTIMAL;
-        case VK_FORMAT_R16G16B16_SFLOAT: return  VK_IMAGE_TILING_OPTIMAL;
-        case VK_FORMAT_R16G16B16A16_SFLOAT: return  VK_IMAGE_TILING_OPTIMAL;
-        case VK_FORMAT_R32_SFLOAT: return VK_IMAGE_TILING_OPTIMAL;
-        case VK_FORMAT_R32G32_SFLOAT: return VK_IMAGE_TILING_OPTIMAL;
-        case VK_FORMAT_R32G32B32_SFLOAT: return  VK_IMAGE_TILING_OPTIMAL;
-        case VK_FORMAT_R32G32B32A32_SFLOAT: return  VK_IMAGE_TILING_OPTIMAL;
-        case VK_FORMAT_R8G8B8A8_UNORM: return VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R8_UNORM:                return VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R8G8_UNORM:              return VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R8G8B8_UNORM:            return VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R8G8B8A8_UNORM:          return VK_IMAGE_TILING_OPTIMAL;
+        case VK_FORMAT_R16_SFLOAT:              return VK_IMAGE_TILING_LINEAR;
+        case VK_FORMAT_R16G16_SFLOAT:           return VK_IMAGE_TILING_LINEAR;
+        case VK_FORMAT_R16G16B16_SFLOAT:        return VK_IMAGE_TILING_LINEAR;
+        case VK_FORMAT_R16G16B16A16_SFLOAT:     return VK_IMAGE_TILING_LINEAR;
+        case VK_FORMAT_R32_SFLOAT:              return VK_IMAGE_TILING_LINEAR;
+        case VK_FORMAT_R32G32_SFLOAT:           return VK_IMAGE_TILING_LINEAR;
+        case VK_FORMAT_R32G32B32_SFLOAT:        return VK_IMAGE_TILING_LINEAR;
+        case VK_FORMAT_R32G32B32A32_SFLOAT:     return VK_IMAGE_TILING_LINEAR;
         default:{
             throw std::runtime_error("not support");
         }
@@ -61,15 +72,14 @@ static VkImageTiling deduceTiling(VkFormat format){
 }
 
 VulkanTexture::~VulkanTexture() {
-    //TODO
-    // clearCPUData();
-    // clearGPUData();
+     clearCPUData();
+     clearGPUData();
 }
 
 
-void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size) {
+void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t imageSize) {
     imageFormat = format;
-    VkDeviceSize imageSize = width * height * size;
+
     TH_WITH_MSG(!pixels,"failed to load texture image!");
 
     VkBuffer stagingBuffer{};
@@ -107,6 +117,7 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size
                                    width,height);
 
     //Generate mipmaps on GPU
+    //BUG
     VulkanUtils::generateImage2DMipMaps(context,image,width,height,mipLevels,
                                         imageFormat,VK_FILTER_LINEAR);
 
@@ -132,7 +143,6 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size
 
 }
 
-
 void VulkanTexture::clearGPUData() {
     vkDestroySampler(context.device_,imageSampler, nullptr);
     vkDestroyImageView(context.device_,imageView, nullptr);
@@ -155,57 +165,42 @@ void VulkanTexture::clearCPUData() {
 }
 
 bool  VulkanTexture::loadFromFile(const std::string &path) {
-    stbi_uc* stb_pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-    channels  = 4;
+    void* stb_pixels = nullptr;
+    size_t pixel_size =0;
+    if (stbi_is_hdr(path.c_str())){
+        stb_pixels = stbi_loadf(path.c_str(), &width, &height, &channels, 0);
+        pixel_size= sizeof(float);
+        mipLevels= 1;
+    } else{
+        stb_pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+        pixel_size= sizeof(stbi_uc);
+        channels = 4;
+        mipLevels =static_cast<int>(std::floor(std::log2(std::max(width,height)))+ 1);
+    }
+
     if(!stb_pixels){
         std::cerr<< "load file failed:" << path <<'\n';
         return false;
     }
 
-    mipLevels =static_cast<int>( std::floor(std::log2(std::max(width,height)))+ 1);
     layers = 1;
 
+    VkFormat format = deduceFormat(pixel_size,channels);
+    VkImageTiling tiling = deduceTiling(format);
+
     clearCPUData();
-    size_t pixel_size= channels *sizeof(stbi_uc);
-    size_t size = width* height * pixel_size;
-    pixels = new unsigned char[size];
-    memcpy(pixels,stb_pixels,size);
+
+    size_t  imageSize = width * height * channels * pixel_size;
+    pixels = new unsigned char[imageSize];
+    memcpy(pixels,stb_pixels,imageSize);
+
+
     stbi_image_free(stb_pixels);
     stb_pixels= nullptr;
-    //
+
     clearGPUData();
-    uploadToGPU(VK_FORMAT_R8G8B8A8_UNORM,VK_IMAGE_TILING_OPTIMAL,pixel_size);
-    return true;
-}
+    uploadToGPU(format,tiling,imageSize);
 
-bool VulkanTexture::loadHDRFromFile(const std::string& path) {
-    //stbi_set_flip_vertically_on_load(true);
-    float* stb_pixels = stbi_loadf(path.c_str(), &width, &height, &channels, 0);
-    if(!stb_pixels){
-        std::cerr<< "load file failed:" << path <<'\n';
-        return false;
-    }
-
-    mipLevels = 1;
-    layers = 1;
-
-    size_t pixel_size =  channels * sizeof(float);
-    size_t size = width *height * pixel_size;
-    clearCPUData();
-
-    pixels = new unsigned char[size];
-    memcpy(pixels,stb_pixels,size);
-    stbi_image_free(stb_pixels);
-    stb_pixels = nullptr;
-    clearGPUData();
-    VkFormat format = VK_FORMAT_UNDEFINED;
-    switch (channels) {
-        case 1:format = VK_FORMAT_R32_SFLOAT;break;
-        case 2: format = VK_FORMAT_R32G32_SFLOAT;break;
-        case 3: format= VK_FORMAT_R32G32B32_SFLOAT;break;
-    }
-
-    uploadToGPU(format,VK_IMAGE_TILING_OPTIMAL,pixel_size);
     return true;
 }
 
@@ -217,7 +212,7 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
     layers = 6;
     imageFormat = format;
     channels  = deduceChannels(format) ;
-    VkImageTiling tiling = deduceTiling(format);
+    VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
 
     VulkanUtils::createCubeImage(
             context,

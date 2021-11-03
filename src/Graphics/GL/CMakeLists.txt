@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
 
-#aux_source_directory(./ SRC)
 
 add_executable(OpenGL
 
@@ -15,12 +14,16 @@ add_executable(OpenGL
             TextureCubeMap.cpp
             main.cpp
             glad.c
-            ../../../extern/imgui/imgui.cpp
-           ../../../extern/imgui/imgui_draw.cpp
+
+        ../../../extern/imgui/imgui.cpp
+        ../../../extern/imgui/imgui_draw.cpp
+        ../../../extern/imgui/imgui_demo.cpp
+        ../../../extern/imgui/imgui_tables.cpp
            ../../../extern/imgui/imgui_widgets.cpp
            ../../../extern/imgui/backends/imgui_impl_glfw.cpp
-            ../../../extern/imgui/backends/imgui_impl_opengl3.cpp
-        ImGuiRender.cpp ImGuiRender.h)
+           ../../../extern/imgui/backends/imgui_impl_opengl3.cpp
+        ImGuiRender.cpp
+        ImGuiRender.h)
 
 target_include_directories(niagara PRIVATE ../../../extern/volk)
 target_include_directories(OpenGL PRIVATE  ../../../extern/glfw/include)

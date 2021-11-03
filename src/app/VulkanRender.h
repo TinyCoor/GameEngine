@@ -53,8 +53,11 @@ private:
     std::vector<VkDeviceMemory> uniformBuffersMemory{};
     std::vector<VkDescriptorSet> descriptorSets{};
 
-    VkRenderPass imGuiRenderPass{VK_NULL_HANDLE};
+    int currentEnvironment{0};
     RenderState state;
+
+private:
+
 
 public:
     explicit VulkanRender(VulkanRenderContext& ctx, VulkanSwapChainContext& swapChainCtx)
@@ -66,6 +69,10 @@ public:
     }
 
     void init(VulkanRenderScene* scene);
+
+    void initEnvironment(VulkanRenderScene* scene);
+
+    void setEnvironment(VulkanRenderScene* scene,int index);
 
     void update(const VulkanRenderScene *scene);
     VkCommandBuffer render(VulkanRenderScene *scene, uint32_t imageIndex);

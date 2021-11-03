@@ -11,14 +11,14 @@
 
 class VulkanRenderScene {
 private:
-    VulkanRenderContext context;
     VulkanResourceManager resource;
-
-
 public:
     explicit VulkanRenderScene(VulkanRenderContext& ctx);
 
     void init();
+    void shutdown() ;
+
+    inline  const VulkanResourceManager &getResource() const{return resource ;}
 
     inline std::shared_ptr<VulkanShader> getPBRVertexShader(){ return resource.getShader(config::Shaders::PBRVertex);}
     inline std::shared_ptr<VulkanShader> getPBRFragmentShader(){return resource.getShader(config::Shaders::PBRFrag);}
@@ -30,16 +30,16 @@ public:
 
     inline std::shared_ptr<VulkanTexture> getEmissionTexture()  { return resource.getTexture(config::Textures::emissionTexture); }
     inline std::shared_ptr<VulkanTexture> getAlbedoTexture() { return resource.getTexture(config::Textures::albedoTexture); }
-    inline std::shared_ptr<VulkanTexture> getHDRTexture() { return  resource.getHDRTexture(config::Textures::Environment);}
+    inline std::shared_ptr<VulkanTexture> getHDRTexture(int index) { return  resource.getHDRTexture(config::Textures::EnvironmentBase +index);}
     inline std::shared_ptr<VulkanTexture> getNormalTexture()  { return resource.getTexture(config::Textures::normalTexture); }
     inline std::shared_ptr<VulkanTexture> getAOTexture() { return resource.getTexture(config::Textures::aoTexture); }
     inline std::shared_ptr<VulkanTexture> getShadingTexture() { return resource.getTexture(config::Textures::shadingTexture); }
-//
-   inline std::shared_ptr<VulkanMesh> getMesh()  {return resource.getMesh(config::Meshes::SciFiHelmet);}
-   inline std::shared_ptr<VulkanMesh> getSkyboxMesh()  {return resource.getMesh(config::Meshes::Skybox);}
+    inline std::shared_ptr<VulkanMesh> getMesh()  {return resource.getMesh(config::Meshes::SciFiHelmet);}
+    inline std::shared_ptr<VulkanMesh> getSkyboxMesh()  {return resource.getMesh(config::Meshes::Skybox);}
 
 
-    void shutdown() ;
+    inline size_t getNumHDRTextures(){return config::hdrTextures.size();}
+
 
 };
 

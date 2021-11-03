@@ -3,8 +3,8 @@
 //
 
 #include "VulkanGraphicsPipelineBuilder.h"
-#include "VulkanUtils.h"
 #include <stdexcept>
+
 VulkanGraphicsPipelineBuilder &
 VulkanGraphicsPipelineBuilder::addShaderStage(VkShaderModule shader, VkShaderStageFlagBits stage, const char *entry) {
     VkPipelineShaderStageCreateInfo vertexShaderStageInfo ={};

@@ -15,8 +15,8 @@
 
 
 VulkanMesh::~VulkanMesh(){
-//    clearGPUData();
-//    clearCPUData();
+    clearGPUData();
+    clearCPUData();
 }
 
 VkVertexInputBindingDescription VulkanMesh::getVertexInputBindingDescription() {

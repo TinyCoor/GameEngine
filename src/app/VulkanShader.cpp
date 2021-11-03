@@ -33,6 +33,10 @@ namespace {
         throw std::runtime_error("not support shader kind");
     }
 }
+
+VulkanShader::~VulkanShader(){
+    clear();
+}
 bool VulkanShader::compileFromFile(const std::string &path,ShaderKind kind) {
     std::ifstream  file(path,std::ios::ate | std::ios::binary);
     if(!file.is_open()){

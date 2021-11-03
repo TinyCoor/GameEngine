@@ -20,7 +20,6 @@ void Texture2D::Bind(GLHANDLE handle){
     pos+=1;
 }
 
-
 bool Texture2D::loadFromFile(const std::string& file){
 
 }

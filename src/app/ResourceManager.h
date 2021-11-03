@@ -15,7 +15,6 @@ class VulkanMesh;
 
 //TODO Make User defined Deconstructor
 class VulkanResourceManager {
-
 public:
     VulkanResourceManager(const VulkanRenderContext& ctx);
     ~VulkanResourceManager();
@@ -24,7 +23,6 @@ public:
     std::shared_ptr<VulkanMesh> loadMesh(int id,const char* path);
     std::shared_ptr<VulkanMesh> createCubeMesh(int id,float size);
     std::shared_ptr<VulkanTexture>  loadTexture(int id,const char* path);
-    std::shared_ptr<VulkanTexture>  loadHDRTexture(int id,const char* path);
 
     std::shared_ptr<VulkanShader> getShader(int id);
     std::shared_ptr<VulkanTexture>  getTexture(int id);
@@ -37,7 +35,6 @@ private:
     std::unordered_map<int,std::shared_ptr<VulkanShader>> shaders;
     std::unordered_map<int,std::shared_ptr<VulkanMesh>> meshes;
     std::unordered_map<int,std::shared_ptr<VulkanTexture>> textures;
-    std::shared_ptr<VulkanTexture> hdrTexture;
 };
 
 

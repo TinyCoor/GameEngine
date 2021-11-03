@@ -78,17 +78,6 @@ std::shared_ptr<VulkanMesh> VulkanResourceManager::getMesh(int id) {
     return nullptr;
 }
 
-std::shared_ptr<VulkanTexture> VulkanResourceManager::loadHDRTexture(int id, const char *path) {
-    auto it = textures.find(id);
-    if(it !=textures.end()){
-        std::cerr << "VulkanResourceManager::loadTexture():" <<id << "is alreay owned by other mesh" << std::endl;
-        return nullptr;
-    }
-    auto texture = std::make_shared<VulkanTexture>(context);
-    texture->loadHDRFromFile(path);
-    textures.insert(std::make_pair( id,texture));
-    return texture;
-}
 
 std::shared_ptr<VulkanMesh> VulkanResourceManager::createCubeMesh(int id, float size) {
     auto it = meshes.find(id);

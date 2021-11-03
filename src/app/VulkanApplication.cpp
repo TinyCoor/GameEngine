@@ -420,20 +420,19 @@ void Application::shutdownVulkan() {
 }
 
 void Application::initImGui() {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplGlfw_InitForVulkan(window,true);
+//    IMGUI_CHECKVERSION();
+//    ImGui::CreateContext();
+//    ImGuiIO& io = ImGui::GetIO();
+//    ImGui::StyleColorsDark();
+//
+//    ImGui_ImplGlfw_InitForVulkan(window,true);
 
 }
 
 void Application::shutdownImGui() {
 
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-
+//    ImGui_ImplGlfw_Shutdown();
+//    ImGui::DestroyContext();
 
 }
 
@@ -481,10 +480,9 @@ void Application::RenderFrame(){
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
-    //TODO Maybe this is a hardware error
-    auto res = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
-//    if ( res != VK_SUCCESS || res == VK_ERROR_DEVICE_LOST)
-//        throw std::runtime_error("Can't submit command buffer");
+    //TODO Maybe this is a hardware error, In Surface there is a bug
+    VK_CHECK( vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]),"Can't submit command buffer");
+
 
     VkSwapchainKHR swapChains[] = {swapchain};
     VkPresentInfoKHR presentInfo = {};
@@ -524,12 +522,12 @@ void Application::mainLoop() {
         return;
 
     while (!glfwWindowShouldClose(window)){
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+//        ImGui_ImplGlfw_NewFrame();
+//        ImGui::NewFrame();
 
         update();
 
-        ImGui::Render();
+//        ImGui::Render();
 
         RenderFrame();
         glfwPollEvents();

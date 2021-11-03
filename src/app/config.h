@@ -26,7 +26,7 @@ namespace config{
         aoTexture,
         shadingTexture,
         emissionTexture,
-        Environment,
+        EnvironmentBase,
     };
 
     enum Meshes{
@@ -68,7 +68,11 @@ namespace config{
             "../../assets/textures/Default_emissive.jpg",
     };
 
-    static const char* hdrTexture= "../../assets/textures/environment/umbrellas.hdr";
+    static std::vector<const char*> hdrTextures= {
+            "../../assets/textures/environment/arctic.hdr",
+            "../../assets/textures/environment/umbrellas.hdr",
+    };
+
 }
 
 

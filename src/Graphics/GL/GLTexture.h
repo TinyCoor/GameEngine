@@ -16,7 +16,9 @@ public:
     GLTexture(): GLObject(CreatePolicy::CreateTexture(),CreatePolicy::GetName()){}
 
 
-    bool loadFromFile(const std::string& path);
+    bool loadFromFile(const std::string& path){
+        CreatePolicy::loadFromFile(path);
+    }
 
     void Bind(){
         CreatePolicy::Bind(this->handle);
