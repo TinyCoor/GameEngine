@@ -165,17 +165,30 @@ void VulkanTexture::clearCPUData() {
 }
 
 bool  VulkanTexture::loadFromFile(const std::string &path) {
+    if(stbi_info(path.c_str(), nullptr, nullptr, nullptr) == 0){
+        std::cerr<< "loadFromFile: unsupported texture format " << path <<'\n';
+        return false;
+    }
+
+
     void* stb_pixels = nullptr;
-    size_t pixel_size =0;
+    size_t pixelSize =0;
+
     if (stbi_is_hdr(path.c_str())){
         stb_pixels = stbi_loadf(path.c_str(), &width, &height, &channels, 0);
-        pixel_size= sizeof(float);
-        mipLevels= 1;
+        pixelSize= sizeof(float);
+        mipLevels= 1; //TODO
     } else{
-        stb_pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-        pixel_size= sizeof(stbi_uc);
+        stb_pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_default);
+        pixelSize= sizeof(stbi_uc);
         channels = 4;
         mipLevels =static_cast<int>(std::floor(std::log2(std::max(width,height)))+ 1);
+    }
+
+    bool convert = false;
+    if(channels == 3){
+        channels =4;
+        convert = true;
     }
 
     if(!stb_pixels){
@@ -185,15 +198,33 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
 
     layers = 1;
 
-    VkFormat format = deduceFormat(pixel_size,channels);
+    VkFormat format = deduceFormat(pixelSize,channels);
     VkImageTiling tiling = deduceTiling(format);
 
     clearCPUData();
 
-    size_t  imageSize = width * height * channels * pixel_size;
+    size_t  imageSize = width * height * channels * pixelSize;
     pixels = new unsigned char[imageSize];
-    memcpy(pixels,stb_pixels,imageSize);
 
+    //TODO refractor rgb to rgba
+    if(convert){
+        size_t numPixels = height *width;
+        uint8_t * d = pixels;
+        uint8_t * s = (uint8_t*)stb_pixels;
+        size_t stride =pixelSize *3;
+
+        for (int i = 0; i < numPixels; ++i) {
+            memcpy(d,s,stride);
+            s += stride;
+            d += stride;
+
+            memset(d,0,pixelSize);
+            d += pixelSize;
+        }
+        stbi_image_free(stb_pixels);
+    }
+
+    memcpy(pixels,stb_pixels,imageSize);
 
     stbi_image_free(stb_pixels);
     stb_pixels= nullptr;

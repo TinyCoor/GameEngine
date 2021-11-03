@@ -16,18 +16,6 @@ GLHANDLE CreateVertexBufferObject(){
     return handle;
 }
 
-VBO::VBO(): GLObject(CreateVertexBufferObject(),"VBO") {}
 
-void VBO::Bind() {
-    glBindBuffer(GL_ARRAY_BUFFER,this->handle);
-}
-
-VAO::VAO() : GLObject(CreateVeretxArrays(),"VAO"){
-
-}
-
-void VAO::Bind() {
-    glBindVertexArray(this->handle);
-}
 
 

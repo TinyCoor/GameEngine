@@ -4,8 +4,9 @@
 
 #ifndef GAMEENGINE_GLMESH_H
 #define GAMEENGINE_GLMESH_H
-
+#include <string>
 #include <glm/glm.hpp>
+#include "VAO.h"
 
 struct Vertex{
     glm::vec3 pos;
@@ -14,6 +15,14 @@ struct Vertex{
 };
 
 class GLMesh {
+public:
+    GLMesh();
+    ~GLMesh();
+
+    bool loadMesh(const std::string& file);
+
+private:
+   Vao vao;
 
 };
 

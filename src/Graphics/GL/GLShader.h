@@ -26,7 +26,7 @@ public:
     inline ShaderKind GetShaderType(){ return type;}
 
 private:
-     bool GetCompileError();
+     bool GetCompileError(const std::string& file);
 
 private:
     ShaderKind type;

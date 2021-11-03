@@ -50,24 +50,25 @@ GLObject(glCreateShader(ToGLShaderType(type)),std::string( "VertexShader")){
 
 bool GLShader::compileFromFile(const std::string& file_name) {
     std::vector<char> buffer;
-    const int length = buffer.size();
-    const char* data = buffer.data();
+
     if(readFile(file_name,buffer)){
-        glShaderSource(this->handle, 1, reinterpret_cast<const GLchar *const *>(data), &length );
+        const int length = buffer.size();
+        const GLchar* data[] = {buffer.data()};
+        glShaderSource(this->handle, 1, data, &length );
         glCompileShader(this->handle);
-        return GetCompileError();
+        return GetCompileError(file_name);
     }
     return false;
 
 }
 
- bool GLShader::GetCompileError() {
+ bool GLShader::GetCompileError(const std::string& file) {
     int result;
     glGetShaderiv(this->handle,GL_COMPILE_STATUS,&result);
     char log[1024]={0};
     if(result == GL_FALSE){
         glGetShaderInfoLog(this->handle,1024,&result,log);
-        std::cerr << log;
+        std::cerr <<file <<"\n" << log;
         return false;
     }
      return true;

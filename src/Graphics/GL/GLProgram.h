@@ -5,7 +5,7 @@
 #ifndef GAMEENGINE_GLPROGRAM_H
 #define GAMEENGINE_GLPROGRAM_H
 #include "GLObject.h"
-
+#include <iostream>
 
 
 class GLProgram : public GLObject{
@@ -18,14 +18,18 @@ public:
         glDeleteProgram(this->handle);
     }
 
-    void link(){}
+    template<typename ... Shaders>
+    void link(){
+
+    }
 
     //TODO select Vetex first and Fragment next
     template<typename Shader,typename ... Shaders>
     void link(Shader shader,Shaders...  otherShader){
-        glAttachShader(this->handle,shader);
+        glAttachShader(this->handle,shader.GetHandle());
         link(otherShader...);
         glLinkProgram(this->handle);
+        GetErrorInformation();
     }
 
     void use(){
@@ -61,7 +65,14 @@ private:
 
     //TODO impl Error information
     void GetErrorInformation(){
-
+        int result;
+        glGetProgramiv(this->handle,GL_LINK_STATUS,&result);
+        char log[1024]={0};
+        if(result == GL_FALSE){
+            glGetProgramInfoLog(this->handle,1024,&result,log);
+            std::cerr <<"Program" <<"\n" << log;
+            exit(-1);
+        }
     }
 
 

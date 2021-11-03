@@ -2,16 +2,30 @@
 // Created by y123456 on 2021/10/22.
 //
 
-#include <GLFW/glfw3.h>
+
 #include "GLApplication.h"
 #include "imgui.h"
-
 #include <iostream>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#include "VAO.h"
+#include "GLBuffer.hpp"
+#include "GLShader.h"
+#include <GLFW/glfw3.h>
+#include "GLProgram.h"
+#include "GLContext.h"
+
 
 const int width =1920;
 const int height = 1080;
+
+
+float vertices[] = {
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.0f,  0.5f, 0.0f
+};
+
 
 void GLApplication::initGLFW(){
 
@@ -36,6 +50,11 @@ void GLApplication::initGLFW(){
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         }
     });
+
+    if(!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)){
+        std::cerr << "init glad failed\n";
+        exit(-1);
+    }
 }
 
 void GLApplication::shutdownGLFW() {
@@ -44,12 +63,39 @@ void GLApplication::shutdownGLFW() {
 }
 
 bool GLApplication::render() {
+
+    Vao vao;
+    GLBuffer<GL_ARRAY_BUFFER> vbo;
+    vao.Bind();
+    vbo.Bind();
+    vbo.CopyToGPU((uint8_t*)vertices,sizeof(vertices), GL_MAP_WRITE_BIT);
+
+    GLShader vertShader(ShaderKind::vertex);
+    vertShader.compileFromFile("../../assets/shaders/triangle.vert");
+    GLShader fragShader(ShaderKind::fragment);
+    fragShader.compileFromFile("../../assets/shaders/triangle.frag");
+
+    GLProgram program;
+    program.link(vertShader,fragShader);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    vao.UnBind();
+
     while (!glfwWindowShouldClose(window)){
         glfwPollEvents();
+
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+
+
+//        VertexInputAttribute<GL_FLOAT> vertexInputAttribute(0,3,3* sizeof(float ));
+//        vertexInputAttribute.SetVertexInputAttribute(GL_FALSE,(void*)0);
+
+
 
         bool show_demo_window = true;
         bool show_another_window = false;
@@ -96,12 +142,19 @@ bool GLApplication::render() {
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        //TODO
+        program.use();
+        vao.Bind();
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
 
 
         glfwSwapBuffers(window);
     }
+    return true;
 }
 
 void GLApplication::run() {
