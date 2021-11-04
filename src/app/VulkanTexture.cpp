@@ -178,9 +178,9 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
         pixelSize= sizeof(float);
         mipLevels= 1; //TODO
     } else{
-        stb_pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_default);
+        stb_pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
         pixelSize= sizeof(stbi_uc);
-//        channels = 4;
+        channels = 4;
         mipLevels =static_cast<int>(std::floor(std::log2(std::max(width,height)))+ 1);
     }
 
