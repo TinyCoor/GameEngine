@@ -1,0 +1,8 @@
+//
+// Created by 12132 on 2021/11/4.
+//
+
+#ifndef GAMEENGINE_GOBJECT_H
+#define GAMEENGINE_GOBJECT_H
+
+#endif //GAMEENGINE_GOBJECT_H
