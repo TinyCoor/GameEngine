@@ -170,7 +170,6 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
         return false;
     }
 
-
     void* stb_pixels = nullptr;
     size_t pixelSize =0;
 
@@ -181,15 +180,17 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
     } else{
         stb_pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_default);
         pixelSize= sizeof(stbi_uc);
-        channels = 4;
+//        channels = 4;
         mipLevels =static_cast<int>(std::floor(std::log2(std::max(width,height)))+ 1);
     }
 
-    bool convert = false;
-    if(channels == 3){
-        channels =4;
-        convert = true;
-    }
+    //TODO RGB convert rbga
+
+//    bool convert = false;
+//    if(channels == 3){
+//        channels =4;
+//        convert = true;
+//    }
 
     if(!stb_pixels){
         std::cerr<< "load file failed:" << path <<'\n';
@@ -203,26 +204,26 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
 
     clearCPUData();
 
-    size_t  imageSize = width * height * channels * pixelSize;
+    size_t imageSize = width * height * channels * pixelSize;
     pixels = new unsigned char[imageSize];
 
     //TODO refractor rgb to rgba
-    if(convert){
-        size_t numPixels = height *width;
-        uint8_t * d = pixels;
-        uint8_t * s = (uint8_t*)stb_pixels;
-        size_t stride =pixelSize *3;
-
-        for (int i = 0; i < numPixels; ++i) {
-            memcpy(d,s,stride);
-            s += stride;
-            d += stride;
-
-            memset(d,0,pixelSize);
-            d += pixelSize;
-        }
-        stbi_image_free(stb_pixels);
-    }
+//    if(convert){
+//        size_t numPixels = height *width;
+//        uint8_t * d = pixels;
+//        uint8_t * s = (uint8_t*)stb_pixels;
+//        size_t stride = pixelSize * 3;
+//
+//        for (int i = 0; i < numPixels; ++i) {
+//            memcpy(d,s,stride);
+//            s += stride;
+//            d += stride;
+//
+//            memset(d,0,pixelSize);
+//            d += pixelSize;
+//        }
+//        stbi_image_free(stb_pixels);
+//    }
 
     memcpy(pixels,stb_pixels,imageSize);
 

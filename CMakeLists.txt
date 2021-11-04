@@ -13,7 +13,7 @@ endif ()
 
 if(CMAKE_HOST_WIN32)
     message(STATUS "This is Windows Platform")
-    #add_compile_definitions(VK_USE_PLATFORM_WIN32_KHR GLFW_EXPOSE_NATIVE_WIN32)
+    add_compile_definitions(VK_USE_PLATFORM_WIN32_KHR GLFW_EXPOSE_NATIVE_WIN32)
 elseif(CMAKE_HOST_UNIX)
     message(STATUS "This is Unix Platform")
 elseif(CMAKE_HOST_APPLE)

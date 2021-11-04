@@ -46,7 +46,7 @@ bool VulkanShader::compileFromSource(const char* path,const char* source,size_t 
                                                                   source,
                                                                   size,
                                                                   shaderc_glsl_infer_from_source,
-                                                                  nullptr,"main",
+                                                                  path,"main",
                                                                   nullptr);
 
     if(shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success){
@@ -59,10 +59,10 @@ bool VulkanShader::compileFromSource(const char* path,const char* source,size_t 
     }
 
     auto byte_size = shaderc_result_get_length(result);
-    auto * bytes = reinterpret_cast<uint32_t*>(shaderc_result_get_bytes(result));
+    auto * bytes = shaderc_result_get_bytes(result);
 
     clear();
-    shaderModule = VulkanUtils::createShaderModule(context,bytes,byte_size);
+    shaderModule = VulkanUtils::createShaderModule(context,(uint32_t*)bytes,byte_size);
 
     shaderc_result_release(result);
     shaderc_compiler_release(compiler);
@@ -73,7 +73,7 @@ bool VulkanShader::compileFromSource(const char* path,const char* source,size_t 
 bool VulkanShader::compileFromFile(const char* path) {
     std::ifstream  file(path,std::ios::ate | std::ios::binary);
     if(!file.is_open()){
-        std::cerr << "VulkanShader: Laod Shder File Failed:" << "\n";
+        std::cerr << "VulkanShader: Laod Shader File Failed:" << "\n";
         return  false;
     }
     clear();
@@ -86,7 +86,6 @@ bool VulkanShader::compileFromFile(const char* path) {
     return compileFromSource(path,buffer.data(),buffer.size(),shaderc_glsl_infer_from_source);
  
 }
-
 
 bool VulkanShader::compileFromFile(const char* path,ShaderKind kind) {
     std::ifstream  file(path,std::ios::ate | std::ios::binary);
@@ -101,7 +100,6 @@ bool VulkanShader::compileFromFile(const char* path,ShaderKind kind) {
     file.seekg(0);
     file.read(buffer.data(),fileSize);
     file.close();
-
 
     return compileFromSource(path,buffer.data(),buffer.size(),shaderc_glsl_infer_from_source);
     
