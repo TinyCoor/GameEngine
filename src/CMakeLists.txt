@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.12)
 find_package(Vulkan REQUIRED)
+
+
+set(ROOT_FOLD ${CMAKE_CURRENT_LIST_DIR})
+
 if (Vulkan_FOUND)
     message(STATUS "Find Vulkan")
     message(STATUS ${Vulkan_INCLUDE_DIRS} )
@@ -30,7 +34,9 @@ add_executable(niagara
         ../extern/imgui/imgui_demo.cpp
         ../extern/imgui/backends/imgui_impl_glfw.cpp
         ../extern/imgui/backends/imgui_impl_vulkan.cpp
-        app/config.cpp app/config.h app/ResourceManager.cpp app/ResourceManager.h)
+         app/config.h 
+         app/ResourceManager.cpp 
+         app/ResourceManager.h)
 
 
 message(STATUS ${ShaderC_LIBRARIES})

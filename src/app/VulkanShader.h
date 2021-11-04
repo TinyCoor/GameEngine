@@ -7,8 +7,8 @@
 
 #include "VulkanRenderContext.h"
 #include <volk.h>
-#include <string>
 #include <stdexcept>
+#include <shaderc/shaderc.h>
 
 
 enum class ShaderKind{
@@ -23,19 +23,20 @@ enum class ShaderKind{
 
 
 
-
 class VulkanShader {
 public:
     explicit VulkanShader(const VulkanRenderContext& ctx): context(ctx){}
     ~VulkanShader();
 
-    bool compileFromFile(const std::string& path,ShaderKind kind);
+    bool compileFromFile(const char* path,ShaderKind kind);
+    bool compileFromFile(const char* path);
+
 
     void clear();
     inline const VkShaderModule& getShaderModule() const {return shaderModule;}
 
 private:
-
+    bool compileFromSource(const char* path,const char* source,size_t size,shaderc_shader_kind kind);
 
 private:
     VulkanRenderContext context;

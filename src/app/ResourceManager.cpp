@@ -7,7 +7,6 @@
 #include "VulkanTexture.h"
 #include "VulkanMesh.h"
 
-
 VulkanResourceManager::VulkanResourceManager(const VulkanRenderContext &ctx) :context(ctx){
 
 }
@@ -30,6 +29,18 @@ std::shared_ptr<VulkanShader> VulkanResourceManager::loadShader(int id, ShaderKi
     return shader;
 }
 
+std::shared_ptr<VulkanShader> VulkanResourceManager::loadShader(int id, const char *path) {
+    auto it = meshes.find(id);
+    if(it !=meshes.end()){
+        std::cerr << "VulkanResourceManager::loadShader():" <<id << "is alreay owned by other mesh" << std::endl;
+        return nullptr;
+    }
+    auto shader = std::make_shared<VulkanShader>(context);
+    shader->compileFromFile(path);
+    shaders.insert(std::make_pair( id,shader));
+    return shader;
+}
+
 std::shared_ptr<VulkanMesh> VulkanResourceManager::loadMesh(int id, const char *path) {
     auto it = meshes.find(id);
     if(it !=meshes.end()){
@@ -37,7 +48,7 @@ std::shared_ptr<VulkanMesh> VulkanResourceManager::loadMesh(int id, const char *
         return nullptr;
     }
     auto mesh = std::make_shared<VulkanMesh>(context);
-    mesh->loadFromFile(std::string(path));
+    mesh->loadFromFile(path);
     meshes.insert(std::make_pair( id,mesh));
     return mesh;
 }

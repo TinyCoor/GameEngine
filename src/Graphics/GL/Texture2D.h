@@ -8,6 +8,10 @@
 
 class Texture2D{
     static int pos;
+    static int channels;
+    static int width;
+    static int height;
+    static uint8_t * data;
     static GLHANDLE CreateTexture();
     static std::string GetName();
     /**
@@ -15,8 +19,13 @@ class Texture2D{
      * @param handle
      */
     static void Bind(GLHANDLE handle);
-    static bool loadFromFile(const std::string& file);
+    static bool loadFromFile(const std::string& file,GLHANDLE handle);
     static void copyToGPU(GLHANDLE handle);
+    static void clearCPUData() {
+        if (data != nullptr){
+            delete data;
+        }
+    }
 };
 
 #endif //GAMEENGINE_TEXTURE2D_H

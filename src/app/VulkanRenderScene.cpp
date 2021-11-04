@@ -7,13 +7,12 @@
 
 VulkanRenderScene::VulkanRenderScene(VulkanRenderContext& ctx)
 : resource(ctx)
-{
+{}
 
-}
 
 void VulkanRenderScene::init(){
     for(int i =0; i< config::shaders.size();++i){
-        resource.loadShader(i,config::shaderKinds[i],config::shaders[i]);
+        resource.loadShader(i,config::shaders[i]);
     }
     for(int i =0; i< config::textures.size();++i){
         resource.loadTexture(i,config::textures[i]);

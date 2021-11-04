@@ -3,13 +3,11 @@
 //
 
 #include "ImGuiRender.h"
+#include "glad.h"
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
-void ImGuiRender::render() {
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
+void ImGuiRender::update() {
 
     bool show_demo_window = true;
     bool show_another_window = false;
@@ -50,7 +48,8 @@ void ImGuiRender::render() {
             show_another_window = false;
         ImGui::End();
     }
-
+    glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+    glClear(GL_COLOR_BUFFER_BIT);
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
@@ -69,4 +68,8 @@ void ImGuiRender::shutdown() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+}
+
+ImGuiRender::~ImGuiRender() {
+    shutdown();
 }

@@ -27,6 +27,7 @@ public:
 };
 
 
+
 template<GLenum buf_type,template<GLenum > class BufferTypePolicy = BufferPolicy>
 class GLBuffer : public GLObject {
 public:

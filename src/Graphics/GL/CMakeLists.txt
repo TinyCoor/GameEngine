@@ -23,13 +23,15 @@ add_executable(OpenGL
            ../../../extern/imgui/backends/imgui_impl_glfw.cpp
            ../../../extern/imgui/backends/imgui_impl_opengl3.cpp
         ImGuiRender.cpp
-        ImGuiRender.h)
+        ImGuiRender.h GObject.hpp GLQuery.cpp GLQuery.h)
 
 target_include_directories(niagara PRIVATE ../../../extern/volk)
 target_include_directories(OpenGL PRIVATE  ../../../extern/glfw/include)
 target_include_directories(OpenGL PRIVATE  ../../../extern/glm)
 target_include_directories(OpenGL PRIVATE  ../../../extern/imgui/backends)
 target_include_directories(OpenGL PRIVATE  ../../../extern/imgui)
+
+target_include_directories(OpenGL PRIVATE ../../../extern/assimp/contrib/stb)
 
 target_link_libraries(OpenGL PRIVATE opengl32 )
 target_link_libraries(OpenGL PRIVATE glfw)

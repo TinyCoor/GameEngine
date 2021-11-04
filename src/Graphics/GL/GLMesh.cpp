@@ -3,3 +3,8 @@
 //
 
 #include "GLMesh.h"
+
+bool GLMesh::loadFromFile(const char* file)
+{
+    
+}

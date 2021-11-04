@@ -37,7 +37,6 @@ public:
     inline std::shared_ptr<VulkanMesh> getMesh()  {return resource.getMesh(config::Meshes::SciFiHelmet);}
     inline std::shared_ptr<VulkanMesh> getSkyboxMesh()  {return resource.getMesh(config::Meshes::Skybox);}
 
-
     inline size_t getNumHDRTextures(){return config::hdrTextures.size();}
 
 

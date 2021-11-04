@@ -36,6 +36,34 @@ public:
     }
 };
 
+
+struct Scissor{
+    int x_ =0;
+    int y_=0;
+    int width_ =0;
+    int height_= 0;
+
+    Scissor(int x,int y,int width,int height):x_(x),y_(y),width_(width),height_(height){
+
+    }
+
+    void SetStencil(){
+        glScissor(x_,y_,width_,height_);
+    }
+};
+
+
+struct MultiSampling{
+
+};
+
+
+struct Stencil{
+
+};
+
+
+
 class GLContext {
 
 };

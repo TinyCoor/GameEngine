@@ -11,14 +11,6 @@ int main(){
     GLApplication app;
 
 
-//    GLBuffer<GL_ELEMENT_ARRAY_BUFFER> ebo;
-//    ebo.Bind();
-
-
-
-
-
-
     app.run();
 
 }

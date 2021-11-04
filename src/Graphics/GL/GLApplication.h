@@ -4,23 +4,23 @@
 
 #ifndef GAMEENGINE_GLAPPLICATION_H
 #define GAMEENGINE_GLAPPLICATION_H
-
-
+#include <memory>
+#include "ImGuiRender.h"
 class GLFWwindow;
 class GLApplication{
 public:
     void run();
 private:
+
+    bool init();
     void initGLFW();
-    void initImGui();
-
-    void shutdownImGui();
     bool render();
-
-    void shutdownGLFW();
+    void shutdownGLFW() ;
+    void shutdown();
 
 private:
     GLFWwindow* window;
+    std::shared_ptr<ImGuiRender> imGuiRender_{new ImGuiRender};
 };
 
 #endif //GAMEENGINE_GLAPPLICATION_H

@@ -17,7 +17,7 @@ public:
 
 
     bool loadFromFile(const std::string& path){
-        CreatePolicy::loadFromFile(path);
+        CreatePolicy::loadFromFile(path, this->handle);
     }
 
     void Bind(){

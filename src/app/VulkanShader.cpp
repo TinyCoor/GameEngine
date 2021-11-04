@@ -37,25 +37,16 @@ namespace {
 VulkanShader::~VulkanShader(){
     clear();
 }
-bool VulkanShader::compileFromFile(const std::string &path,ShaderKind kind) {
-    std::ifstream  file(path,std::ios::ate | std::ios::binary);
-    if(!file.is_open()){
-        std::cerr << "VulkanShader: Laod Shder File Failed:"<< path << "\n";
 
-        return  false;
-    }
-    clear();
-    size_t fileSize = static_cast<uint32_t>(file.tellg());
-    std::vector<char> buffer(fileSize);
-    file.seekg(0);
-    file.read(buffer.data(),fileSize);
-    file.close();
-    //TODO GLSL to spir byte code
+bool VulkanShader::compileFromSource(const char* path,const char* source,size_t size,shaderc_shader_kind kind)
+{
+ //TODO GLSL to spir byte code
     shaderc_compiler_t compiler = shaderc_compiler_initialize();
     shaderc_compilation_result_t result = shaderc_compile_into_spv(compiler,
-                                                                  buffer.data(),
-                                                                  buffer.size(),
-                                                                  vulkan_to_shderc_kind(kind),path.c_str(),"main",
+                                                                  source,
+                                                                  size,
+                                                                  shaderc_glsl_infer_from_source,
+                                                                  nullptr,"main",
                                                                   nullptr);
 
     if(shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success){
@@ -77,6 +68,43 @@ bool VulkanShader::compileFromFile(const std::string &path,ShaderKind kind) {
     shaderc_compiler_release(compiler);
 
     return true;
+}
+
+bool VulkanShader::compileFromFile(const char* path) {
+    std::ifstream  file(path,std::ios::ate | std::ios::binary);
+    if(!file.is_open()){
+        std::cerr << "VulkanShader: Laod Shder File Failed:" << "\n";
+        return  false;
+    }
+    clear();
+    size_t fileSize = static_cast<uint32_t>(file.tellg());
+    std::vector<char> buffer(fileSize);
+    file.seekg(0);
+    file.read(buffer.data(),fileSize);
+    file.close();
+
+    return compileFromSource(path,buffer.data(),buffer.size(),shaderc_glsl_infer_from_source);
+ 
+}
+
+
+bool VulkanShader::compileFromFile(const char* path,ShaderKind kind) {
+    std::ifstream  file(path,std::ios::ate | std::ios::binary);
+    if(!file.is_open()){
+        std::cerr << "VulkanShader: Laod Shder File Failed:"<< path << "\n";
+
+        return  false;
+    }
+    clear();
+    size_t fileSize = static_cast<uint32_t>(file.tellg());
+    std::vector<char> buffer(fileSize);
+    file.seekg(0);
+    file.read(buffer.data(),fileSize);
+    file.close();
+
+
+    return compileFromSource(path,buffer.data(),buffer.size(),shaderc_glsl_infer_from_source);
+    
 }
 
 void VulkanShader::clear() {

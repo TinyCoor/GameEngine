@@ -8,10 +8,11 @@
 class GLFWwindow;
 class ImGuiRender {
 public:
-    ImGuiRender();
+    ImGuiRender()=default;
+    ~ImGuiRender();
     void init(GLFWwindow* window);
 
-    void render();
+    void update();
     void shutdown();
 
 };

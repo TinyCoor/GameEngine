@@ -7,6 +7,7 @@
 #include <string>
 #include <glm/glm.hpp>
 #include "VAO.h"
+#include "GLBuffer.hpp"
 
 struct Vertex{
     glm::vec3 pos;
@@ -19,10 +20,13 @@ public:
     GLMesh();
     ~GLMesh();
 
-    bool loadMesh(const std::string& file);
+    bool loadFromFile(const char* file);
+    
 
 private:
+
    Vao vao;
+   GLBuffer<GL_ARRAY_BUFFER> vbo;
 
 };
 

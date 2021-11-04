@@ -50,16 +50,6 @@ namespace config{
             "../../assets/shaders/diffuseIrrandiance.frag",
     };
 
-    static std::vector< ShaderKind> shaderKinds={
-            ShaderKind::vertex,
-            ShaderKind::fragment,
-            ShaderKind::vertex,
-            ShaderKind::fragment,
-            ShaderKind::vertex,
-            ShaderKind::fragment,
-            ShaderKind::fragment,
-    };
-
     static std::vector< const char*> textures={
             "../../assets/textures/SciFiHelmet_BaseColor.png",
             "../../assets/textures/SciFiHelmet_Normal.png",
