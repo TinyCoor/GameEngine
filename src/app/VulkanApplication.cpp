@@ -522,12 +522,12 @@ void Application::mainLoop() {
         return;
 
     while (!glfwWindowShouldClose(window)){
-//        ImGui_ImplGlfw_NewFrame();
-//        ImGui::NewFrame();
+//     ImGui_ImplGlfw_NewFrame();
+//     ImGui::NewFrame();
 
         update();
 
-//        ImGui::Render();
+//   ImGui::Render();
 
         RenderFrame();
         glfwPollEvents();

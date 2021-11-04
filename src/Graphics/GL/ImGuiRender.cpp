@@ -52,6 +52,8 @@ void ImGuiRender::update() {
     glClear(GL_COLOR_BUFFER_BIT);
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+
 }
 
 void ImGuiRender::init(GLFWwindow* window) {

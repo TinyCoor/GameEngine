@@ -19,7 +19,7 @@ struct CubemapFaceOrientationData{
 void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
                                std::shared_ptr <VulkanShader> fragShader,
                                std::shared_ptr <VulkanTexture> targetTexture) {
-    //  VulkanTexture* inputHDR= nullptr;
+
     renderQuad->createQuad(2.0f);
 
     for (int i = 0; i < 6; ++i) {
@@ -190,14 +190,12 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
             uboSize
     );
 
- 
 
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = 0;
     VK_CHECK(vkCreateFence(context.device_, &fenceInfo, nullptr, &fence) ,"Can't create fence");
 
-  
 
 }
 
@@ -289,6 +287,7 @@ void VulkanCubeMapRender::render(std::shared_ptr <VulkanTexture> inputTexture) {
     submitInfo.commandBufferCount=1;
     submitInfo.pCommandBuffers =&commandBuffer;
 
+    VK_CHECK( vkResetFences(context.device_,1,&fence),"Reset Fence Failed");
     VK_CHECK( vkQueueSubmit(context.graphicsQueue,1,&submitInfo,fence),"Submit Queue Failed");
     VK_CHECK(vkWaitForFences(context.device_, 1, &fence, VK_TRUE, 100000000000),"Can't wait for a fence");
 

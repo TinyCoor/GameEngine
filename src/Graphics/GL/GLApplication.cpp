@@ -14,6 +14,7 @@
 #include <GLFW/glfw3.h>
 #include "GLProgram.h"
 #include "GLContext.h"
+#include "GLTexture.h"
 
 
 const int width =1920;
@@ -21,10 +22,23 @@ const int height = 1080;
 
 
 float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f,  0.5f, 0.0f
+        // positions          // colors           // texture coords
+        0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+        0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left
 };
+
+unsigned int indices[] = {
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
+};
+
+//float texCoords[] = {
+//        0.0f, 0.0f, // 左下角
+//        1.0f, 0.0f, // 右下角
+//        0.5f, 1.0f // 上中
+//};
 
 
 void GLApplication::initGLFW(){
@@ -69,6 +83,10 @@ bool GLApplication::render() {
     vao.Bind();
     vbo.Bind();
     vbo.CopyToGPU((uint8_t*)vertices,sizeof(vertices), GL_MAP_WRITE_BIT);
+    GLBuffer<GL_ELEMENT_ARRAY_BUFFER> ebo;
+    ebo.Bind();
+    ebo.CopyToGPU((uint8_t*)indices, sizeof(indices), GL_MAP_WRITE_BIT);
+
 
     GLShader vertShader(ShaderKind::vertex);
     vertShader.compileFromFile("../../assets/shaders/triangle.vert");
@@ -78,9 +96,23 @@ bool GLApplication::render() {
     GLProgram program;
     program.link(vertShader,fragShader);
 
-    VertexInputAttribute<GL_FLOAT> vertexInputAttribute(0,3,3* sizeof(float ));
+
+    GLTexture<GL_TEXTURE_2D> texture;
+    texture.loadFromFile("../../assets/textures/wall.jpg");
+
+    VertexInputAttribute<GL_FLOAT> vertexInputAttribute(0,3,8* sizeof(float ));
     vertexInputAttribute.SetVertexInputAttribute(GL_FALSE,(void*)0);
+
+    VertexInputAttribute<GL_FLOAT> vertexInputAttribute2(1,3,8 * sizeof(float ));
+    vertexInputAttribute2.SetVertexInputAttribute(GL_FALSE,(void*)(3 * sizeof(float)));
+
+    VertexInputAttribute<GL_FLOAT> vertexInputAttribute3(2,2,8 * sizeof(float ));
+    vertexInputAttribute3.SetVertexInputAttribute(GL_FALSE,(void*)(6 * sizeof(float)));
+
     vao.UnBind();
+
+
+
 
     while (!glfwWindowShouldClose(window)){
         glfwPollEvents();
@@ -94,8 +126,10 @@ bool GLApplication::render() {
 
         //TODO
         program.use();
+        program.SetUniformVec4f("ourColor",1.0,0.0,0.0,1.0);
         vao.Bind();
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        texture.Bind();
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 
         glfwSwapBuffers(window);
