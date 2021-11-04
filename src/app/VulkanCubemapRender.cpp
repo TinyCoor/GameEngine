@@ -18,10 +18,9 @@ struct CubemapFaceOrientationData{
 
 void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
                                std::shared_ptr <VulkanShader> fragShader,
-                               std::shared_ptr <VulkanTexture> inputTexture,
                                std::shared_ptr <VulkanTexture> targetTexture) {
     //  VulkanTexture* inputHDR= nullptr;
-   renderQuad->createQuad(2.0f);
+    renderQuad->createQuad(2.0f);
 
     for (int i = 0; i < 6; ++i) {
         faceViews[i]=VulkanUtils::createImageView(
@@ -35,12 +34,15 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
                 );
     }
 
+    targetExtent.width = targetTexture->getWidth();
+    targetExtent.height = targetTexture->getHeight();
+
 
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)targetTexture->getWidth();
-    viewport.height = (float)targetTexture->getHeight();
+    viewport.width = (float)targetExtent.width;
+    viewport.height = (float)targetExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -128,8 +130,8 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
     framebufferInfo.renderPass = renderPass;
     framebufferInfo.attachmentCount = 6;
     framebufferInfo.pAttachments = faceViews;
-    framebufferInfo.width = targetTexture->getWidth();
-    framebufferInfo.height =targetTexture->getHeight();
+    framebufferInfo.width = targetExtent.width;
+    framebufferInfo.height =targetExtent.height;
     framebufferInfo.layers = 1;
     VK_CHECK(vkCreateFramebuffer(context.device_, &framebufferInfo, nullptr, &frameBuffer),"Can't create framebuffer");
 
@@ -188,59 +190,14 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
             uboSize
     );
 
-    VulkanUtils::bindCombinedImageSampler(
-            context,
-            descriptorSet,
-            1,
-            inputTexture->getImageView(),
-            inputTexture->getSampler()
-    );
-
+ 
 
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = 0;
     VK_CHECK(vkCreateFence(context.device_, &fenceInfo, nullptr, &fence) ,"Can't create fence");
 
-    // Record command buffers
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    beginInfo.pInheritanceInfo = nullptr; // Optional
-    VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo),"Can't begin recording command buffer");
-
-
-    VkRenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
-    renderPassInfo.framebuffer = frameBuffer;
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent.width = targetTexture->getWidth();
-    renderPassInfo.renderArea.extent.height = targetTexture->getHeight();
-
-    VkClearValue clearValues[6];
-    for (int i = 0; i < 6; i++)
-    {
-        clearValues[i] = {};
-        clearValues[i].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-    }
-    renderPassInfo.clearValueCount = 6;
-    renderPassInfo.pClearValues = clearValues;
-
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-
-    VkBuffer vertexBuffers[] = {renderQuad->getVertexBuffer()};
-    VkBuffer indexBuffer = renderQuad->getIndexBuffer();
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexed(commandBuffer, renderQuad->getNumIndices(), 1, 0, 0, 0);
-
-    vkCmdEndRenderPass(commandBuffer);
-    VK_CHECK(vkEndCommandBuffer(commandBuffer),"Can't record command buffer");
+  
 
 }
 
@@ -278,8 +235,55 @@ void VulkanCubeMapRender::shutdown() {
     renderQuad->clearCPUData();
 }
 
-void VulkanCubeMapRender::render() {
+void VulkanCubeMapRender::render(std::shared_ptr <VulkanTexture> inputTexture) {
 
+   VulkanUtils::bindCombinedImageSampler(
+            context,
+            descriptorSet,
+            1,
+            inputTexture->getImageView(),
+            inputTexture->getSampler()
+    );
+
+    // Record command buffers
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    beginInfo.pInheritanceInfo = nullptr; // Optional
+    VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo),"Can't begin recording command buffer");
+
+
+    VkRenderPassBeginInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.framebuffer = frameBuffer;
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent.width = targetExtent.width;
+    renderPassInfo.renderArea.extent.height = targetExtent.height;
+
+    VkClearValue clearValues[6];
+    for (int i = 0; i < 6; i++)
+    {
+        clearValues[i] = {};
+        clearValues[i].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+    }
+    renderPassInfo.clearValueCount = 6;
+    renderPassInfo.pClearValues = clearValues;
+
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+
+    VkBuffer vertexBuffers[] = {renderQuad->getVertexBuffer()};
+    VkBuffer indexBuffer = renderQuad->getIndexBuffer();
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(commandBuffer, renderQuad->getNumIndices(), 1, 0, 0, 0);
+
+    vkCmdEndRenderPass(commandBuffer);
+    VK_CHECK(vkEndCommandBuffer(commandBuffer),"Can't record command buffer");
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount=1;

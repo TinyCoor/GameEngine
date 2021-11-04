@@ -292,7 +292,7 @@ void VulkanRender::update(const VulkanRenderScene *scene) {
     state.proj[1][1] *= -1;
     state.cameraPosWS = glm::vec3(glm::vec4(cameraPos, 1.0f) * rotation);
 
-    // ImGui
+// ImGui
 //    static float f = 0.0f;
 //    static int counter = 0;
 //    static bool show_demo_window = false;
@@ -394,7 +394,17 @@ VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, uint32_t imageInd
 void VulkanRender::initEnvironment(VulkanRenderScene* scene){
     environmentCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
     diffuseIrradianceCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
+    hdriToCubeRenderer.init(
+                scene->getCubeVertexShader(),
+                scene->getHDRToCubeFragmentShader(),
+                environmentCubemap
+        );
 
+    diffuseIrradianceRenderer.init(
+            scene->getCubeVertexShader(),
+            scene->getDiffuseToIrridanceShader(),
+            diffuseIrradianceCubemap
+    );
     setEnvironment(scene,currentEnvironment);
 }
 
@@ -410,13 +420,7 @@ void VulkanRender::setEnvironment(VulkanRenderScene *scene, int index) {
                 0, environmentCubemap->getNumLayers()
         );
 
-        hdriToCubeRenderer.init(
-                scene->getCubeVertexShader(),
-                scene->getHDRToCubeFragmentShader(),
-                scene->getHDRTexture(index),
-                environmentCubemap
-        );
-        hdriToCubeRenderer.render();
+        hdriToCubeRenderer.render(scene->getHDRTexture(index));
 
         VulkanUtils::transitionImageLayout(
                 context,
@@ -440,14 +444,8 @@ void VulkanRender::setEnvironment(VulkanRenderScene *scene, int index) {
                 0, diffuseIrradianceCubemap->getNumMiplevels(),
                 0, diffuseIrradianceCubemap->getNumLayers()
         );
-
-        diffuseIrradianceRenderer.init(
-                scene->getCubeVertexShader(),
-                scene->getDiffuseToIrridanceShader(),
-                environmentCubemap,
-                diffuseIrradianceCubemap
-        );
-        diffuseIrradianceRenderer.render();
+   
+        diffuseIrradianceRenderer.render(environmentCubemap);
 
         VulkanUtils::transitionImageLayout(
                 context,

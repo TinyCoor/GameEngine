@@ -34,7 +34,8 @@ public:
     }
 
     bool GetQueryResult(GLenum pname,GLint* params){
-        glGetQueryBufferObjectiv(this->handle,pname,params);
+        //glGetQueryBufferObjectiv(this->handle,pname,params);
+        return false;
     }
 
     void DestroyQuery(){
