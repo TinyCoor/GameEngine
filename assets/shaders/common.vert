@@ -4,7 +4,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 // Uniforms
-layout(binding = 0) uniform UniformBufferObject {
+layout(binding = 0) uniform RenderState {
 	mat4 faces[6];
 } ubo;
 

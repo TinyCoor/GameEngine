@@ -27,6 +27,7 @@ add_executable(niagara
         app/VulkanPipelineLayoutBuilder.cpp
         app/VulkanCubemapRender.cpp
 
+        ../extern/volk/volk.c
         ../extern/imgui/imgui.cpp
         ../extern/imgui/imgui_draw.cpp
         ../extern/imgui/imgui_widgets.cpp
@@ -56,7 +57,7 @@ target_link_directories(niagara PRIVATE ${ShaderC_LIBRARIES})
 target_link_libraries(niagara PRIVATE glfw)
 target_link_libraries(niagara PRIVATE assimp)
 target_link_libraries(niagara PRIVATE shaderc_shared)
-target_link_libraries(niagara PRIVATE opengl32 volk )
+target_link_libraries(niagara PRIVATE opengl32 )
 
 add_subdirectory(Graphics/GL)
 
