@@ -37,16 +37,22 @@ private:
     std::shared_ptr< VulkanTexture> environmentCubemap;
     std::shared_ptr <VulkanTexture> diffuseIrradianceCubemap;
 
-    VkRenderPass renderPass{VK_NULL_HANDLE};
-    VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
-
-
     VkPipelineLayout  pipelineLayout{VK_NULL_HANDLE};
 
     VkPipeline pbrPipeline{VK_NULL_HANDLE};
     VkPipeline skyboxPipeline{VK_NULL_HANDLE};
 
+    VkRenderPass renderPass{VK_NULL_HANDLE};
 
+    VkDescriptorSetLayout sceneDescriptorSetLayout{VK_NULL_HANDLE};
+    VkDescriptorSet sceneDescriptorSet{VK_NULL_HANDLE};
+
+    int currentEnvironment{0};
+    RenderState state;
+
+    //TODO move to swapchain
+    VkDescriptorSetLayout swapchainDescriptorSetLayout{VK_NULL_HANDLE};
+    std::vector<VkDescriptorSet> swapchainDescriptorSets{};
     std::vector<VkCommandBuffer> commandBuffers{};
     std::vector<VkFramebuffer> frameBuffers{};
 
@@ -54,10 +60,6 @@ private:
     std::vector<VkDeviceMemory> uniformBuffersMemory{};
 
 
-    VkDescriptorSet descriptorSet{};
-
-    int currentEnvironment{0};
-    RenderState state;
 
 private:
 
