@@ -9,6 +9,7 @@
 
 struct VulkanRenderContext{
     VkInstance  instance{VK_NULL_HANDLE};
+    VkSurfaceKHR surface= VK_NULL_HANDLE;
     VkDevice device_ =VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkCommandPool commandPool =VK_NULL_HANDLE;

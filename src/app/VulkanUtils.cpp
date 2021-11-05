@@ -9,6 +9,31 @@
 #include <fstream>
 #include <stb_image.h>
 #include <cassert>
+#include <iostream>
+
+QueueFamilyIndices VulkanUtils::fetchFamilyIndices(VkPhysicalDevice& physcalDevice,VkSurfaceKHR & surface) {
+    uint32_t queueCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physcalDevice,&queueCount, nullptr);
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(physcalDevice,&queueCount,queueFamilies.data());
+    QueueFamilyIndices indices{};
+    for (int i = 0; i< queueFamilies.size();++i) {
+
+        if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = std::make_optional(i);
+        }
+
+        VkBool32  presentSupport= false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physcalDevice,i,surface,&presentSupport);
+        if(queueFamilies[i].queueCount > 0 && presentSupport){
+            indices.presentFamily = std::make_optional(i);
+        }
+        if(indices.isComplete()){
+            break;
+        }
+    }
+    return indices;
+}
 
 void VulkanUtils::createBuffer(const VulkanRenderContext& context,
                                VkDeviceSize size,
@@ -603,4 +628,31 @@ void VulkanUtils::endSingleTimeCommands(const VulkanRenderContext& context,VkCom
     VK_CHECK(vkWaitForFences(context.device_,1,&fence,VK_TRUE,10000000000),"Wait for Fence failed");
     vkDestroyFence(context.device_,fence, nullptr);
     vkFreeCommandBuffers(context.device_, context.commandPool, 1, &commandBuffer);
+}
+
+
+VkFormat VulkanUtils::selectOptimalSupportedImageFormat(const VulkanRenderContext& context,const std::vector<VkFormat> &candiates,
+                                                            VkImageTiling tiling, VkFormatFeatureFlags features) {
+    for(VkFormat format : candiates)
+    {
+        VkFormatProperties properties;
+        vkGetPhysicalDeviceFormatProperties(context.physicalDevice,format,&properties);
+        if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & features) == features)
+            return format;
+
+        if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & features) == features) {
+            return format;
+        }
+        std::cout << format<<"\n";
+    }
+
+    TH_WITH_MSG(true,"can not find support format");
+}
+
+VkFormat  VulkanUtils::selectOptimalImageFormat(const VulkanRenderContext& context) {
+    return selectOptimalSupportedImageFormat(context,
+            {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
+    );
 }

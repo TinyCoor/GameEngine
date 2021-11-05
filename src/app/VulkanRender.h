@@ -8,11 +8,16 @@
 #include "VulkanRenderScene.h"
 #include "VulkanRenderContext.h"
 #include "VulkanCubemapRender.h"
-#include "VulkanTexture.h"
+#include <volk.h>
 #include <string>
 #include <vector>
 #include <stdexcept>
 #include <glm/glm.hpp>
+
+struct VulkanRenderFrame;
+class VulkanTexture;
+class VulkanRenderScene;
+class VulkanSwapChain;
 
 struct RenderState{
     glm::mat4 world;
@@ -24,63 +29,48 @@ struct RenderState{
     float userRoughness {0.0f};
 };
 
+
+
 class VulkanRender {
 private:
     VulkanRenderContext context;
-    VulkanSwapChainContext swapChainContext;
 
     VulkanCubeMapRender hdriToCubeRenderer;
-
-
     VulkanCubeMapRender diffuseIrradianceRenderer;
 
-    std::shared_ptr< VulkanTexture> environmentCubemap;
+    std::shared_ptr<VulkanTexture> environmentCubemap;
     std::shared_ptr <VulkanTexture> diffuseIrradianceCubemap;
 
     VkPipelineLayout  pipelineLayout{VK_NULL_HANDLE};
 
+
     VkPipeline pbrPipeline{VK_NULL_HANDLE};
     VkPipeline skyboxPipeline{VK_NULL_HANDLE};
 
-    VkRenderPass renderPass{VK_NULL_HANDLE};
 
     VkDescriptorSetLayout sceneDescriptorSetLayout{VK_NULL_HANDLE};
     VkDescriptorSet sceneDescriptorSet{VK_NULL_HANDLE};
+    //TODO
+    VkExtent2D extent;
+    VkRenderPass renderPass;
+    VkDescriptorSetLayout descriptorSetLayout;
 
     int currentEnvironment{0};
     RenderState state;
 
-    //TODO move to swapchain
-    VkDescriptorSetLayout swapchainDescriptorSetLayout{VK_NULL_HANDLE};
-    std::vector<VkDescriptorSet> swapchainDescriptorSets{};
-    std::vector<VkCommandBuffer> commandBuffers{};
-    std::vector<VkFramebuffer> frameBuffers{};
-
-    std::vector<VkBuffer> uniformBuffers{};
-    std::vector<VkDeviceMemory> uniformBuffersMemory{};
-
-
-
-private:
-
 
 public:
-    explicit VulkanRender(VulkanRenderContext& ctx, VulkanSwapChainContext& swapChainCtx)
-                    :context(ctx),swapChainContext(swapChainCtx)
-                    , hdriToCubeRenderer(context)
-                    , diffuseIrradianceRenderer(context)
-                    , environmentCubemap(new VulkanTexture(ctx))
-                    , diffuseIrradianceCubemap(new VulkanTexture(ctx)){
-    }
+    explicit VulkanRender(VulkanRenderContext& ctx);
+    virtual ~VulkanRender();
 
-    void init(VulkanRenderScene* scene);
+    void init(VulkanRenderScene* scene,VkExtent2D extent,VkDescriptorSetLayout layout,VkRenderPass renderPass);
 
     void initEnvironment(VulkanRenderScene* scene);
 
     void setEnvironment(VulkanRenderScene* scene,int index);
 
     void update(const VulkanRenderScene *scene);
-    VkCommandBuffer render(VulkanRenderScene *scene, uint32_t imageIndex);
+    VkCommandBuffer render(VulkanRenderScene *scene, const VulkanRenderFrame& frame);
 
     void shutdown();
 };

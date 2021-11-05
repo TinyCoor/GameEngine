@@ -7,6 +7,15 @@
 #include"volk.h"
 #include <vector>
 #include <string>
+#include <optional>
+
+struct QueueFamilyIndices{
+    std::optional<uint32_t> graphicsFamily{std::nullopt};
+    std::optional<uint32_t> presentFamily{std::nullopt};
+    inline bool isComplete()const{
+        return graphicsFamily.has_value() && presentFamily.has_value();
+    }
+};
 
 
 struct VulkanRenderContext;
@@ -133,6 +142,15 @@ public:
             VkImageView imageView,
             VkSampler sampler
     );
+
+    static VkFormat selectOptimalSupportedImageFormat(const VulkanRenderContext& context,
+            const std::vector<VkFormat>& candiates,
+            VkImageTiling tiling,
+            VkFormatFeatureFlags features);
+
+    static VkFormat selectOptimalImageFormat(const VulkanRenderContext& context);
+
+    static QueueFamilyIndices fetchFamilyIndices(VkPhysicalDevice& physcalDevice,VkSurfaceKHR & surface);
 
 };
 

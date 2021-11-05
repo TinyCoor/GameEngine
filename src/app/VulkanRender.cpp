@@ -3,20 +3,38 @@
 //
 
 #include "VulkanRender.h"
+#include "VulkanSwapChain.h"
 #include "VulkanGraphicsPipelineBuilder.h"
 #include "VulkanDescriptorSetLayoutBuilder.h"
 #include "VulkanPipelineLayoutBuilder.h"
 #include "VulkanRenderPassBuilder.h"
+#include "VulkanRenderScene.h"
 #include <chrono>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Macro.h"
 #include <imgui_impl_vulkan.h>
 #include "config.h"
 #include "VulkanUtils.h"
+#include "VulkanTexture.h"
 
+VulkanRender::VulkanRender(VulkanRenderContext &ctx)
+:context(ctx),
+hdriToCubeRenderer(ctx),
+diffuseIrradianceRenderer(ctx),
+environmentCubemap(new VulkanTexture(ctx)),
+diffuseIrradianceCubemap(new VulkanTexture(ctx))
+{
 
+}
 
-void VulkanRender::init(VulkanRenderScene* scene) {
+VulkanRender::~VulkanRender() {
+    shutdown();
+}
+
+void VulkanRender::init(VulkanRenderScene* scene,VkExtent2D extent,VkDescriptorSetLayout layout,VkRenderPass renderPass) {
+    this->extent =extent;
+    this->renderPass = renderPass;
+    this->descriptorSetLayout = layout;
 
     std::shared_ptr<VulkanShader> vertShader = scene->getPBRVertexShader();
     std::shared_ptr<VulkanShader> fragShader = scene->getPBRFragmentShader();
@@ -26,21 +44,20 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swapChainContext.extend.width;
-    viewport.height = (float)swapChainContext.extend.height;
+    viewport.width = extent.width;
+    viewport.height = extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     //create scissor
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = swapChainContext.extend;
+    scissor.extent =extent;
 
+    VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VulkanDescriptorSetLayoutBuilder sceneDescriptorSetLayoutBuilder(context);
-    VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     sceneDescriptorSetLayout = sceneDescriptorSetLayoutBuilder
-            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage)
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
@@ -49,27 +66,12 @@ void VulkanRender::init(VulkanRenderScene* scene) {
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
             .build();
-
-    VulkanDescriptorSetLayoutBuilder swapchainDescriptorSetLayoutBuilder(context);
-    swapchainDescriptorSetLayout = swapchainDescriptorSetLayoutBuilder
-            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage)
-            .build();
-
-
-    VulkanRenderPassBuilder renderPassBuilder(context);
-    renderPassBuilder.addColorAttachment(swapChainContext.colorFormat, context.maxMSAASamples);
-    renderPassBuilder.addColorResolveAttachment(swapChainContext.colorFormat);
-    renderPassBuilder.addDepthStencilAttachment(swapChainContext.depthFormat, context.maxMSAASamples);
-    renderPassBuilder.addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    renderPassBuilder.addColorAttachmentReference(0,0);
-    renderPassBuilder.addColorResolveAttachmentReference(0,1);
-    renderPassBuilder.setDepthStencilAttachment(0,2);
-    renderPass = renderPassBuilder.build();
 
     VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
-    pipelineLayoutBuilder.addDescriptorSetLayout(swapchainDescriptorSetLayout);
+    pipelineLayoutBuilder.addDescriptorSetLayout(layout);
     pipelineLayoutBuilder.addDescriptorSetLayout(sceneDescriptorSetLayout);
     pipelineLayout = pipelineLayoutBuilder.build();
+
 
     VulkanGraphicsPipelineBuilder pbrpipelineBuilder(context,pipelineLayout,renderPass);
     pbrpipelineBuilder.addShaderStage(vertShader->getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT);
@@ -98,46 +100,6 @@ void VulkanRender::init(VulkanRenderScene* scene) {
             .addBlendColorAttachment()
             .build();
 
-    // Create uniform buffers
-    VkDeviceSize uboSize = sizeof(RenderState);
-    uint32_t imageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
-    uniformBuffers.resize(imageCount);
-    uniformBuffersMemory.resize(imageCount);
-
-    for (size_t i = 0; i < imageCount; i++) {
-        VulkanUtils::createBuffer(
-                context,
-                uboSize,
-                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                uniformBuffers[i],
-                uniformBuffersMemory[i]
-        );
-    }
-
-    //Create SwapChain descriptor sets
-    std::vector<VkDescriptorSetLayout> layouts(imageCount,swapchainDescriptorSetLayout);
-    swapchainDescriptorSets.resize(imageCount);
-    VkDescriptorSetAllocateInfo swapchainDescriptorSetAllocInfo = {};
-    swapchainDescriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    swapchainDescriptorSetAllocInfo.descriptorPool = context.descriptorPool;
-    swapchainDescriptorSetAllocInfo.descriptorSetCount = layouts.size();
-    swapchainDescriptorSetAllocInfo.pSetLayouts = layouts.data();
-
-    VK_CHECK(vkAllocateDescriptorSets(context.device_, &swapchainDescriptorSetAllocInfo, swapchainDescriptorSets.data()),
-             "Can't allocate swap chain descriptor sets");
-
-    for (int i = 0; i < imageCount; ++i) {
-        //Bind UBO from swapchain
-        VulkanUtils::bindUniformBuffer(
-                context,
-                swapchainDescriptorSets[i],
-                0,
-                uniformBuffers[i],
-                0,
-                sizeof(RenderState)
-        );
-    }
 
     // Create scene descriptor sets
     VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
@@ -150,7 +112,6 @@ void VulkanRender::init(VulkanRenderScene* scene) {
              "Can't allocate descriptor sets");
 
     initEnvironment(scene);
-
 
     std::array<std::shared_ptr<VulkanTexture>, 7> textures =
     {
@@ -173,74 +134,12 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         );
 
 
-    // Create framebuffers
-    frameBuffers.resize(imageCount);
-    for (size_t i = 0; i < imageCount; i++) {
-        std::array<VkImageView, 3> attachments = {
-                swapChainContext.colorImageView,
-                swapChainContext.imageViews[i],
-                swapChainContext.depthImageView,
-        };
 
-        VkFramebufferCreateInfo framebufferInfo = {};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPass;
-        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = swapChainContext.extend.width;
-        framebufferInfo.height = swapChainContext.extend.height;
-        framebufferInfo.layers = 1;
-
-        if (vkCreateFramebuffer(context.device_, &framebufferInfo, nullptr, &frameBuffers[i]) != VK_SUCCESS)
-            throw std::runtime_error("Can't create framebuffer");
-    }
-
-    // Create command buffers
-    commandBuffers.resize(imageCount);
-    VkCommandBufferAllocateInfo allocateInfo = {};
-    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocateInfo.commandPool = context.commandPool;
-    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocateInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
-
-    VK_CHECK(vkAllocateCommandBuffers(context.device_, &allocateInfo, commandBuffers.data()),"Can't create command buffers");
-
-//    // Init ImGui bindings for Vulkan
-//    {
-//        ImGui_ImplVulkan_InitInfo init_info = {};
-//        init_info.Instance = context.instance;
-//        init_info.PhysicalDevice = context.physicalDevice;
-//        init_info.Device = context.device_;
-//        init_info.QueueFamily = context.graphicsQueueFamily;
-//        init_info.Queue = context.graphicsQueue;
-//        init_info.DescriptorPool = context.descriptorPool;
-//        init_info.MSAASamples = context.maxMSAASamples;
-//        init_info.MinImageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
-//        init_info.ImageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
-//        init_info.Allocator = nullptr;
-//
-//        //TODO Fix Bug In this Function VkCreateSampler Cause Segmentation
-//        ImGui_ImplVulkan_Init(&init_info, renderPass);
-//
-//        VulkanRenderContext imGuiContext = {};
-//        imGuiContext.commandPool = context.commandPool;
-//        imGuiContext.descriptorPool = context.descriptorPool;
-//        imGuiContext.device_ = context.device_;
-//        imGuiContext.graphicsQueue = context.graphicsQueue;
-//        imGuiContext.maxMSAASamples = context.maxMSAASamples;
-//        imGuiContext.physicalDevice = context.physicalDevice;
-//        imGuiContext.presentQueue = context.presentQueue;
-//
-//        VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(imGuiContext);
-//        ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
-//        VulkanUtils::endSingleTimeCommands(imGuiContext, imGuiCommandBuffer);
-//    }
 }
 
 
 void VulkanRender::shutdown() {
-    //Shut down imGui
-//    ImGui_ImplVulkan_Shutdown();
+
 
 
     hdriToCubeRenderer.shutdown();
@@ -249,33 +148,12 @@ void VulkanRender::shutdown() {
     environmentCubemap->clearGPUData();
     diffuseIrradianceCubemap->clearGPUData();
 
-    for (auto framebuffer : frameBuffers) {
-        vkDestroyFramebuffer(context.device_, framebuffer, nullptr);
-    }
-    for (auto uniformBuffer : uniformBuffers) {
-        vkDestroyBuffer(context.device_, uniformBuffer, nullptr);
-    }
-    for (auto memory : uniformBuffersMemory) {
-        vkFreeMemory(context.device_, memory, nullptr);
-    }
 
-    frameBuffers.clear();
-    uniformBuffers.clear();
-    uniformBuffersMemory.clear();
 
     vkDestroyDescriptorSetLayout(context.device_,sceneDescriptorSetLayout, nullptr);
     sceneDescriptorSetLayout= VK_NULL_HANDLE;
 
-    vkDestroyDescriptorSetLayout(context.device_,swapchainDescriptorSetLayout, nullptr);
-    sceneDescriptorSetLayout= VK_NULL_HANDLE;
 
-    vkFreeDescriptorSets(context.device_,context.descriptorPool,1,&sceneDescriptorSet);
-    vkFreeDescriptorSets(context.device_,context.descriptorPool,swapchainDescriptorSets.size(),swapchainDescriptorSets.data());
-    sceneDescriptorSet = VK_NULL_HANDLE;
-    swapchainDescriptorSets.clear();
-
-    vkDestroyRenderPass(context.device_,renderPass, nullptr);
-    renderPass = VK_NULL_HANDLE;
 
     vkDestroyPipelineLayout(context.device_,pipelineLayout, nullptr);
     pipelineLayout = VK_NULL_HANDLE;
@@ -302,7 +180,7 @@ void VulkanRender::update(const VulkanRenderScene *scene) {
     const glm::vec3 &up = {0.0f, 0.0f, 1.0f};
     const glm::vec3 &zero = {0.0f, 0.0f, 0.0f};
 
-    const float aspect = swapChainContext.extend.width / (float) swapChainContext.extend.height;
+    const float aspect =(float )extent.width /(float ) extent.height;
     const float zNear = 0.1f;
     const float zFar = 1000.0f;
 
@@ -337,12 +215,12 @@ void VulkanRender::update(const VulkanRenderScene *scene) {
 
 }
 
-VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, uint32_t imageIndex) {
-    VkCommandBuffer commandBuffer = commandBuffers[imageIndex];
-    VkFramebuffer frameBuffer = frameBuffers[imageIndex];
-    VkBuffer uniformBuffer = uniformBuffers[imageIndex];
-    VkDeviceMemory uniformBufferMemory = uniformBuffersMemory[imageIndex];
-    VkDescriptorSet descriptorSet = swapchainDescriptorSets[imageIndex];
+VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame& frame ) {
+    VkCommandBuffer commandBuffer = frame.commandBuffer;
+    VkFramebuffer frameBuffer = frame.frameBuffer;
+    VkDeviceMemory uniformBufferMemory = frame.uniformBuffersMemory;
+    VkDescriptorSet descriptorSet = frame.swapchainDescriptorSet;
+    //VkRenderPass
 
     //Copy Render State to ubo
     void *ubo = nullptr;
@@ -365,7 +243,7 @@ VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, uint32_t imageInd
     renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = frameBuffer;
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = swapChainContext.extend;
+    renderPassInfo.renderArea.extent = extent;
 
     std::array<VkClearValue, 3> clearValues = {};
     clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -406,7 +284,6 @@ VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, uint32_t imageInd
         vkCmdDrawIndexed(commandBuffer, mesh->getNumIndices(), 1, 0, 0, 0);
     }
 
-//    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -487,17 +364,17 @@ void VulkanRender::setEnvironment(VulkanRenderScene *scene, int index) {
                     diffuseIrradianceCubemap,
     };
 
-    int imageCount = swapChainContext.imageViews.size();
-    for (int i = 0; i <imageCount ; ++i) {
-        for (int k = 0; k < textures.size(); k++)
-            VulkanUtils::bindCombinedImageSampler(
-                    context,
-                    sceneDescriptorSet,
-                    k + 5,
-                    textures[k]->getImageView(),
-                    textures[k]->getSampler()
-            );
-    }
+
+    for (int k = 0; k < textures.size(); k++)
+        VulkanUtils::bindCombinedImageSampler(
+                context,
+                sceneDescriptorSet,
+                k + 5,
+                textures[k]->getImageView(),
+                textures[k]->getSampler()
+        );
 
 
 }
+
+
