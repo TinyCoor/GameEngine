@@ -49,9 +49,12 @@ private:
 
     std::vector<VkCommandBuffer> commandBuffers{};
     std::vector<VkFramebuffer> frameBuffers{};
+
     std::vector<VkBuffer> uniformBuffers{};
     std::vector<VkDeviceMemory> uniformBuffersMemory{};
-    std::vector<VkDescriptorSet> descriptorSets{};
+
+
+    VkDescriptorSet descriptorSet{};
 
     int currentEnvironment{0};
     RenderState state;

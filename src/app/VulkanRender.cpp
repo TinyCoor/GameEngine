@@ -112,49 +112,40 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     }
 
     // Create descriptor sets
-    std::vector<VkDescriptorSetLayout> layouts(imageCount,descriptorSetLayout);
-
     VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
     descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     descriptorSetAllocInfo.descriptorPool = context.descriptorPool;
-    descriptorSetAllocInfo.descriptorSetCount = imageCount;
-    descriptorSetAllocInfo.pSetLayouts = layouts.data();
+    descriptorSetAllocInfo.descriptorSetCount = 1;
+    descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayout;
 
-    descriptorSets.resize(imageCount);
-    if (vkAllocateDescriptorSets(context.device_, &descriptorSetAllocInfo, descriptorSets.data()) != VK_SUCCESS)
-        throw std::runtime_error("Can't allocate descriptor sets");
+    VK_CHECK(vkAllocateDescriptorSets(context.device_, &descriptorSetAllocInfo, &descriptorSet),
+             "Can't allocate descriptor sets");
 
     initEnvironment(scene);
 
-    for (size_t i = 0; i < imageCount; i++)
-    {
-        std::array<std::shared_ptr<VulkanTexture>, 5> textures =
-                {
-                        scene->getAlbedoTexture(),
-                        scene->getNormalTexture(),
-                        scene->getAOTexture(),
-                        scene->getShadingTexture(),
-                        scene->getEmissionTexture(),
-                };
 
-        VulkanUtils::bindUniformBuffer(
+    std::array<std::shared_ptr<VulkanTexture>, 7> textures =
+    {
+            scene->getAlbedoTexture(),
+            scene->getNormalTexture(),
+            scene->getAOTexture(),
+            scene->getShadingTexture(),
+            scene->getEmissionTexture(),
+            environmentCubemap,
+            diffuseIrradianceCubemap,
+    };
+
+
+
+    for (int k = 0; k < textures.size(); k++)
+        VulkanUtils::bindCombinedImageSampler(
                 context,
-                descriptorSets[i],
-                0,
-                uniformBuffers[i],
-                0,
-                sizeof(RenderState)
+                descriptorSet,
+                k + 1,
+                textures[k]->getImageView(),
+                textures[k]->getSampler()
         );
 
-        for (int k = 0; k < textures.size(); k++)
-            VulkanUtils::bindCombinedImageSampler(
-                    context,
-                    descriptorSets[i],
-                    k + 1,
-                    textures[k]->getImageView(),
-                    textures[k]->getSampler()
-            );
-    }
 
     // Create framebuffers
     frameBuffers.resize(imageCount);
@@ -247,7 +238,8 @@ void VulkanRender::shutdown() {
     uniformBuffersMemory.clear();
 
     VK_DESTROY_OBJECT(vkDestroyDescriptorSetLayout(context.device_,descriptorSetLayout, nullptr),descriptorSetLayout);
-
+    vkFreeDescriptorSets(context.device_,context.descriptorPool,1,&descriptorSet);
+    descriptorSet = VK_NULL_HANDLE;
 
     vkDestroyRenderPass(context.device_,renderPass, nullptr);
     renderPass = VK_NULL_HANDLE;
@@ -317,25 +309,33 @@ void VulkanRender::update(const VulkanRenderScene *scene) {
 VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, uint32_t imageIndex) {
     VkCommandBuffer commandBuffer = commandBuffers[imageIndex];
     VkFramebuffer frameBuffer = frameBuffers[imageIndex];
-    VkDescriptorSet descriptorSet = descriptorSets[imageIndex];
     VkBuffer uniformBuffer = uniformBuffers[imageIndex];
     VkDeviceMemory uniformBufferMemory = uniformBuffersMemory[imageIndex];
 
+    //Copy Render State to ubo
     void *ubo = nullptr;
     vkMapMemory(context.device_, uniformBufferMemory, 0, sizeof(RenderState), 0, &ubo);
     memcpy(ubo, &state, sizeof(RenderState));
     vkUnmapMemory(context.device_, uniformBufferMemory);
 
-    if (vkResetCommandBuffer(commandBuffer, 0) != VK_SUCCESS)
-        throw std::runtime_error("Can't reset command buffer");
+    //Bind UBO from swapchain
+    VulkanUtils::bindUniformBuffer(
+            context,
+            descriptorSet,
+            0,
+            uniformBuffer,
+            0,
+            sizeof(RenderState)
+    );
 
+    //do actual drawing
+    VK_CHECK(vkResetCommandBuffer(commandBuffer, 0),"Can't reset command buffer");
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     beginInfo.pInheritanceInfo = nullptr; // Optional
 
-    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
-        throw std::runtime_error("Can't begin recording command buffer");
+    VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo),"Can't begin recording command buffer");
 
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -385,8 +385,7 @@ VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, uint32_t imageInd
 
     vkCmdEndRenderPass(commandBuffer);
 
-    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-        throw std::runtime_error("Can't record command buffer");
+    VK_CHECK(vkEndCommandBuffer(commandBuffer),"Can't record command buffer");
 
     return commandBuffer;
 }
@@ -468,7 +467,7 @@ void VulkanRender::setEnvironment(VulkanRenderScene *scene, int index) {
         for (int k = 0; k < textures.size(); k++)
             VulkanUtils::bindCombinedImageSampler(
                     context,
-                    descriptorSets[i],
+                    descriptorSet,
                     k + 6,
                     textures[k]->getImageView(),
                     textures[k]->getSampler()

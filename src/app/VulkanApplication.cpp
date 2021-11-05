@@ -12,7 +12,6 @@
 #include "VulkanUtils.h"
 #include <volk.h>
 #include <imgui.h>
-#include <imgui_impl_glfw.h>
 
 
 static int maxCombinedImageSamplers = 32;
@@ -283,7 +282,7 @@ bool Application::checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurface
 
 void Application::initVulkan() {
 
-    VK_CHECK( volkInitialize(),"can not init volk help lib");
+    // VK_CHECK( volkInitialize(),"can not init volk help lib");
     //检查vulkan extension and layer
     std::vector<const char*> extensions;
     TH_WITH_MSG(!checkRequiredExtension(extensions),"This device is not have Vulkan Extension\n");

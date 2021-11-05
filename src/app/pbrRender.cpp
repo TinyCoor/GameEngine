@@ -3,6 +3,7 @@
 //
 
 #include "VulkanApplication.h"
+#include "Macro.h"
 
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -10,6 +11,7 @@
 int main(){
    if(!glfwInit())
        return EXIT_FAILURE;
+   VK_CHECK(volkInitialize(),"Init Volk Failed");
    try {
        Application app;
        app.run();
