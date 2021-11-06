@@ -12,6 +12,7 @@
 #include "GLBuffer.hpp"
 #include "GLShader.h"
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include "GLProgram.h"
 #include "GLContext.h"
 #include "GLTexture.h"
@@ -112,8 +113,6 @@ bool GLApplication::render() {
     vao.UnBind();
 
 
-
-
     while (!glfwWindowShouldClose(window)){
         glfwPollEvents();
 
@@ -124,8 +123,15 @@ bool GLApplication::render() {
 
         imGuiRender_->update();
 
-        //TODO
+        auto pos = imGuiRender_->GetPosition();
         program.use();
+
+        glm::mat4 transform = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        transform = glm::translate(transform, pos);
+  //      transform = glm::rotate(transform, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+        program.SetUniformMatrix4fv("transform", 1, GL_FALSE, transform);
+        //TODO
+
         program.SetUniformVec4f("ourColor",1.0,0.0,0.0,1.0);
         vao.Bind();
         texture.Bind();

@@ -6,7 +6,10 @@
 #define GAMEENGINE_GLPROGRAM_H
 #include "GLObject.h"
 #include <iostream>
-
+#include <glm/glm.hpp>
+#include <glm/detail/type_mat.hpp>
+#include <glm/detail/type_mat4x4.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 class GLProgram : public GLObject{
 
@@ -42,6 +45,11 @@ public:
 
     void SetUniformMatrix3f(const char* name,GLsizei count, GLboolean transpose,GLfloat* values){
         glUniformMatrix3fv(GetUniformLocation(name),count,transpose,values);
+    }
+
+    void SetUniformMatrix4fv(const char* name, int count, GLboolean transpose, glm::mat4& matrix)
+    {
+        glUniformMatrix4fv(GetUniformLocation(name),count,transpose,glm::value_ptr(matrix));
     }
 
     void SetUniformFloat(const char* name,float value){

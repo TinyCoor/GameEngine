@@ -4,6 +4,7 @@
 
 #ifndef GAMEENGINE_IMGUIRENDER_H
 #define GAMEENGINE_IMGUIRENDER_H
+#include <glm/glm.hpp>
 
 class GLFWwindow;
 class ImGuiRender {
@@ -14,6 +15,14 @@ public:
 
     void update();
     void shutdown();
+
+    glm::vec3 GetPosition()const {return position;}
+    glm::vec3 GetRotation() const{ return rotation;}
+
+private:
+    bool ToolOpen = true;
+    glm::vec3 position;
+    glm::vec3 rotation;
 
 };
 

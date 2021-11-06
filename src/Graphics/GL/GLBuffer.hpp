@@ -27,6 +27,44 @@ public:
 };
 
 
+template<>
+class BufferPolicy<GL_FRAMEBUFFER>{
+public:
+    static constexpr GLenum buffer_type = GL_FRAMEBUFFER;
+    static GLHANDLE  createBufferObject(){
+        GLHANDLE buffer_handle;
+        glCreateFramebuffers(1,&buffer_handle);
+        return buffer_handle;
+    }
+
+    static void Bind(GLHANDLE glhandle) {
+        glBindFramebuffer(buffer_type,glhandle);
+    }
+
+    static void DestroyBuffer(GLHANDLE handle){
+        glDeleteFramebuffers(1,&handle);
+    }
+};
+
+template<>
+class BufferPolicy<GL_RENDERBUFFER>{
+public:
+    static constexpr GLenum buffer_type = GL_RENDERBUFFER;
+    static GLHANDLE  createBufferObject(){
+        GLHANDLE buffer_handle;
+        glCreateRenderbuffers(1,&buffer_handle);
+        return buffer_handle;
+    }
+
+    static void Bind(GLHANDLE glhandle) {
+        glBindRenderbuffer(buffer_type,glhandle);
+    }
+
+    static void DestroyBuffer(GLHANDLE handle){
+        glDeleteRenderbuffers(1,&handle);
+    }
+};
+
 
 template<GLenum buf_type,template<GLenum > class BufferTypePolicy = BufferPolicy>
 class GLBuffer : public GLObject {
@@ -96,8 +134,9 @@ public:
     void GetGPUData(size_t offset,size_t size ,void* data){
         glGetNamedBufferSubData(buf_type,offset,size,data);
     }
+
     //将当前缓存映射到CPU端
-   void*  Map(GLenum access){
+    void*  Map(GLenum access){
        return glMapBuffer(this->handle,access);
     }
 

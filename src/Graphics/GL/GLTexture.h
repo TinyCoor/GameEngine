@@ -12,7 +12,7 @@
 
 
 
-template<GLenum textureType, template<GLenum > class TextureCreatePolicy=Texture2D>
+template<GLenum textureType, template<GLenum > class TextureCreatePolicy=TextureObject>
 class GLTexture: public GLObject{
 public:
     GLTexture(): GLObject(TextureCreatePolicy<textureType>::CreateTexture(),"Texture"){

@@ -19,7 +19,7 @@ void loadTexture(const char* file,ImageInfo& imageInfo);
 
 
 template<GLenum textureType>
-class Texture2D{
+class TextureObject{
 public:
     static inline int pos =0;
 
@@ -59,6 +59,8 @@ public:
     }
 
 };
+
+
 
 
 #endif //GAMEENGINE_TEXTURE2D_H
