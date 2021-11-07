@@ -25,6 +25,8 @@ public:
     void update(RenderState& state,
                 VulkanRenderScene* scene);
 
+    void resize(std::shared_ptr<VulkanSwapChain> swapChain);
+
     void render(RenderState& state,
                            VulkanRenderScene* scene,
                            const VulkanRenderFrame& frame);

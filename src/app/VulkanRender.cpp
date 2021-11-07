@@ -44,19 +44,6 @@ void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
     std::shared_ptr<VulkanShader> skyboxVertexShader = scene->getSkyboxVertexShader();
     std::shared_ptr<VulkanShader> skyboxFragmentShader = scene->getSkyboxFragmentShader();
 
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = extent.width;
-    viewport.height = extent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    //create scissor
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent =extent;
-
     VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VulkanDescriptorSetLayoutBuilder sceneDescriptorSetLayoutBuilder(context);
@@ -77,17 +64,18 @@ void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
 
 
     VulkanGraphicsPipelineBuilder pbrpipelineBuilder(context,pipelineLayout,renderPass);
-    pbrpipelineBuilder.addShaderStage(vertShader->getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT);
-    pbrpipelineBuilder.addShaderStage(fragShader->getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT);
-    pbrpipelineBuilder.addVertexInput(VulkanMesh::getVertexInputBindingDescription(),VulkanMesh::getAttributeDescriptions());
-    pbrpipelineBuilder.setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    pbrpipelineBuilder.addViewport(viewport);
-    pbrpipelineBuilder.addScissor(scissor);
-    pbrpipelineBuilder.setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE);
-    pbrpipelineBuilder.setMultisampleState(context.maxMSAASamples, true);
-    pbrpipelineBuilder.setDepthStencilState(true, true, VK_COMPARE_OP_LESS),
-    pbrpipelineBuilder.addBlendColorAttachment();
-    pbrPipeline =  pbrpipelineBuilder.build();
+    pbrPipeline = pbrpipelineBuilder .addShaderStage(vertShader->getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
+        .addShaderStage(fragShader->getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
+        .addVertexInput(VulkanMesh::getVertexInputBindingDescription(),VulkanMesh::getAttributeDescriptions())
+        .setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+        .addDynamicState(VK_DYNAMIC_STATE_SCISSOR)
+        .addDynamicState(VK_DYNAMIC_STATE_VIEWPORT)
+        .setRasterizerState(false, false, VK_POLYGON_MODE_FILL,
+                            1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE)
+        .setMultisampleState(context.maxMSAASamples, true)
+        .setDepthStencilState(true, true, VK_COMPARE_OP_LESS)
+        .addBlendColorAttachment()
+        .build();
 
     VulkanGraphicsPipelineBuilder skyboxPipelineBuilder(context, pipelineLayout, renderPass);
     skyboxPipeline = skyboxPipelineBuilder
@@ -95,8 +83,8 @@ void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
             .addShaderStage(skyboxFragmentShader->getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
             .addVertexInput(VulkanMesh::getVertexInputBindingDescription(), VulkanMesh::getAttributeDescriptions())
             .setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
-            .addViewport(viewport)
-            .addScissor(scissor)
+            .addDynamicState(VK_DYNAMIC_STATE_SCISSOR)
+            .addDynamicState(VK_DYNAMIC_STATE_VIEWPORT)
             .setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE)
             .setMultisampleState(context.maxMSAASamples,true)
             .setDepthStencilState(true, true, VK_COMPARE_OP_LESS)
@@ -215,11 +203,33 @@ void VulkanRender::render(RenderState& state,VulkanRenderScene *scene, const Vul
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
 
+
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = extent.width;
+    viewport.height = extent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    //create scissor
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent=extent;
+
+
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
+
+    vkCmdSetScissor(commandBuffer,0,1,&scissor);
+    vkCmdSetViewport(commandBuffer,0,1,&viewport);
+
+
     std::array<VkDescriptorSet,2> bindDescriptors={descriptorSet,sceneDescriptorSet };
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, bindDescriptors.size(), bindDescriptors.data(), 0, nullptr);
+
+
     {
        auto skybox = scene->getSkyboxMesh();
 
@@ -335,6 +345,11 @@ void VulkanRender::setEnvironment(RenderState& state,VulkanRenderScene* scene, i
                 textures[k]->getSampler()
         );
 
+
+}
+
+void VulkanRender::resize(const std::shared_ptr<VulkanSwapChain> swapChain) {
+    extent = swapChain->getExtent();
 
 }
 

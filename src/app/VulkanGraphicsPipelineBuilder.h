@@ -22,8 +22,10 @@ private:
     std::vector<VkVertexInputAttributeDescription> vertexInputAttributes;
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
 
-    std::vector<VkViewport> viewports;
-    std::vector<VkRect2D> scissors;
+    std::vector<VkViewport> viewports{};
+    std::vector<VkRect2D> scissors{};
+
+    std::vector<VkDynamicState> dynamicStates{};
 
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{};
     VkPipelineRasterizationStateCreateInfo rasterizerState{};
@@ -60,6 +62,8 @@ public:
     VulkanGraphicsPipelineBuilder& addScissor(
             const VkRect2D& scissor
             );
+
+    VulkanGraphicsPipelineBuilder& addDynamicState(VkDynamicState dynamicState);
 
     VulkanGraphicsPipelineBuilder& addBlendColorAttachment(
             bool blend = false,

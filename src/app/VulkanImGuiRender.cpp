@@ -129,3 +129,8 @@ void VulkanImGuiRender::render(RenderState &state,
 void VulkanImGuiRender::shutdown() {
     ImGui_ImplGlfw_Shutdown();
 }
+
+void VulkanImGuiRender::resize(std::shared_ptr<VulkanSwapChain> swapChain) {
+    extent = swapChain->getExtent();
+    ImGui_ImplVulkan_SetMinImageCount(swapChain->getNumImages());
+}

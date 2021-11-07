@@ -60,6 +60,8 @@ public:
 
     void shutdown();
 
+    void resize(const std::shared_ptr<VulkanSwapChain> swapChain);
+
 private:
     void initEnvironment(RenderState& state,VulkanRenderScene* scene);
     void setEnvironment(RenderState& state,VulkanRenderScene* scene,int index);

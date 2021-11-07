@@ -131,6 +131,14 @@ VkPipeline VulkanGraphicsPipelineBuilder::build() {
     colorBlendState.blendConstants[3] = 0.0f;
 
 
+    VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo={};
+    dynamicStateCreateInfo.sType =VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicStateCreateInfo.pNext= nullptr;
+    dynamicStateCreateInfo.dynamicStateCount =dynamicStates.size();
+    dynamicStateCreateInfo.pDynamicStates= dynamicStates.data();
+
+
+
     // Create graphics pipeline
     VkGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -143,6 +151,7 @@ VkPipeline VulkanGraphicsPipelineBuilder::build() {
     pipelineInfo.pMultisampleState = &multisamplingState;
     pipelineInfo.pDepthStencilState = &depthStencilState;
     pipelineInfo.pColorBlendState = &colorBlendState;
+    pipelineInfo.pDynamicState = &dynamicStateCreateInfo;
     pipelineInfo.layout = pipelineLayout;
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
@@ -171,5 +180,11 @@ VulkanGraphicsPipelineBuilder::setDepthStencilState(bool depthTest, bool depthWr
     depthStencilState.depthBoundsTestEnable = VK_FALSE;
     depthStencilState.minDepthBounds = 0.0f; // Optional
     depthStencilState.maxDepthBounds = 1.0f; // Optional
+    return *this;
+}
+
+VulkanGraphicsPipelineBuilder &VulkanGraphicsPipelineBuilder::addDynamicState(VkDynamicState dynamicState) {
+
+    dynamicStates.emplace_back(dynamicState);
     return *this;
 }

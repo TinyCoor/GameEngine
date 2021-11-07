@@ -515,8 +515,11 @@ void Application::recreateSwapChain() {
     }
     vkDeviceWaitIdle(context.device_);
 
+    glfwGetWindowSize(window,&width,&height);
     swapChain->reinit(width,height);
-//    render->setextent(width,height);
+    render->resize(swapChain);
+
+    //ImGuiRender->resize(swapChain);
 
 }
 
