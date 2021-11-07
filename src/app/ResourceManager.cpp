@@ -65,7 +65,7 @@ std::shared_ptr<VulkanTexture> VulkanResourceManager::loadTexture(int id, const 
     return texture;
 }
 
-std::shared_ptr<VulkanShader> VulkanResourceManager::getShader(int id) {
+std::shared_ptr<VulkanShader> VulkanResourceManager::getShader(int id) const {
     auto it = shaders.find(id);
     if (it !=shaders.end()){
         return it->second;
@@ -73,7 +73,7 @@ std::shared_ptr<VulkanShader> VulkanResourceManager::getShader(int id) {
     return nullptr;
 }
 
-std::shared_ptr<VulkanTexture> VulkanResourceManager::getTexture(int id) {
+std::shared_ptr<VulkanTexture> VulkanResourceManager::getTexture(int id) const{
     auto it = textures.find(id);
     if (it !=textures.end()){
         return it->second;
@@ -81,7 +81,7 @@ std::shared_ptr<VulkanTexture> VulkanResourceManager::getTexture(int id) {
     return nullptr;
 }
 
-std::shared_ptr<VulkanMesh> VulkanResourceManager::getMesh(int id) {
+std::shared_ptr<VulkanMesh> VulkanResourceManager::getMesh(int id) const {
     auto it = meshes.find(id);
     if (it !=meshes.end()){
         return it->second;
@@ -102,7 +102,7 @@ std::shared_ptr<VulkanMesh> VulkanResourceManager::createCubeMesh(int id, float 
     return mesh;
 }
 
-std::shared_ptr<VulkanTexture> VulkanResourceManager::getHDRTexture(int id) {
+std::shared_ptr<VulkanTexture> VulkanResourceManager::getHDRTexture(int id) const {
     auto it = textures.find(id);
     if (it !=textures.end()){
         return it->second;

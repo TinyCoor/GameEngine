@@ -5,35 +5,26 @@
 #ifndef GAMEENGINE_VULKANRENDER_H
 #define GAMEENGINE_VULKANRENDER_H
 
-#include "VulkanRenderScene.h"
 #include "VulkanRenderContext.h"
 #include "VulkanCubemapRender.h"
 #include <volk.h>
-#include <string>
 #include <vector>
-#include <stdexcept>
-#include <glm/glm.hpp>
 
 struct VulkanRenderFrame;
 class VulkanTexture;
 class VulkanRenderScene;
 class VulkanSwapChain;
+class VulkanRenderScene;
 
-struct RenderState{
-    glm::mat4 world;
-    glm::mat4 view;
-    glm::mat4 proj;
-    glm::vec3 cameraPosWS;
-    float lerpUserValues {0.0f};
-    float userMetalness {0.0f};
-    float userRoughness {0.0f};
-};
-
+struct RenderState;
 
 
 class VulkanRender {
 private:
     VulkanRenderContext context;
+    VkExtent2D extent;
+    VkRenderPass renderPass{VK_NULL_HANDLE};
+    VkPipelineLayout  pipelineLayout{VK_NULL_HANDLE};
 
     VulkanCubeMapRender hdriToCubeRenderer;
     VulkanCubeMapRender diffuseIrradianceRenderer;
@@ -41,38 +32,37 @@ private:
     std::shared_ptr<VulkanTexture> environmentCubemap;
     std::shared_ptr <VulkanTexture> diffuseIrradianceCubemap;
 
-    VkPipelineLayout  pipelineLayout{VK_NULL_HANDLE};
-
 
     VkPipeline pbrPipeline{VK_NULL_HANDLE};
     VkPipeline skyboxPipeline{VK_NULL_HANDLE};
 
 
     VkDescriptorSetLayout sceneDescriptorSetLayout{VK_NULL_HANDLE};
+    //TODO swapchain descriptorSetLayout
+    VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
     VkDescriptorSet sceneDescriptorSet{VK_NULL_HANDLE};
     //TODO
-    VkExtent2D extent;
-    VkRenderPass renderPass;
-    VkDescriptorSetLayout descriptorSetLayout;
-
-    int currentEnvironment{0};
-    RenderState state;
+//    RenderState state{};
 
 
 public:
-    explicit VulkanRender(VulkanRenderContext& ctx);
+    explicit VulkanRender(VulkanRenderContext& ctx,
+                          VkExtent2D extent,
+                          VkDescriptorSetLayout layout,
+                          VkRenderPass renderPass);
     virtual ~VulkanRender();
 
-    void init(VulkanRenderScene* scene,VkExtent2D extent,VkDescriptorSetLayout layout,VkRenderPass renderPass);
+    void init(RenderState& state, VulkanRenderScene* scene);
 
-    void initEnvironment(VulkanRenderScene* scene);
+    void update(RenderState& state,VulkanRenderScene *scene);
 
-    void setEnvironment(VulkanRenderScene* scene,int index);
-
-    void update(const VulkanRenderScene *scene);
-    VkCommandBuffer render(VulkanRenderScene *scene, const VulkanRenderFrame& frame);
+    VkCommandBuffer render(RenderState& state,VulkanRenderScene *scene, const VulkanRenderFrame& frame);
 
     void shutdown();
+
+private:
+    void initEnvironment(RenderState& state,VulkanRenderScene* scene);
+    void setEnvironment(RenderState& state,VulkanRenderScene* scene,int index);
 };
 
 

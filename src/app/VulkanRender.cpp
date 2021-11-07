@@ -3,22 +3,25 @@
 //
 
 #include "VulkanRender.h"
+#include "RenderState.h"
 #include "VulkanSwapChain.h"
 #include "VulkanGraphicsPipelineBuilder.h"
 #include "VulkanDescriptorSetLayoutBuilder.h"
 #include "VulkanPipelineLayoutBuilder.h"
-#include "VulkanRenderPassBuilder.h"
+#include "VulkanMesh.h"
 #include "VulkanRenderScene.h"
-#include <chrono>
-#include <glm/gtc/matrix_transform.hpp>
 #include "Macro.h"
-#include <imgui_impl_vulkan.h>
-#include "config.h"
 #include "VulkanUtils.h"
 #include "VulkanTexture.h"
+#include <chrono>
+#include <glm/gtc/matrix_transform.hpp>
 
-VulkanRender::VulkanRender(VulkanRenderContext &ctx)
+
+VulkanRender::VulkanRender(VulkanRenderContext &ctx,VkExtent2D size,VkDescriptorSetLayout layout,VkRenderPass pass)
 :context(ctx),
+renderPass(pass),
+extent(size),
+descriptorSetLayout(layout),
 hdriToCubeRenderer(ctx),
 diffuseIrradianceRenderer(ctx),
 environmentCubemap(new VulkanTexture(ctx)),
@@ -31,10 +34,7 @@ VulkanRender::~VulkanRender() {
     shutdown();
 }
 
-void VulkanRender::init(VulkanRenderScene* scene,VkExtent2D extent,VkDescriptorSetLayout layout,VkRenderPass renderPass) {
-    this->extent =extent;
-    this->renderPass = renderPass;
-    this->descriptorSetLayout = layout;
+void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
 
     std::shared_ptr<VulkanShader> vertShader = scene->getPBRVertexShader();
     std::shared_ptr<VulkanShader> fragShader = scene->getPBRFragmentShader();
@@ -68,7 +68,7 @@ void VulkanRender::init(VulkanRenderScene* scene,VkExtent2D extent,VkDescriptorS
             .build();
 
     VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
-    pipelineLayoutBuilder.addDescriptorSetLayout(layout);
+    pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
     pipelineLayoutBuilder.addDescriptorSetLayout(sceneDescriptorSetLayout);
     pipelineLayout = pipelineLayoutBuilder.build();
 
@@ -111,7 +111,7 @@ void VulkanRender::init(VulkanRenderScene* scene,VkExtent2D extent,VkDescriptorS
     VK_CHECK(vkAllocateDescriptorSets(context.device_, &descriptorSetAllocInfo, &sceneDescriptorSet),
              "Can't allocate descriptor sets");
 
-    initEnvironment(scene);
+    initEnvironment(state,scene);
 
     std::array<std::shared_ptr<VulkanTexture>, 7> textures =
     {
@@ -141,7 +141,6 @@ void VulkanRender::init(VulkanRenderScene* scene,VkExtent2D extent,VkDescriptorS
 void VulkanRender::shutdown() {
 
 
-
     hdriToCubeRenderer.shutdown();
     diffuseIrradianceRenderer.shutdown();
 
@@ -149,10 +148,8 @@ void VulkanRender::shutdown() {
     diffuseIrradianceCubemap->clearGPUData();
 
 
-
     vkDestroyDescriptorSetLayout(context.device_,sceneDescriptorSetLayout, nullptr);
     sceneDescriptorSetLayout= VK_NULL_HANDLE;
-
 
 
     vkDestroyPipelineLayout(context.device_,pipelineLayout, nullptr);
@@ -165,11 +162,10 @@ void VulkanRender::shutdown() {
     vkDestroyPipeline(context.device_,skyboxPipeline, nullptr);
     skyboxPipeline = VK_NULL_HANDLE;
 
-    sceneDescriptorSetLayout = VK_NULL_HANDLE;
 
 }
 
-void VulkanRender::update(const VulkanRenderScene *scene) {
+void VulkanRender::update(RenderState& state,VulkanRenderScene *scene) {
     // Render state
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
@@ -204,18 +200,32 @@ void VulkanRender::update(const VulkanRenderScene *scene) {
 //
 //    ImGui::Begin("Material Parameters");
 //
+//    int oldCurrentEnvironment =state.currentEnvironment;
+//    if(ImGui::BeginCombo("Chose your Destiny",scene->getHDRTexture(state.currentEnvironment))){
+//        for (int i = 0; i < scene->getNumHDRTextures(); ++i) {
+//            bool selected = (i==state.currentEnvironment);
+//            if (ImGui::Selectable(scene->getHDRTexturePath(i),&selected))
+//                state.currentEnvironment = i;
+//            if (selected)
+//                ImGui::SetItemDefaultFocus();
+//        }
+//        ImGui::EndCombo();
+//    }
 //    ImGui::Checkbox("Demo Window", &show_demo_window);
-//
+
 //    ImGui::SliderFloat("Lerp User Material", &state.lerpUserValues, 0.0f, 1.0f);
 //    ImGui::SliderFloat("Metalness", &state.userMetalness, 0.0f, 1.0f);
 //    ImGui::SliderFloat("Roughness", &state.userRoughness, 0.0f, 1.0f);
 //
 //    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 //    ImGui::End();
+//    if(oldCurrentEnvironment !=state.currentEnvironment){
+//        setEnvironment(scene,state.currentEnvironment);
+//    }
 
 }
 
-VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame& frame ) {
+VkCommandBuffer VulkanRender::render(RenderState& state,VulkanRenderScene *scene, const VulkanRenderFrame& frame ) {
     VkCommandBuffer commandBuffer = frame.commandBuffer;
     VkFramebuffer frameBuffer = frame.frameBuffer;
     VkDeviceMemory uniformBufferMemory = frame.uniformBuffersMemory;
@@ -227,7 +237,6 @@ VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, const VulkanRende
     vkMapMemory(context.device_, uniformBufferMemory, 0, sizeof(RenderState), 0, &ubo);
     memcpy(ubo, &state, sizeof(RenderState));
     vkUnmapMemory(context.device_, uniformBufferMemory);
-
 
     //do actual drawing
     VK_CHECK(vkResetCommandBuffer(commandBuffer, 0),"Can't reset command buffer");
@@ -292,7 +301,7 @@ VkCommandBuffer VulkanRender::render(VulkanRenderScene *scene, const VulkanRende
     return commandBuffer;
 }
 
-void VulkanRender::initEnvironment(VulkanRenderScene* scene){
+void VulkanRender::initEnvironment(RenderState& state,VulkanRenderScene* scene){
     environmentCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
     diffuseIrradianceCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
     hdriToCubeRenderer.init(
@@ -306,10 +315,10 @@ void VulkanRender::initEnvironment(VulkanRenderScene* scene){
             scene->getDiffuseToIrridanceShader(),
             diffuseIrradianceCubemap
     );
-    setEnvironment(scene,currentEnvironment);
+    setEnvironment(state,scene,state.currentEnvironment);
 }
 
-void VulkanRender::setEnvironment(VulkanRenderScene *scene, int index) {
+void VulkanRender::setEnvironment(RenderState& state,VulkanRenderScene* scene, int index) {
     {
         VulkanUtils::transitionImageLayout(
                 context,

@@ -4,12 +4,14 @@
 
 #pragma once
 
-#include "VulkanRenderScene.h"
+
 #include "VulkanRenderContext.h"
-#include "VulkanMesh.h"
-#include <string>
-#include <vector>
-#include <stdexcept>
+
+#include <memory>
+
+class VulkanMesh;
+class VulkanTexture;
+class VulkanShader;
 
 class VulkanCubeMapRender {
 private:
@@ -29,7 +31,6 @@ private:
     VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
 
 
-
     VkFence fence {VK_NULL_HANDLE};
 
     VkBuffer uniformBuffer{VK_NULL_HANDLE};
@@ -38,8 +39,7 @@ private:
 
 
 public:
-    VulkanCubeMapRender(VulkanRenderContext& ctx)
-                    :context(ctx),renderQuad(new VulkanMesh(ctx)){}
+    VulkanCubeMapRender(VulkanRenderContext& ctx);
 
     void init(std::shared_ptr <VulkanShader> vertShader,
               std::shared_ptr <VulkanShader> fragShader,

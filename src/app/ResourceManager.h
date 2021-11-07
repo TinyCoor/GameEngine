@@ -25,10 +25,10 @@ public:
     std::shared_ptr<VulkanMesh> createCubeMesh(int id,float size);
     std::shared_ptr<VulkanTexture>  loadTexture(int id,const char* path);
 
-    std::shared_ptr<VulkanShader> getShader(int id);
-    std::shared_ptr<VulkanTexture>  getTexture(int id);
-    std::shared_ptr<VulkanMesh> getMesh(int id);
-    std::shared_ptr<VulkanTexture> getHDRTexture(int id);
+    std::shared_ptr<VulkanShader> getShader(int id) const;
+    std::shared_ptr<VulkanTexture>  getTexture(int id) const;
+    std::shared_ptr<VulkanMesh> getMesh(int id) const;
+    std::shared_ptr<VulkanTexture> getHDRTexture(int id) const;
 
 private:
     //May be This is singleton

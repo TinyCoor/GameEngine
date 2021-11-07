@@ -4,17 +4,22 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 #include "VulkanCubemapRender.h"
+#include "VulkanMesh.h"
 #include "VulkanGraphicsPipelineBuilder.h"
 #include "VulkanDescriptorSetLayoutBuilder.h"
 #include "VulkanPipelineLayoutBuilder.h"
 #include "VulkanRenderPassBuilder.h"
 #include "VulkanUtils.h"
+#include "VulkanShader.h"
 #include "Macro.h"
 #include "VulkanTexture.h"
 
 struct CubemapFaceOrientationData{
     glm::mat4 faces[6];
 };
+
+VulkanCubeMapRender::VulkanCubeMapRender(VulkanRenderContext& ctx)
+:context(ctx),renderQuad(new VulkanMesh(ctx)){}
 
 void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
                                std::shared_ptr <VulkanShader> fragShader,

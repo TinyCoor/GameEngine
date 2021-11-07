@@ -7,7 +7,6 @@
 
 #include "VulkanRenderContext.h"
 #include <volk.h>
-#include <stdexcept>
 #include <shaderc/shaderc.h>
 
 

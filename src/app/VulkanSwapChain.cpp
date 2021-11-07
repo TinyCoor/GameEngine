@@ -1,11 +1,16 @@
-#include <functional>
-#include <iostream>
+
 #include "VulkanSwapChain.h"
 #include "VulkanUtils.h"
 #include "VulkanApplication.h"
 #include "Macro.h"
 #include "VulkanDescriptorSetLayoutBuilder.h"
 #include "VulkanRenderPassBuilder.h"
+#include "VulkanRender.h"
+
+#include <functional>
+#include <iostream>
+#include <limits>
+#include <cassert>
 
 VulkanSwapChain::VulkanSwapChain(const VulkanRenderContext& ctx):context(ctx){
 }
@@ -241,8 +246,6 @@ void VulkanSwapChain::init(VkDeviceSize uboSize,int width,int height) {
 }
 
 void VulkanSwapChain::shutdown() {
-    vkDestroyDescriptorPool(context.device_,context.descriptorPool, nullptr);
-    context.descriptorPool = VK_NULL_HANDLE;
 
     for(auto& imageView :swapChainImageViews){
         vkDestroyImageView(context.device_,imageView, nullptr);
@@ -284,7 +287,6 @@ void VulkanSwapChain::shutdown() {
 bool  VulkanSwapChain::Acquire(VulkanRenderFrame& frame) {
     vkWaitForFences(context.device_, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
-    uint32_t imageIndex = 0;
     VkResult result = vkAcquireNextImageKHR(
             context.device_,
             swapchain,

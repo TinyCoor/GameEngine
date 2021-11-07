@@ -1,0 +1,14 @@
+//
+// Created by 12132 on 2021/11/6.
+//
+
+#ifndef GAMEENGINE_GLTRANSFERFEEDBACK_H
+#define GAMEENGINE_GLTRANSFERFEEDBACK_H
+
+
+class GLTransferFeedBack {
+
+};
+
+
+#endif //GAMEENGINE_GLTRANSFERFEEDBACK_H

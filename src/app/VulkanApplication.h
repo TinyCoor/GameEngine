@@ -4,14 +4,15 @@
 
 #ifndef GAMEENGINE_VULKANAPPLICATION_H
 #define GAMEENGINE_VULKANAPPLICATION_H
-#include "VulkanRender.h"
-#include "volk.h"
-#include <vector>
+#include "VulkanRenderContext.h"
+#include "RenderState.h"
+#include <volk.h>
 #include <memory>
-#include "VulkanSwapChain.h"
+
 class GLFWwindow;
-
-
+class VulkanRender;
+class VulkanRenderScene;
+class VulkanSwapChain;
 
 class Application{
 public:
@@ -55,11 +56,10 @@ private:
     GLFWwindow* window{nullptr};
     VulkanRenderScene* scene{nullptr};
     VulkanRender* render{nullptr};
+    RenderState state;
 
     std::shared_ptr<VulkanSwapChain> swapChain;
     VulkanRenderContext context;
-
-
 
     VkQueue graphicsQueue {VK_NULL_HANDLE};
     VkQueue presentQueue {VK_NULL_HANDLE};

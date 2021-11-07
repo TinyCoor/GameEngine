@@ -3,16 +3,20 @@
 //
 #include "VulkanApplication.h"
 #include "VulkanSwapChain.h"
+#include "VulkanRenderScene.h"
+#include "VulkanRender.h"
+#include "Macro.h"
+#include "VulkanUtils.h"
 #include <iostream>
 #include <set>
 #include <GLFW/glfw3.h>
-#include "Macro.h"
 #include <GLFW/glfw3native.h>
 #include <algorithm>
 #include <functional>
-#include "VulkanUtils.h"
 #include <volk.h>
 #include <imgui.h>
+#include <imgui_impl_vulkan.h>
+#include <imgui_impl_glfw.h>
 
 
 std::vector<const char*>  requiredPhysicalDeviceExtensions ={
@@ -136,10 +140,10 @@ namespace {
 void Application::initWindow() {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
     glfwWindowHint(GL_RED_BITS,mode->redBits);
     glfwWindowHint(GL_GREEN_BITS,mode->greenBits);
     glfwWindowHint(GL_BLUE_BITS,mode->blueBits);
-
     glfwWindowHint(GLFW_CLIENT_API,GLFW_NO_API);
 
     window = glfwCreateWindow(mode->width,mode->height,"Vulkan", nullptr, nullptr);
@@ -400,33 +404,33 @@ void Application::initImGui() {
 //
 //    ImGui_ImplGlfw_InitForVulkan(window,true);
 //    // Init ImGui bindings for Vulkan
-//        ImGui_ImplVulkan_InitInfo init_info = {};
-//        init_info.Instance = context.instance;
-//        init_info.PhysicalDevice = context.physicalDevice;
-//        init_info.Device = context.device_;
-//        init_info.QueueFamily = context.graphicsQueueFamily;
-//        init_info.Queue = context.graphicsQueue;
-//        init_info.DescriptorPool = context.descriptorPool;
-//        init_info.MSAASamples = context.maxMSAASamples;
-//        init_info.MinImageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
-//        init_info.ImageCount = static_cast<uint32_t>(swapChainContext.imageViews.size());
-//        init_info.Allocator = nullptr;
+//    ImGui_ImplVulkan_InitInfo init_info = {};
+//    init_info.Instance = context.instance;
+//    init_info.PhysicalDevice = context.physicalDevice;
+//    init_info.Device = context.device_;
+//    init_info.QueueFamily = context.graphicsQueueFamily;
+//    init_info.Queue = context.graphicsQueue;
+//    init_info.DescriptorPool = context.descriptorPool;
+//    init_info.MSAASamples = context.maxMSAASamples;
+//    init_info.MinImageCount = static_cast<uint32_t>(swapChain->getNumImages());
+//    init_info.ImageCount = static_cast<uint32_t>(swapChain->getNumImages());
+//    init_info.Allocator = nullptr;
 //
-//        //TODO Fix Bug In this Function VkCreateSampler Cause Segmentation
-//        ImGui_ImplVulkan_Init(&init_info, renderPass);
+//    //TODO Fix Bug In this Function VkCreateSampler Cause Segmentation
+//    ImGui_ImplVulkan_Init(&init_info, swapChain->getRenderPass());
 //
-//        VulkanRenderContext imGuiContext = {};
-//        imGuiContext.commandPool = context.commandPool;
-//        imGuiContext.descriptorPool = context.descriptorPool;
-//        imGuiContext.device_ = context.device_;
-//        imGuiContext.graphicsQueue = context.graphicsQueue;
-//        imGuiContext.maxMSAASamples = context.maxMSAASamples;
-//        imGuiContext.physicalDevice = context.physicalDevice;
-//        imGuiContext.presentQueue = context.presentQueue;
+//    VulkanRenderContext imGuiContext = {};
+//    imGuiContext.commandPool = context.commandPool;
+//    imGuiContext.descriptorPool = context.descriptorPool;
+//    imGuiContext.device_ = context.device_;
+//    imGuiContext.graphicsQueue = context.graphicsQueue;
+//    imGuiContext.maxMSAASamples = context.maxMSAASamples;
+//    imGuiContext.physicalDevice = context.physicalDevice;
+//    imGuiContext.presentQueue = context.presentQueue;
 //
-//        VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(imGuiContext);
-//        ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
-//        VulkanUtils::endSingleTimeCommands(imGuiContext, imGuiCommandBuffer);
+//    VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(imGuiContext);
+//    ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
+//    VulkanUtils::endSingleTimeCommands(imGuiContext, imGuiCommandBuffer);
 
 
 }
@@ -458,7 +462,7 @@ void Application::RenderFrame(){
         return;
     }
 
-    render->render(scene, frame);
+    render->render(state,scene, frame);
 
 //    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
@@ -470,7 +474,7 @@ void Application::RenderFrame(){
 }
 void Application::update()
 {
-    render->update(scene);
+    render->update(state,scene);
 }
 void Application::mainLoop() {
     if(!window)
@@ -499,8 +503,8 @@ void Application::shutdownRender() {
 }
 
 void Application::initRender() {
-    render = new VulkanRender(context);
-    render->init(scene,swapChain->getExtent(),swapChain->getDescriptorSetLayout(),swapChain->getRenderPass());
+    render = new VulkanRender(context,swapChain->getExtent(),swapChain->getDescriptorSetLayout(),swapChain->getRenderPass());
+    render->init(state,scene);
 }
 
 
