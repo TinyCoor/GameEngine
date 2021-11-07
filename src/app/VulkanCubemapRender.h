@@ -4,9 +4,7 @@
 
 #pragma once
 
-
 #include "VulkanRenderContext.h"
-
 #include <memory>
 
 class VulkanMesh;
@@ -19,7 +17,6 @@ private:
     std::shared_ptr<VulkanMesh> renderQuad;
     VkImageView faceViews[6];
     VkExtent2D targetExtent;
-
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
@@ -35,7 +32,6 @@ private:
 
     VkBuffer uniformBuffer{VK_NULL_HANDLE};
     VkDeviceMemory uniformBuffersMemory{VK_NULL_HANDLE};
-
 
 
 public:

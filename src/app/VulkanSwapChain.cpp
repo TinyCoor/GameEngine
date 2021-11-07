@@ -5,10 +5,7 @@
 #include "Macro.h"
 #include "VulkanDescriptorSetLayoutBuilder.h"
 #include "VulkanRenderPassBuilder.h"
-#include "VulkanRender.h"
-
 #include <functional>
-#include <iostream>
 #include <limits>
 #include <cassert>
 
@@ -92,10 +89,11 @@ VulkanSwapChain::Settings VulkanSwapChain::selectOptimalSwapchainSettings(Suppor
 
     return settings;
 }
-void VulkanSwapChain::init(VkDeviceSize uboSize,int width,int height) {
+void VulkanSwapChain::init(VkDeviceSize Size,int width,int height) {
     //create SwapChain finally
     swapChainExtent.width = width;
     swapChainExtent.height = height;
+    uboSize =Size;
 
     SupportedDetails details = fetchSwapchainSupportedDetails(context.physicalDevice,context.surface);
     Settings settings = selectOptimalSwapchainSettings(details,width,height);
@@ -284,7 +282,7 @@ void VulkanSwapChain::shutdown() {
     shutFrame();
 }
 
-bool  VulkanSwapChain::Acquire(VulkanRenderFrame& frame) {
+bool  VulkanSwapChain::Acquire(const RenderState& state,VulkanRenderFrame& frame) {
     vkWaitForFences(context.device_, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
     VkResult result = vkAcquireNextImageKHR(
@@ -303,7 +301,17 @@ bool  VulkanSwapChain::Acquire(VulkanRenderFrame& frame) {
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
         throw std::runtime_error("Can't aquire swap chain image");
 
+
     frame = frames[imageIndex];
+
+    //Copy Render State to ubo
+    void *ubo = nullptr;
+    vkMapMemory(context.device_, frame.uniformBuffersMemory, 0, uboSize, 0, &ubo);
+    memcpy(ubo, &state, sizeof(RenderState));
+    vkUnmapMemory(context.device_, frame.uniformBuffersMemory);
+    //reset command buffer
+    VK_CHECK(vkResetCommandBuffer(frame.commandBuffer,0),"Can't Reset Command Buffer");
+
     return true;
 }
 

@@ -13,6 +13,7 @@ class GLFWwindow;
 class VulkanRender;
 class VulkanRenderScene;
 class VulkanSwapChain;
+class VulkanImGuiRender;
 
 class Application{
 public:
@@ -29,6 +30,9 @@ private:
     void initWindow();
     void initVulkan();
     void shutdownVulkan();
+
+    void initImGuiRender();
+    void shutdownImGuiRender();
 
     void initVulkanSwapChain();
     void shutdownSwapChain();
@@ -56,6 +60,8 @@ private:
     GLFWwindow* window{nullptr};
     VulkanRenderScene* scene{nullptr};
     VulkanRender* render{nullptr};
+    VulkanImGuiRender* ImGuiRender{nullptr};
+
     RenderState state;
 
     std::shared_ptr<VulkanSwapChain> swapChain;

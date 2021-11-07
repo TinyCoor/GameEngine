@@ -15,9 +15,7 @@ class VulkanTexture;
 class VulkanRenderScene;
 class VulkanSwapChain;
 class VulkanRenderScene;
-
 struct RenderState;
-
 
 class VulkanRender {
 private:
@@ -41,8 +39,6 @@ private:
     //TODO swapchain descriptorSetLayout
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
     VkDescriptorSet sceneDescriptorSet{VK_NULL_HANDLE};
-    //TODO
-//    RenderState state{};
 
 
 public:
@@ -56,7 +52,7 @@ public:
 
     void update(RenderState& state,VulkanRenderScene *scene);
 
-    VkCommandBuffer render(RenderState& state,VulkanRenderScene *scene, const VulkanRenderFrame& frame);
+    void render(RenderState& state,VulkanRenderScene *scene, const VulkanRenderFrame& frame);
 
     void shutdown();
 

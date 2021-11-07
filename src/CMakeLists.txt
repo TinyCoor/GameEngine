@@ -26,7 +26,7 @@ add_executable(niagara
         app/VulkanRenderPassBuilder.cpp
         app/VulkanPipelineLayoutBuilder.cpp
         app/VulkanCubemapRender.cpp
-
+        app/VulkanSwapChain.cpp
         ../extern/volk/volk.c
         ../extern/imgui/imgui.cpp
         ../extern/imgui/imgui_draw.cpp
@@ -37,7 +37,7 @@ add_executable(niagara
         ../extern/imgui/backends/imgui_impl_vulkan.cpp
          app/config.h 
          app/ResourceManager.cpp 
-         app/ResourceManager.h)
+         app/ResourceManager.h Entity/camera.cpp Entity/camera.h app/RenderState.h app/VulkanImGuiRender.cpp app/VulkanImGuiRender.h)
 
 
 message(STATUS ${ShaderC_LIBRARIES})

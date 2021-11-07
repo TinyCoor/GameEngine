@@ -5,6 +5,7 @@
 #include "VulkanSwapChain.h"
 #include "VulkanRenderScene.h"
 #include "VulkanRender.h"
+#include "VulkanImGuiRender.h"
 #include "Macro.h"
 #include "VulkanUtils.h"
 #include <iostream>
@@ -159,13 +160,14 @@ void Application::run(){
     initVulkanSwapChain();
     initScene();
     initRender();
-
+    initImGuiRender();
     mainLoop();
-    shutdownImGui();
+    shutdownImGuiRender();
     shutdownWindow();
     shutdownScene();
     shutdownRender();
     shutdownSwapChain();
+    shutdownImGui();
     shutdownVulkan();
 }
 
@@ -403,44 +405,32 @@ void Application::initImGui() {
 //    ImGui::StyleColorsDark();
 //
 //    ImGui_ImplGlfw_InitForVulkan(window,true);
-//    // Init ImGui bindings for Vulkan
-//    ImGui_ImplVulkan_InitInfo init_info = {};
-//    init_info.Instance = context.instance;
-//    init_info.PhysicalDevice = context.physicalDevice;
-//    init_info.Device = context.device_;
-//    init_info.QueueFamily = context.graphicsQueueFamily;
-//    init_info.Queue = context.graphicsQueue;
-//    init_info.DescriptorPool = context.descriptorPool;
-//    init_info.MSAASamples = context.maxMSAASamples;
-//    init_info.MinImageCount = static_cast<uint32_t>(swapChain->getNumImages());
-//    init_info.ImageCount = static_cast<uint32_t>(swapChain->getNumImages());
-//    init_info.Allocator = nullptr;
-//
-//    //TODO Fix Bug In this Function VkCreateSampler Cause Segmentation
-//    ImGui_ImplVulkan_Init(&init_info, swapChain->getRenderPass());
-//
-//    VulkanRenderContext imGuiContext = {};
-//    imGuiContext.commandPool = context.commandPool;
-//    imGuiContext.descriptorPool = context.descriptorPool;
-//    imGuiContext.device_ = context.device_;
-//    imGuiContext.graphicsQueue = context.graphicsQueue;
-//    imGuiContext.maxMSAASamples = context.maxMSAASamples;
-//    imGuiContext.physicalDevice = context.physicalDevice;
-//    imGuiContext.presentQueue = context.presentQueue;
-//
-//    VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(imGuiContext);
-//    ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
-//    VulkanUtils::endSingleTimeCommands(imGuiContext, imGuiCommandBuffer);
-
 
 }
+
+void Application::initImGuiRender() {
+    if (!ImGuiRender){
+        ImGuiRender = new VulkanImGuiRender(context);
+       // ImGuiRender->init(state,scene,swapChain.get());
+    }
+}
+
+void Application::shutdownImGuiRender() {
+    if(ImGuiRender){
+      //  ImGuiRender->shutdown();
+        delete ImGuiRender;
+        ImGuiRender = nullptr;
+    }
+}
+
 
 void Application::shutdownImGui() {
 
-//    ImGui_ImplGlfw_Shutdown();
-//    ImGui::DestroyContext();
+ //   ImGui::DestroyContext();
 
 }
+
+
 
 void Application::shutdownWindow() {
     glfwDestroyWindow(window);
@@ -448,23 +438,15 @@ void Application::shutdownWindow() {
 }
 
 void Application::RenderFrame(){
-    /**
-     * RenderFrame = highLevelSwapChain.Acquire()
-     * render->render(scene,frame) // begin renderMesh() renderWhatever() ...
-     * imgui_render->render(...)// ;
-     * highLevelSwapChain.Present(Frame)
-     */
-
     VulkanRenderFrame frame;
-
-    if(!swapChain->Acquire(frame)){
+    if(!swapChain->Acquire(state,frame)){
         recreateSwapChain();
         return;
     }
 
-    render->render(state,scene, frame);
 
-//    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+    ImGuiRender->render(state,scene,frame);
+    render->render(state,scene, frame);
 
     if(!swapChain->Present(frame) || windowResized){
         windowResized = false;
@@ -475,18 +457,19 @@ void Application::RenderFrame(){
 void Application::update()
 {
     render->update(state,scene);
+   // ImGuiRender->update(state,scene);
 }
 void Application::mainLoop() {
     if(!window)
         return;
 
     while (!glfwWindowShouldClose(window)){
-//     ImGui_ImplGlfw_NewFrame();
-//     ImGui::NewFrame();
+//         ImGui_ImplGlfw_NewFrame();
+//         ImGui::NewFrame();
 
-        update();
+         update();
 
-//   ImGui::Render();
+//        ImGui::Render();
 
         RenderFrame();
         glfwPollEvents();
@@ -508,12 +491,10 @@ void Application::initRender() {
 }
 
 
-
-
 void Application::initVulkanSwapChain() {
   //TODO
     if (!swapChain){
-        swapChain= std::make_unique<VulkanSwapChain>(context);
+        swapChain= std::shared_ptr<VulkanSwapChain>(new VulkanSwapChain(context));
     }
 
     int width,height;
@@ -549,11 +530,8 @@ void Application::recreateSwapChain() {
     }
     vkDeviceWaitIdle(context.device_);
 
-    shutdownRender();
     shutdownSwapChain();
-
     initVulkanSwapChain();
-    initRender();
 }
 
 

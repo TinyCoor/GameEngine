@@ -9,7 +9,6 @@
 #include <volk.h>
 #include <shaderc/shaderc.h>
 
-
 enum class ShaderKind{
     vertex =0,
     fragment,
@@ -19,8 +18,6 @@ enum class ShaderKind{
     tessellation_evaluation,
 
 };
-
-
 
 class VulkanShader {
 public:

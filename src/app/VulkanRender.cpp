@@ -13,8 +13,11 @@
 #include "Macro.h"
 #include "VulkanUtils.h"
 #include "VulkanTexture.h"
-#include <chrono>
+
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
+
 
 
 VulkanRender::VulkanRender(VulkanRenderContext &ctx,VkExtent2D size,VkDescriptorSetLayout layout,VkRenderPass pass)
@@ -140,7 +143,6 @@ void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
 
 void VulkanRender::shutdown() {
 
-
     hdriToCubeRenderer.shutdown();
     diffuseIrradianceRenderer.shutdown();
 
@@ -189,57 +191,15 @@ void VulkanRender::update(RenderState& state,VulkanRenderScene *scene) {
     state.proj[1][1] *= -1;
     state.cameraPosWS = glm::vec3(glm::vec4(cameraPos, 1.0f) * rotation);
 
-// ImGui
-//    static float f = 0.0f;
-//    static int counter = 0;
-//    static bool show_demo_window = false;
-//    static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-//    if (show_demo_window)
-//        ImGui::ShowDemoWindow(&show_demo_window);
-//
-//    ImGui::Begin("Material Parameters");
-//
-//    int oldCurrentEnvironment =state.currentEnvironment;
-//    if(ImGui::BeginCombo("Chose your Destiny",scene->getHDRTexture(state.currentEnvironment))){
-//        for (int i = 0; i < scene->getNumHDRTextures(); ++i) {
-//            bool selected = (i==state.currentEnvironment);
-//            if (ImGui::Selectable(scene->getHDRTexturePath(i),&selected))
-//                state.currentEnvironment = i;
-//            if (selected)
-//                ImGui::SetItemDefaultFocus();
-//        }
-//        ImGui::EndCombo();
-//    }
-//    ImGui::Checkbox("Demo Window", &show_demo_window);
-
-//    ImGui::SliderFloat("Lerp User Material", &state.lerpUserValues, 0.0f, 1.0f);
-//    ImGui::SliderFloat("Metalness", &state.userMetalness, 0.0f, 1.0f);
-//    ImGui::SliderFloat("Roughness", &state.userRoughness, 0.0f, 1.0f);
-//
-//    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-//    ImGui::End();
-//    if(oldCurrentEnvironment !=state.currentEnvironment){
-//        setEnvironment(scene,state.currentEnvironment);
-//    }
-
 }
 
-VkCommandBuffer VulkanRender::render(RenderState& state,VulkanRenderScene *scene, const VulkanRenderFrame& frame ) {
+void VulkanRender::render(RenderState& state,VulkanRenderScene *scene, const VulkanRenderFrame& frame ) {
     VkCommandBuffer commandBuffer = frame.commandBuffer;
     VkFramebuffer frameBuffer = frame.frameBuffer;
     VkDeviceMemory uniformBufferMemory = frame.uniformBuffersMemory;
     VkDescriptorSet descriptorSet = frame.swapchainDescriptorSet;
-    //VkRenderPass
 
-    //Copy Render State to ubo
-    void *ubo = nullptr;
-    vkMapMemory(context.device_, uniformBufferMemory, 0, sizeof(RenderState), 0, &ubo);
-    memcpy(ubo, &state, sizeof(RenderState));
-    vkUnmapMemory(context.device_, uniformBufferMemory);
 
-    //do actual drawing
-    VK_CHECK(vkResetCommandBuffer(commandBuffer, 0),"Can't reset command buffer");
     VkCommandBufferBeginInfo beginInfo = {};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
@@ -293,12 +253,10 @@ VkCommandBuffer VulkanRender::render(RenderState& state,VulkanRenderScene *scene
         vkCmdDrawIndexed(commandBuffer, mesh->getNumIndices(), 1, 0, 0, 0);
     }
 
-
     vkCmdEndRenderPass(commandBuffer);
 
     VK_CHECK(vkEndCommandBuffer(commandBuffer),"Can't record command buffer");
 
-    return commandBuffer;
 }
 
 void VulkanRender::initEnvironment(RenderState& state,VulkanRenderScene* scene){

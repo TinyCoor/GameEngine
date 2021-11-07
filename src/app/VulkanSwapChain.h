@@ -22,13 +22,15 @@ struct VulkanRenderFrame
 
 };
 
+struct RenderState;
+
 class VulkanSwapChain{
 public:
     VulkanSwapChain(const VulkanRenderContext& ctx);
     virtual ~VulkanSwapChain();
 
     void init(VkDeviceSize uboSize,int width,int height);
-    bool Acquire(VulkanRenderFrame& frame);
+    bool Acquire(const RenderState& state,VulkanRenderFrame& frame);
 
     bool  Present( VulkanRenderFrame& frame);
 
@@ -75,6 +77,7 @@ private:
 
     VkFormat swapChainImageFormat; //color format
     VkExtent2D swapChainExtent;
+    VkDeviceSize uboSize;
 
 
     VkImage colorImage;
