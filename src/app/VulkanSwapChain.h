@@ -26,20 +26,25 @@ struct RenderState;
 
 class VulkanSwapChain{
 public:
-    VulkanSwapChain(const VulkanRenderContext& ctx);
+    VulkanSwapChain(const VulkanRenderContext& ctx,VkDeviceSize uboSize);
     virtual ~VulkanSwapChain();
 
-    void init(VkDeviceSize uboSize,int width,int height);
+    void init(int width,int height);
+
     bool Acquire(const RenderState& state,VulkanRenderFrame& frame);
 
     bool  Present( VulkanRenderFrame& frame);
+
+    void reinit(int width,int height);
 
     void shutdown();
 
     inline VkExtent2D getExtent() const{ return swapChainExtent;}
     inline VkRenderPass getRenderPass() const{return renderPass;}
+    inline VkRenderPass getNoClearRenderPass()const {return noClearRenderPass;}
     inline VkDescriptorSetLayout getDescriptorSetLayout() const{return descriptorSetLayout;}
     inline uint32_t getNumImages()const {return swapChainImageViews.size();}
+
 
 private:
 
@@ -61,15 +66,22 @@ private:
     Settings selectOptimalSwapchainSettings(SupportedDetails& details,int width,int height);
 
 private:
-    void initFrame(VkDeviceSize uboSize);
-    void shutFrame();
+
+    void initTransient(int width,int height);
+    void shutdownTransient();
+
+    void initPersistent();
+    void shutdownPersistent();
+
+    void initFrames(VkDeviceSize uboSize);
+    void shutFrames();
 private:
     VulkanRenderContext context;
     VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
 
     VkRenderPass renderPass{VK_NULL_HANDLE};
+    VkRenderPass  noClearRenderPass;
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
-
 
     //
     std::vector<VkImage> swapChainImages;
@@ -93,7 +105,6 @@ private:
     std::vector<VulkanRenderFrame> frames;
 
     //SwapChain
-
     std::vector<VkSemaphore> imageAvailableSemaphores;
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;

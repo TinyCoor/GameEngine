@@ -23,9 +23,26 @@ public:
 
     inline VkRenderPass getRenderPass(){return renderPass;}
 
-    VulkanRenderPassBuilder& addColorResolveAttachment(VkFormat format);
-    VulkanRenderPassBuilder& addDepthStencilAttachment(VkFormat format, VkSampleCountFlagBits msaaSamples);
-    VulkanRenderPassBuilder& addColorAttachment(VkFormat format, VkSampleCountFlagBits msaaSamples);
+    VulkanRenderPassBuilder& addColorResolveAttachment(VkFormat format,
+                                                       VkAttachmentLoadOp loadOp =VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                       VkAttachmentStoreOp storeOp =VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                       VkAttachmentLoadOp stencilOp =VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                       VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE);
+
+    VulkanRenderPassBuilder& addDepthStencilAttachment(VkFormat format,
+                                                       VkSampleCountFlagBits msaaSamples,
+                                                       VkAttachmentLoadOp loadOp =VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                       VkAttachmentStoreOp storeOp =VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                       VkAttachmentLoadOp stencilOp =VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                       VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE
+                                                       );
+
+    VulkanRenderPassBuilder& addColorAttachment(VkFormat format,
+                                                VkSampleCountFlagBits msaaSamples,
+                                                VkAttachmentLoadOp loadOp =VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                VkAttachmentStoreOp storeOp =VK_ATTACHMENT_STORE_OP_DONT_CARE,
+                                                VkAttachmentLoadOp stencilOp =VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+                                                VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE);
 
     VulkanRenderPassBuilder &addColorAttachmentReference(
             int subpassIndex,

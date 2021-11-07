@@ -9,11 +9,14 @@
 #include <limits>
 #include <cassert>
 
-VulkanSwapChain::VulkanSwapChain(const VulkanRenderContext& ctx):context(ctx){
+VulkanSwapChain::VulkanSwapChain(const VulkanRenderContext& ctx,VkDeviceSize Size)
+:context(ctx),uboSize(Size){
+
 }
 
 VulkanSwapChain::~VulkanSwapChain() {
-    shutdown();
+//    shutdownPersistent();
+//    shutdown();
 }
 
 VulkanSwapChain::SupportedDetails VulkanSwapChain::fetchSwapchainSupportedDetails(VkPhysicalDevice& physical_device,
@@ -89,11 +92,308 @@ VulkanSwapChain::Settings VulkanSwapChain::selectOptimalSwapchainSettings(Suppor
 
     return settings;
 }
-void VulkanSwapChain::init(VkDeviceSize Size,int width,int height) {
-    //create SwapChain finally
+
+void VulkanSwapChain::init(int width,int height) {
+    initTransient(width,height);
+    initPersistent();
+
+    initFrames(uboSize);
+
+}
+
+void VulkanSwapChain::reinit(int width,int height) {
+
+    shutdownTransient();
+    shutFrames();
+
+    initTransient(width,height);
+    initFrames(uboSize);
+
+}
+
+void VulkanSwapChain::shutdown() {
+    shutdownTransient();
+    shutFrames();
+    shutdownPersistent();
+
+}
+
+bool  VulkanSwapChain::Acquire(const RenderState& state,VulkanRenderFrame& frame) {
+
+    vkWaitForFences(context.device_, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+
+    VkResult result = vkAcquireNextImageKHR(
+            context.device_,
+            swapchain,
+            std::numeric_limits<uint64_t>::max(),
+            imageAvailableSemaphores[currentFrame],
+            VK_NULL_HANDLE,
+            &imageIndex
+    );
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        return false;
+    }
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        throw std::runtime_error("Can't aquire swap chain image");
+
+
+    frame = frames[imageIndex];
+
+    //Copy Render State to ubo
+    void *ubo = nullptr;
+    vkMapMemory(context.device_, frame.uniformBuffersMemory, 0, uboSize, 0, &ubo);
+    memcpy(ubo, &state, sizeof(RenderState));
+    vkUnmapMemory(context.device_, frame.uniformBuffersMemory);
+
+
+    //reset command buffer
+    VK_CHECK(vkResetCommandBuffer(frame.commandBuffer,0),"Can't Reset Command Buffer");
+    VkCommandBufferBeginInfo beginInfo = {};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+    beginInfo.pInheritanceInfo = nullptr; // Optional
+
+    VK_CHECK(vkBeginCommandBuffer(frame.commandBuffer, &beginInfo),"Can't begin recording command buffer");
+
+    return true;
+}
+
+bool VulkanSwapChain::Present( VulkanRenderFrame& frame) {
+    //TODO EndCommand Buffer
+    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &frame.commandBuffer;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    vkResetFences(context.device_, 1, &inFlightFences[currentFrame]);
+    //TODO Maybe this is a hardware error, In Surface there is a bug
+    VK_CHECK( vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]),"Can't submit command buffer");
+
+
+    VkSwapchainKHR swapChains[] = {swapchain};
+    VkPresentInfoKHR presentInfo = {};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = nullptr; // Optional
+
+    VulkanUtils::transitionImageLayout(
+            context,
+            swapChainImages[imageIndex],
+            swapChainImageFormat,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+    );
+
+    auto result = vkQueuePresentKHR(context.presentQueue, &presentInfo);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR )
+        return false;
+    else if (result != VK_SUCCESS)
+        throw std::runtime_error("Can't aquire swap chain image");
+
+    currentFrame = (currentFrame + 1) % MAX_FRAME_IN_FLIGHT;
+    return true;
+}
+
+void VulkanSwapChain::initFrames(VkDeviceSize uboSize) {
+
+    uint32_t imageCount = static_cast<uint32_t>(swapChainImages.size());
+    frames.resize(imageCount);
+    int i =0;
+    for (auto& frame: frames) {
+        //create Uniform Buffer Object
+        VulkanUtils::createBuffer(
+                context,
+                uboSize,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                frame.uniformBuffers,
+                frame.uniformBuffersMemory
+        );
+         //Create descriptor Set
+        VkDescriptorSetAllocateInfo swapchainDescriptorSetAllocInfo = {};
+        swapchainDescriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        swapchainDescriptorSetAllocInfo.descriptorPool = context.descriptorPool;
+        swapchainDescriptorSetAllocInfo.descriptorSetCount = 1;
+        swapchainDescriptorSetAllocInfo.pSetLayouts =&descriptorSetLayout;
+
+        VK_CHECK(vkAllocateDescriptorSets(context.device_, &swapchainDescriptorSetAllocInfo, &frame.swapchainDescriptorSet),
+                 "Can't allocate swap chain descriptor sets");
+
+        VulkanUtils::bindUniformBuffer(
+                context,
+                frame.swapchainDescriptorSet,
+                0,
+                frame.uniformBuffers,
+                0,
+                sizeof(RenderState)
+        );
+        std::array<VkImageView, 3> attachments = {
+                colorImageView,
+                swapChainImageViews[i],
+                depthImageView,
+        };
+        //create Frame buffer
+        VkFramebufferCreateInfo framebufferInfo = {};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebufferInfo.pAttachments = attachments.data();
+        framebufferInfo.width = swapChainExtent.width;
+        framebufferInfo.height = swapChainExtent.height;
+        framebufferInfo.layers = 1;
+
+        VK_CHECK(vkCreateFramebuffer(context.device_, &framebufferInfo, nullptr, &frame.frameBuffer),"Can't create framebuffer");
+
+        // Create command buffers
+        VkCommandBufferAllocateInfo allocateInfo = {};
+        allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocateInfo.commandPool = context.commandPool;
+        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocateInfo.commandBufferCount = 1;
+
+        VK_CHECK(vkAllocateCommandBuffers(context.device_, &allocateInfo, &frame.commandBuffer),"Can't create command buffers");
+
+        i++;
+    }
+
+}
+
+void VulkanSwapChain::shutFrames() {
+
+    for (int i = 0; i <frames.size() ; ++i) {
+        vkDestroyFramebuffer(context.device_,frames[i].frameBuffer, nullptr);
+        vkDestroyBuffer(context.device_, frames[i].uniformBuffers, nullptr);
+        vkFreeMemory(context.device_, frames[i].uniformBuffersMemory, nullptr);
+        vkFreeDescriptorSets(context.device_,context.descriptorPool,1,&frames[i].swapchainDescriptorSet);
+        frames[i].commandBuffer =VK_NULL_HANDLE;
+        frames[i].uniformBuffers =VK_NULL_HANDLE;
+        frames[i].uniformBuffersMemory = VK_NULL_HANDLE;
+    }
+    frames.clear();
+
+}
+
+void VulkanSwapChain::initPersistent() {
+    //Create Sync Object
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    imageAvailableSemaphores.resize(MAX_FRAME_IN_FLIGHT);
+    renderFinishedSemaphores.resize(MAX_FRAME_IN_FLIGHT);
+    inFlightFences.resize(MAX_FRAME_IN_FLIGHT);
+
+    VkFenceCreateInfo fenceInfo = {};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    for (size_t i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        if (vkCreateSemaphore(context.device_, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+            vkCreateSemaphore(context.device_, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+            vkCreateFence(context.device_, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create semaphores!");
+        }
+    }
+    //create descriptor set layout and render pass
+
+    VulkanDescriptorSetLayoutBuilder swapchainDescriptorSetLayoutBuilder(context);
+    descriptorSetLayout = swapchainDescriptorSetLayoutBuilder
+            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL)
+            .build();
+
+    VulkanRenderPassBuilder renderPassBuilder(context);
+    renderPass =  renderPassBuilder.addColorAttachment(swapChainImageFormat, context.maxMSAASamples,
+                                         VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_STORE_OP_STORE)
+                .addColorResolveAttachment(swapChainImageFormat,
+                                           VK_ATTACHMENT_LOAD_OP_DONT_CARE,VK_ATTACHMENT_STORE_OP_STORE)
+                .addDepthStencilAttachment(depthFormat, context.maxMSAASamples,VK_ATTACHMENT_LOAD_OP_CLEAR)
+                .addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
+                .addColorAttachmentReference(0,0)
+                .addColorResolveAttachmentReference(0,1)
+                .setDepthStencilAttachment(0,2)
+                .build();
+
+    VulkanRenderPassBuilder noClearRenderPassBuilder(context);
+    noClearRenderPass =  noClearRenderPassBuilder
+        .addColorAttachment(swapChainImageFormat, context.maxMSAASamples,
+                            VK_ATTACHMENT_LOAD_OP_DONT_CARE,VK_ATTACHMENT_STORE_OP_STORE)
+        .addColorResolveAttachment(swapChainImageFormat,
+                                   VK_ATTACHMENT_LOAD_OP_DONT_CARE,VK_ATTACHMENT_STORE_OP_STORE)
+        .addDepthStencilAttachment(depthFormat, context.maxMSAASamples)
+        .addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
+        .addColorAttachmentReference(0,0)
+        .addColorResolveAttachmentReference(0,1)
+        .setDepthStencilAttachment(0,2)
+        .build();
+
+    // renderPassBuilder.build();
+}
+
+void VulkanSwapChain::shutdownPersistent() {
+    for (int i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
+        vkDestroySemaphore(context.device_, renderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(context.device_, imageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(context.device_, inFlightFences[i], nullptr);
+    }
+    imageAvailableSemaphores.clear();
+    renderFinishedSemaphores.clear();
+    inFlightFences.clear();
+
+    vkDestroyRenderPass(context.device_,renderPass, nullptr);
+    renderPass = VK_NULL_HANDLE;
+    vkDestroyRenderPass(context.device_,noClearRenderPass, nullptr);
+    noClearRenderPass = VK_NULL_HANDLE;
+
+
+    vkDestroyDescriptorSetLayout(context.device_,descriptorSetLayout, nullptr);
+    descriptorSetLayout= VK_NULL_HANDLE;
+}
+
+void VulkanSwapChain::shutdownTransient() {
+    for(auto& imageView :swapChainImageViews){
+        vkDestroyImageView(context.device_,imageView, nullptr);
+    }
+
+    swapChainImageViews.clear();
+    swapChainImages.clear();
+
+    vkDestroyImage(context.device_,depthImage, nullptr);
+    depthImage = VK_NULL_HANDLE;
+    vkDestroyImageView(context.device_,depthImageView, nullptr);
+    depthImageView =  VK_NULL_HANDLE;
+    vkFreeMemory(context.device_,depthImageMemory, nullptr);
+    depthImageMemory = VK_NULL_HANDLE;
+
+    vkDestroyImage(context.device_,colorImage, nullptr);
+    colorImage = VK_NULL_HANDLE;
+    vkDestroyImageView(context.device_,colorImageView, nullptr);
+    colorImageView =  VK_NULL_HANDLE;
+    vkFreeMemory(context.device_,colorImageMemory, nullptr);
+    colorImageMemory = VK_NULL_HANDLE;
+
+    vkDestroySwapchainKHR(context.device_,swapchain, nullptr);
+    swapchain= VK_NULL_HANDLE;
+
+
+}
+
+void VulkanSwapChain::initTransient(int width,int height) {
+
     swapChainExtent.width = width;
     swapChainExtent.height = height;
-    uboSize =Size;
 
     SupportedDetails details = fetchSwapchainSupportedDetails(context.physicalDevice,context.surface);
     Settings settings = selectOptimalSwapchainSettings(details,width,height);
@@ -205,247 +505,6 @@ void VulkanSwapChain::init(VkDeviceSize Size,int width,int height) {
                                        VK_IMAGE_LAYOUT_UNDEFINED,
                                        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    //Create Sync Object
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    imageAvailableSemaphores.resize(MAX_FRAME_IN_FLIGHT);
-    renderFinishedSemaphores.resize(MAX_FRAME_IN_FLIGHT);
-    inFlightFences.resize(MAX_FRAME_IN_FLIGHT);
-
-    VkFenceCreateInfo fenceInfo = {};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    for (size_t i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        if (vkCreateSemaphore(context.device_, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(context.device_, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(context.device_, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create semaphores!");
-        }
-    }
-    //create descriptor set layout and render pass
-
-    VulkanDescriptorSetLayoutBuilder swapchainDescriptorSetLayoutBuilder(context);
-    descriptorSetLayout = swapchainDescriptorSetLayoutBuilder
-            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL)
-            .build();
-
-    VulkanRenderPassBuilder renderPassBuilder(context);
-    renderPassBuilder.addColorAttachment(swapChainImageFormat, context.maxMSAASamples);
-    renderPassBuilder.addColorResolveAttachment(swapChainImageFormat);
-    renderPassBuilder.addDepthStencilAttachment(depthFormat, context.maxMSAASamples);
-    renderPassBuilder.addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    renderPassBuilder.addColorAttachmentReference(0,0);
-    renderPassBuilder.addColorResolveAttachmentReference(0,1);
-    renderPassBuilder.setDepthStencilAttachment(0,2);
-    renderPass = renderPassBuilder.build();
-
-    initFrame(uboSize);
-
 }
 
-void VulkanSwapChain::shutdown() {
 
-    for(auto& imageView :swapChainImageViews){
-        vkDestroyImageView(context.device_,imageView, nullptr);
-    }
-
-    swapChainImageViews.clear();
-    swapChainImages.clear();
-
-    vkDestroyImage(context.device_,depthImage, nullptr);
-    depthImage = VK_NULL_HANDLE;
-    vkDestroyImageView(context.device_,depthImageView, nullptr);
-    depthImageView =  VK_NULL_HANDLE;
-    vkFreeMemory(context.device_,depthImageMemory, nullptr);
-    depthImageMemory = VK_NULL_HANDLE;
-
-    vkDestroyImage(context.device_,colorImage, nullptr);
-    colorImage = VK_NULL_HANDLE;
-    vkDestroyImageView(context.device_,colorImageView, nullptr);
-    colorImageView =  VK_NULL_HANDLE;
-    vkFreeMemory(context.device_,colorImageMemory, nullptr);
-    colorImageMemory = VK_NULL_HANDLE;
-
-    vkDestroySwapchainKHR(context.device_,swapchain, nullptr);
-    swapchain= VK_NULL_HANDLE;
-
-
-    for (int i = 0; i <MAX_FRAME_IN_FLIGHT ; ++i) {
-        vkDestroySemaphore(context.device_, renderFinishedSemaphores[i], nullptr);
-        vkDestroySemaphore(context.device_, imageAvailableSemaphores[i], nullptr);
-        vkDestroyFence(context.device_, inFlightFences[i], nullptr);
-    }
-    imageAvailableSemaphores.clear();
-    renderFinishedSemaphores.clear();
-    inFlightFences.clear();
-
-    shutFrame();
-}
-
-bool  VulkanSwapChain::Acquire(const RenderState& state,VulkanRenderFrame& frame) {
-    vkWaitForFences(context.device_, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-
-    VkResult result = vkAcquireNextImageKHR(
-            context.device_,
-            swapchain,
-            std::numeric_limits<uint64_t>::max(),
-            imageAvailableSemaphores[currentFrame],
-            VK_NULL_HANDLE,
-            &imageIndex
-    );
-
-    if (result == VK_ERROR_OUT_OF_DATE_KHR)
-    {
-        return false;
-    }
-    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-        throw std::runtime_error("Can't aquire swap chain image");
-
-
-    frame = frames[imageIndex];
-
-    //Copy Render State to ubo
-    void *ubo = nullptr;
-    vkMapMemory(context.device_, frame.uniformBuffersMemory, 0, uboSize, 0, &ubo);
-    memcpy(ubo, &state, sizeof(RenderState));
-    vkUnmapMemory(context.device_, frame.uniformBuffersMemory);
-    //reset command buffer
-    VK_CHECK(vkResetCommandBuffer(frame.commandBuffer,0),"Can't Reset Command Buffer");
-
-    return true;
-}
-
-bool VulkanSwapChain::Present( VulkanRenderFrame& frame) {
-    VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
-    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-
-    VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
-
-    VkSubmitInfo submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &frame.commandBuffer;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
-
-    vkResetFences(context.device_, 1, &inFlightFences[currentFrame]);
-    //TODO Maybe this is a hardware error, In Surface there is a bug
-    VK_CHECK( vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]),"Can't submit command buffer");
-
-
-    VkSwapchainKHR swapChains[] = {swapchain};
-    VkPresentInfoKHR presentInfo = {};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapChains;
-    presentInfo.pImageIndices = &imageIndex;
-    presentInfo.pResults = nullptr; // Optional
-
-    VulkanUtils::transitionImageLayout(
-            context,
-            swapChainImages[imageIndex],
-            swapChainImageFormat,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-    );
-
-    auto result = vkQueuePresentKHR(context.presentQueue, &presentInfo);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR )
-        return false;
-    else if (result != VK_SUCCESS)
-        throw std::runtime_error("Can't aquire swap chain image");
-
-    currentFrame = (currentFrame + 1) % MAX_FRAME_IN_FLIGHT;
-    return true;
-}
-
-void VulkanSwapChain::initFrame(VkDeviceSize uboSize) {
-
-    uint32_t imageCount = static_cast<uint32_t>(swapChainImages.size());
-    frames.resize(imageCount);
-    int i =0;
-    for (auto& frame: frames) {
-        //create Uniform Buffer Object
-        VulkanUtils::createBuffer(
-                context,
-                uboSize,
-                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                frame.uniformBuffers,
-                frame.uniformBuffersMemory
-        );
-         //Create descriptor Set
-        VkDescriptorSetAllocateInfo swapchainDescriptorSetAllocInfo = {};
-        swapchainDescriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        swapchainDescriptorSetAllocInfo.descriptorPool = context.descriptorPool;
-        swapchainDescriptorSetAllocInfo.descriptorSetCount = 1;
-        swapchainDescriptorSetAllocInfo.pSetLayouts =&descriptorSetLayout;
-
-        VK_CHECK(vkAllocateDescriptorSets(context.device_, &swapchainDescriptorSetAllocInfo, &frame.swapchainDescriptorSet),
-                 "Can't allocate swap chain descriptor sets");
-
-        VulkanUtils::bindUniformBuffer(
-                context,
-                frame.swapchainDescriptorSet,
-                0,
-                frame.uniformBuffers,
-                0,
-                sizeof(RenderState)
-        );
-        std::array<VkImageView, 3> attachments = {
-                colorImageView,
-                swapChainImageViews[i],
-                depthImageView,
-        };
-        //create Frame buffer
-        VkFramebufferCreateInfo framebufferInfo = {};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPass;
-        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = swapChainExtent.width;
-        framebufferInfo.height = swapChainExtent.height;
-        framebufferInfo.layers = 1;
-
-        VK_CHECK(vkCreateFramebuffer(context.device_, &framebufferInfo, nullptr, &frame.frameBuffer),"Can't create framebuffer");
-
-        // Create command buffers
-        VkCommandBufferAllocateInfo allocateInfo = {};
-        allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocateInfo.commandPool = context.commandPool;
-        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocateInfo.commandBufferCount = 1;
-
-        VK_CHECK(vkAllocateCommandBuffers(context.device_, &allocateInfo, &frame.commandBuffer),"Can't create command buffers");
-
-        i++;
-    }
-
-}
-
-void VulkanSwapChain::shutFrame() {
-
-    for (int i = 0; i <frames.size() ; ++i) {
-        vkDestroyFramebuffer(context.device_,frames[i].frameBuffer, nullptr);
-        vkDestroyBuffer(context.device_, frames[i].uniformBuffers, nullptr);
-        vkFreeMemory(context.device_, frames[i].uniformBuffersMemory, nullptr);
-        vkFreeDescriptorSets(context.device_,context.descriptorPool,1,&frames[i].swapchainDescriptorSet);
-        frames[i].commandBuffer =VK_NULL_HANDLE;
-        frames[i].uniformBuffers =VK_NULL_HANDLE;
-        frames[i].uniformBuffersMemory = VK_NULL_HANDLE;
-    }
-    frames.clear();
-
-    vkDestroyRenderPass(context.device_,renderPass, nullptr);
-    renderPass = VK_NULL_HANDLE;
-
-    vkDestroyDescriptorSetLayout(context.device_,descriptorSetLayout, nullptr);
-    descriptorSetLayout= VK_NULL_HANDLE;
-
-
-}

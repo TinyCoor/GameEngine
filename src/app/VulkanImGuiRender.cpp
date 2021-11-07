@@ -14,8 +14,10 @@
 #include <imgui_impl_glfw.h>
 
 
-VulkanImGuiRender::VulkanImGuiRender(const VulkanRenderContext &ctx)
-:context(ctx)
+VulkanImGuiRender::VulkanImGuiRender(const VulkanRenderContext &ctx,
+                                     VkExtent2D size,
+                                     VkRenderPass pass)
+:context(ctx),extent(size),renderPass(pass)
 {
 
 }
@@ -26,7 +28,7 @@ VulkanImGuiRender::~VulkanImGuiRender()
 
 void VulkanImGuiRender::init(RenderState &state,
                              VulkanRenderScene *scene,
-                             const VulkanSwapChain* swapChain)
+                             std::shared_ptr<VulkanSwapChain> swapChain)
 {
     // Init ImGui bindings for Vulkan
     ImGui_ImplVulkan_InitInfo init_info = {};
@@ -103,8 +105,25 @@ void VulkanImGuiRender::render(RenderState &state,
     VkDeviceMemory uniformBufferMemory = frame.uniformBuffersMemory;
     VkDescriptorSet descriptorSet = frame.swapchainDescriptorSet;
 
-    //ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-//    VK_CHECK(vkEndCommandBuffer(commandBuffer),"Can't record command buffer");
+    VkRenderPassBeginInfo renderPassInfo = {};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.framebuffer = frameBuffer;
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = extent;
+
+    std::array<VkClearValue, 3> clearValues = {};
+    clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    clearValues[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    clearValues[2].depthStencil = {1.0f, 0};
+    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+    renderPassInfo.pClearValues = clearValues.data();
+
+//    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+//    //ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+
+//    vkCmdEndRenderPass(commandBuffer);
+
 }
 
 void VulkanImGuiRender::shutdown() {

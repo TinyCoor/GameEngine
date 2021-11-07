@@ -36,10 +36,12 @@ private:
 
 
     VkDescriptorSetLayout sceneDescriptorSetLayout{VK_NULL_HANDLE};
+
     //TODO swapchain descriptorSetLayout
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
     VkDescriptorSet sceneDescriptorSet{VK_NULL_HANDLE};
 
+    uint32_t currentEnvironment =0;
 
 public:
     explicit VulkanRender(VulkanRenderContext& ctx,
@@ -47,6 +49,8 @@ public:
                           VkDescriptorSetLayout layout,
                           VkRenderPass renderPass);
     virtual ~VulkanRender();
+
+    void setextent(int width,int height){extent.width =width;extent.height= height;}
 
     void init(RenderState& state, VulkanRenderScene* scene);
 

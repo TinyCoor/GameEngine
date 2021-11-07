@@ -135,9 +135,6 @@ void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
                 textures[k]->getImageView(),
                 textures[k]->getSampler()
         );
-
-
-
 }
 
 
@@ -190,6 +187,10 @@ void VulkanRender::update(RenderState& state,VulkanRenderScene *scene) {
     state.proj = glm::perspective(glm::radians(60.0f), aspect, zNear, zFar);
     state.proj[1][1] *= -1;
     state.cameraPosWS = glm::vec3(glm::vec4(cameraPos, 1.0f) * rotation);
+    if (currentEnvironment !=state.currentEnvironment){
+        currentEnvironment= state.currentEnvironment;
+        setEnvironment(state,scene,currentEnvironment);
+    }
 
 }
 
@@ -199,13 +200,6 @@ void VulkanRender::render(RenderState& state,VulkanRenderScene *scene, const Vul
     VkDeviceMemory uniformBufferMemory = frame.uniformBuffersMemory;
     VkDescriptorSet descriptorSet = frame.swapchainDescriptorSet;
 
-
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    beginInfo.pInheritanceInfo = nullptr; // Optional
-
-    VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo),"Can't begin recording command buffer");
 
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

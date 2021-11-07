@@ -13,12 +13,14 @@ class VulkanSwapChain;
 
 class VulkanImGuiRender {
 public:
-    explicit VulkanImGuiRender(const VulkanRenderContext& ctx);
+    explicit VulkanImGuiRender(const VulkanRenderContext& ctx,
+                               VkExtent2D extent,
+                               VkRenderPass renderPass);
 
     virtual ~VulkanImGuiRender();
 
     void init(RenderState& state,VulkanRenderScene* scene,
-              const VulkanSwapChain* swapChain);
+             std::shared_ptr<VulkanSwapChain> swapChain);
 
     void update(RenderState& state,
                 VulkanRenderScene* scene);
@@ -31,6 +33,8 @@ public:
 
 private:
     VulkanRenderContext context;
+    VkRenderPass renderPass;
+    VkExtent2D extent;
 };
 
 

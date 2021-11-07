@@ -31,9 +31,6 @@ private:
     void initVulkan();
     void shutdownVulkan();
 
-    void initImGuiRender();
-    void shutdownImGuiRender();
-
     void initVulkanSwapChain();
     void shutdownSwapChain();
 
@@ -43,8 +40,8 @@ private:
     void initImGui();
     void shutdownImGui();
 
-    void initRender();
-    void shutdownRender();
+    void initRenders();
+    void shutdownRenders();
 
     void mainLoop();
     void update();
@@ -55,27 +52,23 @@ private:
 
     static void OnFrameBufferResized(GLFWwindow* window,int width,int height);
 
-
 private:
     GLFWwindow* window{nullptr};
     VulkanRenderScene* scene{nullptr};
     VulkanRender* render{nullptr};
     VulkanImGuiRender* ImGuiRender{nullptr};
+    std::shared_ptr<VulkanSwapChain> swapChain;
 
     RenderState state;
 
-    std::shared_ptr<VulkanSwapChain> swapChain;
     VulkanRenderContext context;
 
-    VkQueue graphicsQueue {VK_NULL_HANDLE};
-    VkQueue presentQueue {VK_NULL_HANDLE};
-
-
-    VkCommandPool commandPool =VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
 
-
-    VkDescriptorPool descriptorPool;
+//    VkQueue graphicsQueue {VK_NULL_HANDLE};
+//    VkQueue presentQueue {VK_NULL_HANDLE};
+//    VkCommandPool commandPool =VK_NULL_HANDLE;
+//    VkDescriptorPool descriptorPool;
 
     bool windowResized = false;
 };

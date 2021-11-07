@@ -16,8 +16,6 @@
 #include <functional>
 #include <volk.h>
 #include <imgui.h>
-#include <imgui_impl_vulkan.h>
-#include <imgui_impl_glfw.h>
 
 
 std::vector<const char*>  requiredPhysicalDeviceExtensions ={
@@ -159,13 +157,11 @@ void Application::run(){
     initVulkan();
     initVulkanSwapChain();
     initScene();
-    initRender();
-    initImGuiRender();
+    initRenders();
     mainLoop();
-    shutdownImGuiRender();
     shutdownWindow();
     shutdownScene();
-    shutdownRender();
+    shutdownRenders();
     shutdownSwapChain();
     shutdownImGui();
     shutdownVulkan();
@@ -289,7 +285,7 @@ bool Application::checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurface
     if(!deviceFeatures.geometryShader)
         return false;
 
-    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU;
+    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 }
 
 void Application::initVulkan() {
@@ -336,11 +332,11 @@ void Application::initVulkan() {
     volkLoadDevice(context.device_);
 
     //Get Logical Device
-    vkGetDeviceQueue(context.device_,indices.graphicsFamily.value(),0,&graphicsQueue);
-    TH_WITH_MSG(graphicsQueue == VK_NULL_HANDLE,"Get graphics queue from logical device failed\n");
+    vkGetDeviceQueue(context.device_,indices.graphicsFamily.value(),0,&context.graphicsQueue);
+    TH_WITH_MSG(context.graphicsQueue == VK_NULL_HANDLE,"Get graphics queue from logical device failed\n");
 
-    vkGetDeviceQueue(context.device_,indices.presentFamily.value(),0,&presentQueue);
-    TH_WITH_MSG(presentQueue == VK_NULL_HANDLE,"Get present queue from logical device failed\n");
+    vkGetDeviceQueue(context.device_,indices.presentFamily.value(),0,&context.presentQueue);
+    TH_WITH_MSG(context.presentQueue == VK_NULL_HANDLE,"Get present queue from logical device failed\n");
 
 
     ////
@@ -348,7 +344,7 @@ void Application::initVulkan() {
     commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.value();
     commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
-    VK_CHECK(vkCreateCommandPool(context.device_, &commandPoolInfo, nullptr, &commandPool),"failed to create command pool!");
+    VK_CHECK(vkCreateCommandPool(context.device_, &commandPoolInfo, nullptr, &context.commandPool),"failed to create command pool!");
 
 
     //create descriptor Pool
@@ -365,33 +361,31 @@ void Application::initVulkan() {
     descriptorPoolCreateInfo.maxSets = maxCombinedImageSamplers + maxUniformBuffers;;
     descriptorPoolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-    VK_CHECK(vkCreateDescriptorPool(context.device_, &descriptorPoolCreateInfo, nullptr, &descriptorPool),"failed to create descriptor pool!");
+    VK_CHECK(vkCreateDescriptorPool(context.device_, &descriptorPoolCreateInfo, nullptr, &context.descriptorPool),"failed to create descriptor pool!");
 
 
-    context.commandPool = commandPool;
     context.graphicsQueueFamily= indices.graphicsFamily.value();
     context.presentQueueFamily = indices.presentFamily.value();
-    context.graphicsQueue = graphicsQueue;
-    context.presentQueue= presentQueue;
     context.maxMSAASamples = VulkanUtils::getMaxUsableSampleCount(context);
-    context.descriptorPool =descriptorPool;
 }
 
 void Application::shutdownVulkan() {
 
-    vkDestroyDescriptorPool(context.device_, descriptorPool, nullptr);
-    descriptorPool = VK_NULL_HANDLE;
+    vkDestroyDescriptorPool(context.device_,context.descriptorPool, nullptr);
+    context.descriptorPool = VK_NULL_HANDLE;
 
-    vkDestroyCommandPool(context.device_,commandPool, nullptr);
-    commandPool = VK_NULL_HANDLE;
+    vkDestroyCommandPool(context.device_,context.commandPool, nullptr);
+    context.commandPool = VK_NULL_HANDLE;
 
     vkDestroyDebugUtilsMessengerEXT(context.instance,debugMessenger, nullptr);
+
+    context.instance= VK_NULL_HANDLE ;
 
     vkDestroyDevice(context.device_, nullptr);
     context.device_=VK_NULL_HANDLE;
 
-    vkDestroySurfaceKHR(context.instance,context.surface, nullptr);
-    context.instance= VK_NULL_HANDLE ;
+//    vkDestroySurfaceKHR(context.instance,context.surface, nullptr);
+//    context.surface =VK_NULL_HANDLE;
 
     vkDestroyInstance(context.instance, nullptr);
     context.surface = VK_NULL_HANDLE;
@@ -408,29 +402,11 @@ void Application::initImGui() {
 
 }
 
-void Application::initImGuiRender() {
-    if (!ImGuiRender){
-        ImGuiRender = new VulkanImGuiRender(context);
-       // ImGuiRender->init(state,scene,swapChain.get());
-    }
-}
-
-void Application::shutdownImGuiRender() {
-    if(ImGuiRender){
-      //  ImGuiRender->shutdown();
-        delete ImGuiRender;
-        ImGuiRender = nullptr;
-    }
-}
-
 
 void Application::shutdownImGui() {
 
  //   ImGui::DestroyContext();
-
 }
-
-
 
 void Application::shutdownWindow() {
     glfwDestroyWindow(window);
@@ -439,11 +415,11 @@ void Application::shutdownWindow() {
 
 void Application::RenderFrame(){
     VulkanRenderFrame frame;
+
     if(!swapChain->Acquire(state,frame)){
         recreateSwapChain();
         return;
     }
-
 
     ImGuiRender->render(state,scene,frame);
     render->render(state,scene, frame);
@@ -479,35 +455,44 @@ void Application::mainLoop() {
 }
 
 
-void Application::shutdownRender() {
-    render->shutdown();
-    delete render;
-    render = nullptr;
+void Application::shutdownRenders() {
+    if(render){
+        render->shutdown();
+        delete render;
+        render = nullptr;
+    }
+
 }
 
-void Application::initRender() {
-    render = new VulkanRender(context,swapChain->getExtent(),swapChain->getDescriptorSetLayout(),swapChain->getRenderPass());
-    render->init(state,scene);
+void Application::initRenders() {
+    if(!render){
+        render = new VulkanRender(context,swapChain->getExtent(),swapChain->getDescriptorSetLayout(),swapChain->getRenderPass());
+        render->init(state,scene);
+    }
+
+    if (!ImGuiRender){
+        ImGuiRender = new VulkanImGuiRender(context,swapChain->getExtent(),swapChain->getNoClearRenderPass());
+        // ImGuiRender->init(state,scene,swapChain.get());
+    }
+
 }
 
 
 void Application::initVulkanSwapChain() {
   //TODO
     if (!swapChain){
-        swapChain= std::shared_ptr<VulkanSwapChain>(new VulkanSwapChain(context));
+        swapChain= std::shared_ptr<VulkanSwapChain>(new VulkanSwapChain(context, sizeof(RenderState)));
     }
 
     int width,height;
     glfwGetWindowSize(window,&width,&height);
-    swapChain->init(sizeof(RenderState),width,height);
-
+    swapChain->init(width,height);
 }
 
 void Application::shutdownSwapChain() {
    //TODO
-   if(swapChain){
-       swapChain->shutdown();
-   }
+   swapChain->shutdown();
+
 }
 
 void Application::initScene() {
@@ -530,8 +515,9 @@ void Application::recreateSwapChain() {
     }
     vkDeviceWaitIdle(context.device_);
 
-    shutdownSwapChain();
-    initVulkanSwapChain();
+    swapChain->reinit(width,height);
+//    render->setextent(width,height);
+
 }
 
 

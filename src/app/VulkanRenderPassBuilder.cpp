@@ -5,15 +5,20 @@
 #include "VulkanRenderPassBuilder.h"
 #include <stdexcept>
 VulkanRenderPassBuilder &
-VulkanRenderPassBuilder::addColorAttachment(VkFormat format, VkSampleCountFlagBits msaaSamples) {
+VulkanRenderPassBuilder::addColorAttachment(VkFormat format,
+                                            VkSampleCountFlagBits msaaSamples,
+                                            VkAttachmentLoadOp loadOp ,
+                                            VkAttachmentStoreOp storeOp,
+                                            VkAttachmentLoadOp stenciLoadOp,
+                                            VkAttachmentStoreOp stencilStoreOp) {
     // Create render pass
     VkAttachmentDescription colorAttachment = {};
     colorAttachment.format = format;
     colorAttachment.samples = msaaSamples;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.loadOp = loadOp;
+    colorAttachment.storeOp = storeOp;
+    colorAttachment.stencilLoadOp = stenciLoadOp;
+    colorAttachment.stencilStoreOp = stencilStoreOp;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
@@ -23,14 +28,19 @@ VulkanRenderPassBuilder::addColorAttachment(VkFormat format, VkSampleCountFlagBi
 }
 
 VulkanRenderPassBuilder &
-VulkanRenderPassBuilder::addDepthStencilAttachment(VkFormat format, VkSampleCountFlagBits msaaSamples) {
+VulkanRenderPassBuilder::addDepthStencilAttachment(VkFormat format,
+                                                   VkSampleCountFlagBits msaaSamples,
+                                                   VkAttachmentLoadOp loadOp ,
+                                                   VkAttachmentStoreOp storeOp,
+                                                   VkAttachmentLoadOp stencilOp,
+                                                   VkAttachmentStoreOp stencilStoreOp) {
     VkAttachmentDescription depthAttachment = {};
     depthAttachment.format = format;
     depthAttachment.samples = msaaSamples;
-    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depthAttachment.loadOp = loadOp;
+    depthAttachment.storeOp = storeOp;
+    depthAttachment.stencilLoadOp = stencilOp;
+    depthAttachment.stencilStoreOp = stencilStoreOp;
     depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
@@ -38,15 +48,19 @@ VulkanRenderPassBuilder::addDepthStencilAttachment(VkFormat format, VkSampleCoun
     return *this;
 }
 
-VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColorResolveAttachment(VkFormat format)
+VulkanRenderPassBuilder& VulkanRenderPassBuilder::addColorResolveAttachment(VkFormat format,
+                                                                            VkAttachmentLoadOp loadOp ,
+                                                                            VkAttachmentStoreOp storeOp,
+                                                                            VkAttachmentLoadOp stencilOp,
+                                                                            VkAttachmentStoreOp stencilStoreOp)
 {
     VkAttachmentDescription colorAttachmentResolve = {};
     colorAttachmentResolve.format = format;
     colorAttachmentResolve.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachmentResolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachmentResolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachmentResolve.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachmentResolve.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachmentResolve.loadOp = loadOp;
+    colorAttachmentResolve.storeOp = storeOp;
+    colorAttachmentResolve.stencilLoadOp = stencilOp;
+    colorAttachmentResolve.stencilStoreOp = stencilStoreOp;
     colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
