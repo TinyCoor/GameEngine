@@ -134,6 +134,7 @@ VkPipeline VulkanGraphicsPipelineBuilder::build() {
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo={};
     dynamicStateCreateInfo.sType =VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicStateCreateInfo.pNext= nullptr;
+//    dynamicStateCreateInfo.flags =
     dynamicStateCreateInfo.dynamicStateCount =dynamicStates.size();
     dynamicStateCreateInfo.pDynamicStates= dynamicStates.data();
 

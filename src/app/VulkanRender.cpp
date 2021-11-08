@@ -68,6 +68,8 @@ void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
         .addShaderStage(fragShader->getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
         .addVertexInput(VulkanMesh::getVertexInputBindingDescription(),VulkanMesh::getAttributeDescriptions())
         .setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+        .addViewport(VkViewport())
+        .addScissor(VkRect2D())
         .addDynamicState(VK_DYNAMIC_STATE_SCISSOR)
         .addDynamicState(VK_DYNAMIC_STATE_VIEWPORT)
         .setRasterizerState(false, false, VK_POLYGON_MODE_FILL,
@@ -83,6 +85,8 @@ void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
             .addShaderStage(skyboxFragmentShader->getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
             .addVertexInput(VulkanMesh::getVertexInputBindingDescription(), VulkanMesh::getAttributeDescriptions())
             .setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
+            .addViewport(VkViewport())
+            .addScissor(VkRect2D())
             .addDynamicState(VK_DYNAMIC_STATE_SCISSOR)
             .addDynamicState(VK_DYNAMIC_STATE_VIEWPORT)
             .setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE)
