@@ -56,11 +56,24 @@ static shaderc_include_result* vulkan_shaderc_include_resolver(
     result->content = nullptr;
     result->content_length =0;
 
-    std::string sourcePath = requesting_source;
-    size_t position = sourcePath.find_last_of("/\\");
+    std::string targetDir = "";
 
-    std::string sourceDir = (position != std::string::npos) ? sourcePath.substr(0,position + 1) :"";
-    std::string targetPath = sourceDir + std::string(requested_source);
+    switch (type) {
+        case shaderc_include_type_standard:{
+            targetDir = std::string("shaders/");
+        }break;
+        case shaderc_include_type_relative:{
+            std::string_view sourcePath = requesting_source;
+            size_t position = sourcePath.find_last_of("/\\");
+
+            if(position !=std::string_view::npos){
+                targetDir=sourcePath.substr(0,position + 1);
+            }
+        }
+        break;
+    }
+
+    std::string targetPath = targetDir + std::string(requested_source);
 
     std::ifstream  file(targetPath,std::ios::ate | std::ios::binary);
     if(!file.is_open()){
