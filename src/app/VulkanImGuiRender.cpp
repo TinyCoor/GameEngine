@@ -14,7 +14,7 @@
 #include <imgui_impl_glfw.h>
 
 
-VulkanImGuiRender::VulkanImGuiRender(const VulkanRenderContext &ctx,
+VulkanImGuiRender::VulkanImGuiRender(const VulkanContext *ctx,
                                      VkExtent2D size,
                                      VkRenderPass pass)
 :context(ctx),extent(size),renderPass(pass)
@@ -31,13 +31,13 @@ void VulkanImGuiRender::init(VulkanRenderScene *scene,
 {
     // Init ImGui bindings for Vulkan
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = context.instance;
-    init_info.PhysicalDevice = context.physicalDevice;
-    init_info.Device = context.device_;
-    init_info.QueueFamily = context.graphicsQueueFamily;
-    init_info.Queue = context.graphicsQueue;
-    init_info.DescriptorPool = context.descriptorPool;
-    init_info.MSAASamples = context.maxMSAASamples;
+    init_info.Instance = context->instance;
+    init_info.PhysicalDevice = context->physicalDevice;
+    init_info.Device = context->device;
+    init_info.QueueFamily = context->graphicsQueueFamily;
+    init_info.Queue = context->graphicsQueue;
+    init_info.DescriptorPool = context->descriptorPool;
+    init_info.MSAASamples = context->maxMSAASamples;
     init_info.MinImageCount = swapChain->getNumImages();
     init_info.ImageCount = swapChain->getNumImages();
     init_info.Allocator = nullptr;
@@ -45,14 +45,14 @@ void VulkanImGuiRender::init(VulkanRenderScene *scene,
     //TODO Fix Bug In this Function VkCreateSampler Cause Segmentation
     ImGui_ImplVulkan_Init(&init_info,swapChain->getRenderPass());
 
-    VulkanRenderContext imGuiContext = {};
-    imGuiContext.commandPool = context.commandPool;
-    imGuiContext.descriptorPool = context.descriptorPool;
-    imGuiContext.device_ = context.device_;
-    imGuiContext.graphicsQueue = context.graphicsQueue;
-    imGuiContext.maxMSAASamples = context.maxMSAASamples;
-    imGuiContext.physicalDevice = context.physicalDevice;
-    imGuiContext.presentQueue = context.presentQueue;
+    VulkanContext* imGuiContext = new VulkanContext;
+    imGuiContext->commandPool = context->commandPool;
+    imGuiContext->descriptorPool = context->descriptorPool;
+    imGuiContext->device = context->device;
+    imGuiContext->graphicsQueue = context->graphicsQueue;
+    imGuiContext->maxMSAASamples = context->maxMSAASamples;
+    imGuiContext->physicalDevice = context->physicalDevice;
+    imGuiContext->presentQueue = context->presentQueue;
 
     VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(imGuiContext);
     ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);

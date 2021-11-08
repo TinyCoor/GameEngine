@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_VULKANIMGUIRENDER_H
 #define GAMEENGINE_VULKANIMGUIRENDER_H
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 #include <memory>
 
 struct RenderState;
@@ -15,7 +15,7 @@ class VulkanSwapChain;
 
 class VulkanImGuiRender {
 public:
-    explicit VulkanImGuiRender(const VulkanRenderContext& ctx,
+    explicit VulkanImGuiRender(const VulkanContext* ctx,
                                VkExtent2D extent,
                                VkRenderPass renderPass);
 
@@ -32,7 +32,7 @@ public:
 
 
 private:
-    VulkanRenderContext context;
+    const VulkanContext* context;
     VkRenderPass renderPass;
     VkExtent2D extent;
 };

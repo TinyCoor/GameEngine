@@ -61,14 +61,14 @@ void VulkanMesh::createVertexBuffer() {
                               stagingBufferMemory);
 
     void* data = nullptr;
-    vkMapMemory(context.device_, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vkMapMemory(context->device, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, vertices.data(), bufferSize);
-    vkUnmapMemory(context.device_, stagingBufferMemory);
+    vkUnmapMemory(context->device, stagingBufferMemory);
 
     VulkanUtils::copyBuffer(context,stagingBuffer,vertexBuffer,bufferSize);
 
-    vkDestroyBuffer(context.device_,stagingBuffer, nullptr);
-    vkFreeMemory(context.device_, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(context->device,stagingBuffer, nullptr);
+    vkFreeMemory(context->device, stagingBufferMemory, nullptr);
 }
 
 void VulkanMesh::createIndexBuffer() {
@@ -91,14 +91,14 @@ void VulkanMesh::createIndexBuffer() {
                                stagingBufferMemory);
 
     void* data = nullptr;
-    vkMapMemory(context.device_, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vkMapMemory(context->device, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data,indices.data(), bufferSize);
-    vkUnmapMemory(context.device_, stagingBufferMemory);
+    vkUnmapMemory(context->device, stagingBufferMemory);
 
     VulkanUtils::copyBuffer(context,stagingBuffer,indexBuffer,bufferSize);
 
-    vkDestroyBuffer(context.device_,stagingBuffer, nullptr);
-    vkFreeMemory(context.device_, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(context->device,stagingBuffer, nullptr);
+    vkFreeMemory(context->device, stagingBufferMemory, nullptr);
 }
 
 //This is a bug in load form File
@@ -214,10 +214,10 @@ bool VulkanMesh::loadFromFile(const char* file) {
 }
 
 void VulkanMesh::clearGPUData() {
-    vkDestroyBuffer(context.device_,vertexBuffer, nullptr);
-    vkFreeMemory(context.device_,vertexBufferMemory, nullptr);
-    vkDestroyBuffer(context.device_,indexBuffer, nullptr);
-    vkFreeMemory(context.device_,indexBufferMemory, nullptr);
+    vkDestroyBuffer(context->device,vertexBuffer, nullptr);
+    vkFreeMemory(context->device,vertexBufferMemory, nullptr);
+    vkDestroyBuffer(context->device,indexBuffer, nullptr);
+    vkFreeMemory(context->device,indexBufferMemory, nullptr);
     vertexBuffer =VK_NULL_HANDLE;
     vertexBufferMemory = VK_NULL_HANDLE;
     indexBuffer= VK_NULL_HANDLE;

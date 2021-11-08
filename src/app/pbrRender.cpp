@@ -11,7 +11,6 @@
 int main(){
    if(!glfwInit())
        return EXIT_FAILURE;
-   VK_CHECK(volkInitialize(),"Init Volk Failed");
    try {
        Application app;
        app.run();

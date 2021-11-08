@@ -91,9 +91,9 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t imag
                                stagingBufferMemory);
 
     void* data;
-    vkMapMemory(context.device_, stagingBufferMemory, 0, imageSize, 0, &data);
+    vkMapMemory(context->device, stagingBufferMemory, 0, imageSize, 0, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(context.device_, stagingBufferMemory);
+    vkUnmapMemory(context->device, stagingBufferMemory);
 
     VulkanUtils::createImage2D(context,width,
                                height,
@@ -129,25 +129,25 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t imag
                                        0,mipLevels);
 
     //clean up
-    vkDestroyBuffer(context.device_,stagingBuffer, nullptr);
-    vkFreeMemory(context.device_, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(context->device,stagingBuffer, nullptr);
+    vkFreeMemory(context->device, stagingBufferMemory, nullptr);
 
     //create ImageView
-    imageView =VulkanUtils::createImageView(context,
+    imageView =VulkanUtils::createImageView(context->device,
                                               image,
                                               imageFormat,
                                               VK_IMAGE_ASPECT_COLOR_BIT,
                                                VK_IMAGE_VIEW_TYPE_2D,
                                               0,mipLevels,0,layers);
-    imageSampler= VulkanUtils::createSampler2D(context,mipLevels);
+    imageSampler= VulkanUtils::createSampler(context->device,mipLevels);
 
 }
 
 void VulkanTexture::clearGPUData() {
-    vkDestroySampler(context.device_,imageSampler, nullptr);
-    vkDestroyImageView(context.device_,imageView, nullptr);
-    vkDestroyImage(context.device_, image, nullptr);
-    vkFreeMemory(context.device_, imageMemory, nullptr);
+    vkDestroySampler(context->device,imageSampler, nullptr);
+    vkDestroyImageView(context->device,imageView, nullptr);
+    vkDestroyImage(context->device, image, nullptr);
+    vkFreeMemory(context->device, imageMemory, nullptr);
 
     image = VK_NULL_HANDLE;
     imageView = VK_NULL_HANDLE;
@@ -271,13 +271,13 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
 
 
 
-    imageView =VulkanUtils::createImageView(context,
+    imageView =VulkanUtils::createImageView(context->device,
                                             image,
                                             format,
                                             VK_IMAGE_ASPECT_COLOR_BIT,
                                             VK_IMAGE_VIEW_TYPE_CUBE,
                                             0,mipLevels,
                                             0,layers);
-    imageSampler= VulkanUtils::createSampler2D(context,mipLevels);
+    imageSampler= VulkanUtils::createSampler(context->device,mipLevels);
 }
 

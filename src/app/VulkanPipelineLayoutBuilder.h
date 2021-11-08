@@ -7,16 +7,16 @@
 
 #include <vector>
 #include <volk.h>
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 
 class VulkanPipelineLayoutBuilder {
 private:
-    VulkanRenderContext context;
+    const VulkanContext* context;
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts{};
     VkPipelineLayout  pipelineLayout{};
 
 public:
-    VulkanPipelineLayoutBuilder(const VulkanRenderContext& ctx)
+    VulkanPipelineLayoutBuilder(const VulkanContext* ctx)
     : context(ctx){}
 
     inline VkPipelineLayout  getPipelineLayout() const {return pipelineLayout;}

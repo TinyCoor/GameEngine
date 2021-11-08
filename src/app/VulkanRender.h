@@ -5,7 +5,7 @@
 #ifndef GAMEENGINE_VULKANRENDER_H
 #define GAMEENGINE_VULKANRENDER_H
 
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 #include "VulkanCubemapRender.h"
 #include <volk.h>
 #include <vector>
@@ -19,7 +19,7 @@ struct RenderState;
 
 class VulkanRender {
 private:
-    VulkanRenderContext context;
+    const VulkanContext* context;
     VkExtent2D extent;
     //TODO swapchain descriptorSetLayout
     VkRenderPass renderPass{VK_NULL_HANDLE};
@@ -41,7 +41,7 @@ private:
 
 
 public:
-    explicit VulkanRender(VulkanRenderContext& ctx,
+    explicit VulkanRender(const VulkanContext* ctx,
                           VkExtent2D extent,
                           VkDescriptorSetLayout layout,
                           VkRenderPass renderPass);

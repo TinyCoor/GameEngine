@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_VULKANSWAPCHAIN_H
 #define GAMEENGINE_VULKANSWAPCHAIN_H
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 #include <volk.h>
 #include <vector>
 
@@ -26,7 +26,7 @@ struct RenderState;
 
 class VulkanSwapChain{
 public:
-    VulkanSwapChain(const VulkanRenderContext& ctx,VkDeviceSize uboSize);
+    VulkanSwapChain(const VulkanContext* ctx,VkDeviceSize uboSize);
     virtual ~VulkanSwapChain();
 
     void init(int width,int height);
@@ -61,8 +61,9 @@ private:
     };
 
 
-    SupportedDetails fetchSwapchainSupportedDetails(VkPhysicalDevice& physical_device,
-                                                             VkSurfaceKHR& surface);
+    SupportedDetails fetchSwapchainSupportedDetails(VkPhysicalDevice physical_device,
+                                                             VkSurfaceKHR surface);
+
     Settings selectOptimalSwapchainSettings(SupportedDetails& details,int width,int height);
 
 private:
@@ -77,7 +78,7 @@ private:
     void shutdownFrames();
 private:
 
-    VulkanRenderContext context;
+    const VulkanContext* context;
     VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkRenderPass  noClearRenderPass{VK_NULL_HANDLE};

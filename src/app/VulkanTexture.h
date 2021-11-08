@@ -5,12 +5,12 @@
 #ifndef GAMEENGINE_VULKANTEXTURE_H
 #define GAMEENGINE_VULKANTEXTURE_H
 
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 #include <string>
 
 class VulkanTexture {
 public:
-    VulkanTexture(const VulkanRenderContext& ctx)
+    VulkanTexture(const VulkanContext* ctx)
     : context(ctx){}
     ~VulkanTexture();
 
@@ -31,7 +31,7 @@ public:
 private:
     void uploadToGPU(VkFormat format,VkImageTiling tiling,size_t size);
 private:
-    VulkanRenderContext context;
+    const VulkanContext* context;
     unsigned char* pixels = nullptr;
     int width =0;
     int height =0;

@@ -4,14 +4,14 @@
 
 #ifndef GAMEENGINE_VULKANDESCRIPTORSETLAYOUTBUILDER_H
 #define GAMEENGINE_VULKANDESCRIPTORSETLAYOUTBUILDER_H
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 
 class VulkanDescriptorSetLayoutBuilder {
-    VulkanRenderContext context;
+    const VulkanContext* context;
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
     std::vector<VkDescriptorSetLayoutBinding> bindings;
 public:
-    VulkanDescriptorSetLayoutBuilder(const VulkanRenderContext& ctx): context(ctx){
+    VulkanDescriptorSetLayoutBuilder(const VulkanContext* ctx): context(ctx){
     }
 
     VulkanDescriptorSetLayoutBuilder& addDescriptorBinding(VkDescriptorType type,

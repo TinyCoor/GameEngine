@@ -7,13 +7,13 @@
 
 #include <vector>
 #include <volk.h>
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 
 
 
 class VulkanGraphicsPipelineBuilder {
 private:
-    VulkanRenderContext context;
+    const VulkanContext* context;
     VkRenderPass renderPass {};
     VkPipelineLayout  pipelineLayout{};
 
@@ -36,7 +36,7 @@ private:
     VkPipeline pipeline{};
 
 public:
-    VulkanGraphicsPipelineBuilder(const VulkanRenderContext& ctx,
+    VulkanGraphicsPipelineBuilder(const VulkanContext* ctx,
                                   VkPipelineLayout  pipelineLayout,
                                   VkRenderPass renderPass)
     : context(ctx),pipelineLayout(pipelineLayout),renderPass(renderPass){}

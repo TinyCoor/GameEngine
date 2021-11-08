@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_RESOURCEMANAGER_H
 #define GAMEENGINE_RESOURCEMANAGER_H
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 #include "VulkanShader.h"
 #include <unordered_map>
 #include <memory>
@@ -12,11 +12,12 @@
 class VulkanShader;
 class VulkanTexture;
 class VulkanMesh;
+class VulkanContext;
 
 //TODO Make User defined Deconstructor
 class VulkanResourceManager {
 public:
-    VulkanResourceManager(const VulkanRenderContext& ctx);
+    VulkanResourceManager(const VulkanContext* ctx);
     ~VulkanResourceManager();
 
     std::shared_ptr<VulkanShader> loadShader(int id, ShaderKind kind,const char* path);
@@ -33,7 +34,7 @@ public:
 
 private:
     //May be This is singleton
-    VulkanRenderContext context;
+    const VulkanContext* context;
     std::unordered_map<int,std::shared_ptr<VulkanShader>> shaders;
     std::unordered_map<int,std::shared_ptr<VulkanMesh>> meshes;
     std::unordered_map<int,std::shared_ptr<VulkanTexture>> textures;

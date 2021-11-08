@@ -12,7 +12,7 @@ class VulkanRenderScene {
 private:
     VulkanResourceManager resource;
 public:
-    explicit VulkanRenderScene(VulkanRenderContext& ctx);
+    explicit VulkanRenderScene(const VulkanContext* ctx);
 
     void init();
     void shutdown() ;

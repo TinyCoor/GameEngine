@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include "VulkanShader.h"
+//TODO read config from file
 namespace config{
 
     enum Shaders{
@@ -61,6 +62,7 @@ namespace config{
     static std::vector<const char*> hdrTextures= {
             "../../assets/textures/environment/arctic.hdr",
             "../../assets/textures/environment/umbrellas.hdr",
+            "../../assets/textures/environment/shanghai_bund_4k.hdr"
     };
 
 }

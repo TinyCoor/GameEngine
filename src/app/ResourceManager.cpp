@@ -7,7 +7,7 @@
 #include "VulkanTexture.h"
 #include "VulkanMesh.h"
 
-VulkanResourceManager::VulkanResourceManager(const VulkanRenderContext &ctx) :context(ctx){
+VulkanResourceManager::VulkanResourceManager(const VulkanContext *ctx) :context(ctx){
 
 }
 

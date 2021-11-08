@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_VULKANRENDERPASSBUILDER_H
 #define GAMEENGINE_VULKANRENDERPASSBUILDER_H
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 
 class VulkanRenderPassBuilder {
     struct SubpassData{
@@ -14,12 +14,12 @@ class VulkanRenderPassBuilder {
     };
     std::vector<SubpassData> subpassDatas;
     std::vector<VkSubpassDescription> infos{};
-    VulkanRenderContext context;
+    const VulkanContext* context;
     VkRenderPass renderPass{VK_NULL_HANDLE};
     std::vector<VkAttachmentDescription> attachments;
 
 public:
-    VulkanRenderPassBuilder(const VulkanRenderContext& ctx): context(ctx){}
+    VulkanRenderPassBuilder(const VulkanContext* ctx): context(ctx){}
 
     inline VkRenderPass getRenderPass(){return renderPass;}
 

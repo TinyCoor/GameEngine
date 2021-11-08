@@ -5,7 +5,7 @@
 
 #include "VulkanRenderScene.h"
 
-VulkanRenderScene::VulkanRenderScene(VulkanRenderContext& ctx)
+VulkanRenderScene::VulkanRenderScene(const VulkanContext* ctx)
 : resource(ctx)
 {}
 

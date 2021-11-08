@@ -3,13 +3,13 @@
 //
 
 #include "VulkanUtils.h"
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 #include "Macro.h"
 #include <stdexcept>
 #include <fstream>
-#include <stb_image.h>
 #include <cassert>
 #include <iostream>
+#include <cstring>
 
 QueueFamilyIndices VulkanUtils::fetchFamilyIndices(VkPhysicalDevice& physcalDevice,VkSurfaceKHR & surface) {
     uint32_t queueCount = 0;
@@ -35,7 +35,7 @@ QueueFamilyIndices VulkanUtils::fetchFamilyIndices(VkPhysicalDevice& physcalDevi
     return indices;
 }
 
-void VulkanUtils::createBuffer(const VulkanRenderContext& context,
+void VulkanUtils::createBuffer(const VulkanContext* context,
                                VkDeviceSize size,
                                VkBufferUsageFlags usageFlags,
                                VkMemoryPropertyFlags memoryFlags,
@@ -47,28 +47,28 @@ void VulkanUtils::createBuffer(const VulkanRenderContext& context,
     bufferInfo.size = size;
     bufferInfo.usage = usageFlags;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VK_CHECK(vkCreateBuffer(context.device_, &bufferInfo, nullptr, &buffer),
+    VK_CHECK(vkCreateBuffer(context->device, &bufferInfo, nullptr, &buffer),
              "failed to create vertex buffer!");
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(context.device_, buffer, &memRequirements);
+    vkGetBufferMemoryRequirements(context->device, buffer, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(context,memRequirements.memoryTypeBits, memoryFlags);
-    VK_CHECK(vkAllocateMemory(context.device_, &allocInfo, nullptr, &memory) ,"failed to allocate vertex buffer memory!");
-    VK_CHECK( vkBindBufferMemory(context.device_, buffer, memory, 0),"Bind Buffer VertexBuffer Failed");
+    allocInfo.memoryTypeIndex = findMemoryType(context->physicalDevice,memRequirements.memoryTypeBits, memoryFlags);
+    VK_CHECK(vkAllocateMemory(context->device, &allocInfo, nullptr, &memory) ,"failed to allocate vertex buffer memory!");
+    VK_CHECK( vkBindBufferMemory(context->device, buffer, memory, 0),"Bind Buffer VertexBuffer Failed");
 
 }
 
 
 
-uint32_t VulkanUtils::findMemoryType(const VulkanRenderContext& context,
+uint32_t VulkanUtils::findMemoryType(const VkPhysicalDevice physicalDevice,
                                      uint32_t typeFilter,
                                      VkMemoryPropertyFlags properties) {
     VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(context.physicalDevice, &memProperties);
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
         uint32_t memoryPropertiy   = memProperties.memoryTypes[i].propertyFlags;
         if (typeFilter & (1 << i) && (memoryPropertiy & properties) == properties){
@@ -78,7 +78,7 @@ uint32_t VulkanUtils::findMemoryType(const VulkanRenderContext& context,
     throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void VulkanUtils::copyBuffer(const VulkanRenderContext& context,
+void VulkanUtils::copyBuffer(const VulkanContext* context,
                              VkBuffer srcBuffer,
                              VkBuffer dstBuffer,
                              VkDeviceSize size) {
@@ -108,15 +108,15 @@ std::vector<char> VulkanUtils::readFile(const std::string& filename){
 }
 
 
-VkCommandBuffer VulkanUtils::beginSingleTimeCommands(const VulkanRenderContext& context) {
+VkCommandBuffer VulkanUtils::beginSingleTimeCommands(const VulkanContext* context) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool =context.commandPool;
+    allocInfo.commandPool =context->commandPool;
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(context.device_, &allocInfo, &commandBuffer);
+    vkAllocateCommandBuffers(context->device, &allocInfo, &commandBuffer);
     assert(commandBuffer !=VK_NULL_HANDLE);
 
     VkCommandBufferBeginInfo beginInfo{};
@@ -129,7 +129,7 @@ VkCommandBuffer VulkanUtils::beginSingleTimeCommands(const VulkanRenderContext& 
 }
 
 
-void VulkanUtils::createImage2D(const VulkanRenderContext &context,
+void VulkanUtils::createImage2D(const VulkanContext *context,
                                 uint32_t width, uint32_t height,  uint32_t mipLevel, VkSampleCountFlagBits numberSample,
                                 VkFormat format,VkImageTiling tiling,
                                 VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
@@ -151,22 +151,22 @@ void VulkanUtils::createImage2D(const VulkanRenderContext &context,
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags = 0;
 
-    VK_CHECK(vkCreateImage(context.device_, &imageInfo, nullptr, &image),
+    VK_CHECK(vkCreateImage(context->device, &imageInfo, nullptr, &image),
              "failed to create textures!");
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(context.device_, image, &memRequirements);
+    vkGetImageMemoryRequirements(context->device, image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(context,memRequirements.memoryTypeBits, properties);
-    VK_CHECK(vkAllocateMemory(context.device_, &allocInfo, nullptr, &memory) ,"failed to allocate vertex buffer memory!");
-    VK_CHECK(vkBindImageMemory(context.device_, image, memory, 0),"Bind Buffer VertexBuffer Failed");
+    allocInfo.memoryTypeIndex = findMemoryType(context->physicalDevice,memRequirements.memoryTypeBits, properties);
+    VK_CHECK(vkAllocateMemory(context->device, &allocInfo, nullptr, &memory) ,"failed to allocate vertex buffer memory!");
+    VK_CHECK(vkBindImageMemory(context->device, image, memory, 0),"Bind Buffer VertexBuffer Failed");
 }
 
 
-void VulkanUtils::createCubeImage(const VulkanRenderContext &context, uint32_t width, uint32_t height,
+void VulkanUtils::createCubeImage(const VulkanContext *context, uint32_t width, uint32_t height,
                                   uint32_t mipLevel, VkSampleCountFlagBits numberSample, VkFormat format,
                                   VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                   VkImage &image, VkDeviceMemory &memory) {
@@ -187,23 +187,23 @@ void VulkanUtils::createCubeImage(const VulkanRenderContext &context, uint32_t w
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
-    VK_CHECK(vkCreateImage(context.device_, &imageInfo, nullptr, &image),
+    VK_CHECK(vkCreateImage(context->device, &imageInfo, nullptr, &image),
              "failed to create textures!");
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(context.device_, image, &memRequirements);
+    vkGetImageMemoryRequirements(context->device, image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(context,memRequirements.memoryTypeBits, properties);
-    VK_CHECK(vkAllocateMemory(context.device_, &allocInfo, nullptr, &memory) ,"failed to allocate image buffer memory!");
-    VK_CHECK(vkBindImageMemory(context.device_, image, memory, 0),"Bind Buffer  Failed");
+    allocInfo.memoryTypeIndex = findMemoryType(context->physicalDevice,memRequirements.memoryTypeBits, properties);
+    VK_CHECK(vkAllocateMemory(context->device, &allocInfo, nullptr, &memory) ,"failed to allocate image buffer memory!");
+    VK_CHECK(vkBindImageMemory(context->device, image, memory, 0),"Bind Buffer  Failed");
 
 }
 
 
-VkImageView VulkanUtils::createImageCubeView(const VulkanRenderContext& context,
+VkImageView VulkanUtils::createImageCubeView(VkDevice device,
                                         VkImage image,
                                         VkFormat format,
                                         VkImageAspectFlags aspectFlags,
@@ -221,11 +221,11 @@ VkImageView VulkanUtils::createImageCubeView(const VulkanRenderContext& context,
     viewInfo.subresourceRange.levelCount = numMipLevel;
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 6;
-    VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
+    VK_CHECK(vkCreateImageView(device, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
     return textureImageView;
 }
 
-VkImageView VulkanUtils::createImageView(const VulkanRenderContext& context,
+VkImageView VulkanUtils::createImageView(VkDevice device,
                                      VkImage image,
                                      VkFormat format,
                                      VkImageAspectFlags aspectFlags,
@@ -248,12 +248,12 @@ VkImageView VulkanUtils::createImageView(const VulkanRenderContext& context,
     viewInfo.subresourceRange.baseArrayLayer = baseLayer;
     viewInfo.subresourceRange.layerCount = numLayers;
 
-    VK_CHECK(vkCreateImageView(context.device_, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
+    VK_CHECK(vkCreateImageView(device, &viewInfo, nullptr, &textureImageView),"failed to create texture image view!");
     return textureImageView;
 }
 
 
-void VulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
+void VulkanUtils::transitionImageLayout(const VulkanContext* context,
                                    VkImage image,
                                    VkFormat format,
                                    VkImageLayout oldLayout,
@@ -368,7 +368,7 @@ void VulkanUtils::transitionImageLayout(const VulkanRenderContext& context,
 }
 
 
-void VulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
+void VulkanUtils::copyBufferToImage(const VulkanContext *context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
                                     uint32_t height) {
     auto commandBuffer = beginSingleTimeCommands(context);
 
@@ -401,7 +401,7 @@ void VulkanUtils::copyBufferToImage(const VulkanRenderContext &context, VkBuffer
 
 
 
-VkSampler VulkanUtils::createSampler2D(const VulkanRenderContext& context,
+VkSampler VulkanUtils::createSampler(VkDevice device,
                                        uint32_t mipLevels){
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -421,7 +421,7 @@ VkSampler VulkanUtils::createSampler2D(const VulkanRenderContext& context,
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod =static_cast<float>(mipLevels);
     VkSampler textureSampler{VK_NULL_HANDLE};
-    VK_CHECK(vkCreateSampler(context.device_, &samplerInfo, nullptr, &textureSampler),"failed to create texture sampler!") ;
+    VK_CHECK(vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler),"failed to create texture sampler!") ;
 
     return textureSampler;
 }
@@ -432,7 +432,7 @@ bool VulkanUtils::hasStencilComponent(VkFormat format){
 }
 
 void
-VulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
+VulkanUtils::generateImage2DMipMaps(const VulkanContext *context,
                                     VkImage image,uint32_t width, uint32_t height,
                                     uint32_t mipLevel,VkFormat format,
                                     VkFilter filter) {
@@ -444,7 +444,7 @@ VulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
     bool supportCubicFiltering = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT) == 0;
 
     //TODO Fix
-    vkGetPhysicalDeviceFormatProperties(context.physicalDevice, format, &formatProperties);
+    vkGetPhysicalDeviceFormatProperties(context->physicalDevice, format, &formatProperties);
     if ((filter == VK_FILTER_LINEAR) && !supportsLinearFiltering) {
         throw std::runtime_error("texture image format does not support linear blitting!");
     }
@@ -521,9 +521,9 @@ VulkanUtils::generateImage2DMipMaps(const VulkanRenderContext &context,
 }
 
 
-VkSampleCountFlagBits VulkanUtils::getMaxUsableSampleCount(const VulkanRenderContext& context) {
+VkSampleCountFlagBits VulkanUtils::getMaxUsableSampleCount(VkPhysicalDevice physicalDevice) {
     VkPhysicalDeviceProperties physicalDeviceProperties;
-    vkGetPhysicalDeviceProperties(context.physicalDevice, &physicalDeviceProperties);
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
 
     VkSampleCountFlags counts = std::min(
             physicalDeviceProperties.limits.framebufferColorSampleCounts,
@@ -539,7 +539,7 @@ VkSampleCountFlagBits VulkanUtils::getMaxUsableSampleCount(const VulkanRenderCon
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-VkShaderModule VulkanUtils::createShaderModule(const VulkanRenderContext& context,
+VkShaderModule VulkanUtils::createShaderModule(VkDevice device,
                                          uint32_t * code,
                                          uint32_t size){
     VkShaderModuleCreateInfo shaderInfo={};
@@ -547,13 +547,12 @@ VkShaderModule VulkanUtils::createShaderModule(const VulkanRenderContext& contex
     shaderInfo.pCode =code;
     shaderInfo.codeSize =size;
     VkShaderModule shader;
-    VK_CHECK(vkCreateShaderModule(context.device_,&shaderInfo, nullptr,&shader),"Create shader module failed\n");
+    VK_CHECK(vkCreateShaderModule(device,&shaderInfo, nullptr,&shader),"Create shader module failed\n");
     return shader;
 }
 
 
-void VulkanUtils::bindUniformBuffer(
-        const VulkanRenderContext &context,
+void VulkanUtils::bindUniformBuffer(VkDevice device,
         VkDescriptorSet descriptorSet,
         int binding,
         VkBuffer buffer,
@@ -577,11 +576,11 @@ void VulkanUtils::bindUniformBuffer(
 
     // TODO: not optimal, probably should be refactored to a Binder class,
     // i.e. it's better to collect all descriptor writes before the call
-    vkUpdateDescriptorSets(context.device_, 1, &descriptorWrite, 0, nullptr);
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 }
 
 void VulkanUtils::bindCombinedImageSampler(
-        const VulkanRenderContext &context,
+        VkDevice device,
         VkDescriptorSet descriptorSet,
         int binding,
         VkImageView imageView,
@@ -604,12 +603,12 @@ void VulkanUtils::bindCombinedImageSampler(
 
     // TODO: not optimal, probably should be refactored to a Binder class,
     // i.e. it's better to collect all descriptor writes before the call
-    vkUpdateDescriptorSets(context.device_, 1, &descriptorWrite, 0, nullptr);
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 
     //
 }
 
-void VulkanUtils::endSingleTimeCommands(const VulkanRenderContext& context,VkCommandBuffer commandBuffer)
+void VulkanUtils::endSingleTimeCommands(const VulkanContext* context,VkCommandBuffer commandBuffer)
 {
     vkEndCommandBuffer(commandBuffer);
 
@@ -618,25 +617,25 @@ void VulkanUtils::endSingleTimeCommands(const VulkanRenderContext& context,VkCom
     fenceInfo.flags = 0;
 
     VkFence fence{};
-    VK_CHECK(vkCreateFence(context.device_,&fenceInfo, nullptr,&fence),"Create Fence Failed\n");
+    VK_CHECK(vkCreateFence(context->device,&fenceInfo, nullptr,&fence),"Create Fence Failed\n");
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    VK_CHECK( vkQueueSubmit(context.graphicsQueue, 1, &submitInfo, fence),"failed to submit command buffer");
-    VK_CHECK(vkWaitForFences(context.device_,1,&fence,VK_TRUE,10000000000),"Wait for Fence failed");
-    vkDestroyFence(context.device_,fence, nullptr);
-    vkFreeCommandBuffers(context.device_, context.commandPool, 1, &commandBuffer);
+    VK_CHECK( vkQueueSubmit(context->graphicsQueue, 1, &submitInfo, fence),"failed to submit command buffer");
+    VK_CHECK(vkWaitForFences(context->device,1,&fence,VK_TRUE,10000000000),"Wait for Fence failed");
+    vkDestroyFence(context->device,fence, nullptr);
+    vkFreeCommandBuffers(context->device, context->commandPool, 1, &commandBuffer);
 }
 
 
-VkFormat VulkanUtils::selectOptimalSupportedImageFormat(const VulkanRenderContext& context,const std::vector<VkFormat> &candiates,
+VkFormat VulkanUtils::selectOptimalSupportedImageFormat(const VkPhysicalDevice& physicalDevice,const std::vector<VkFormat> &candiates,
                                                             VkImageTiling tiling, VkFormatFeatureFlags features) {
     for(VkFormat format : candiates)
     {
         VkFormatProperties properties;
-        vkGetPhysicalDeviceFormatProperties(context.physicalDevice,format,&properties);
+        vkGetPhysicalDeviceFormatProperties(physicalDevice,format,&properties);
         if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & features) == features)
             return format;
 
@@ -649,10 +648,127 @@ VkFormat VulkanUtils::selectOptimalSupportedImageFormat(const VulkanRenderContex
     TH_WITH_MSG(true,"can not find support format");
 }
 
-VkFormat  VulkanUtils::selectOptimalImageFormat(const VulkanRenderContext& context) {
-    return selectOptimalSupportedImageFormat(context,
+VkFormat  VulkanUtils::selectOptimalImageFormat(const VkPhysicalDevice& physicalDevice) {
+    return selectOptimalSupportedImageFormat(physicalDevice,
             {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
             VK_IMAGE_TILING_OPTIMAL,
             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
     );
+}
+
+/*
+ */
+bool VulkanUtils::checkInstanceValidationLayers(
+        const std::vector<const char *> &requiredLayers,
+        bool verbose
+)
+{
+    uint32_t availableLayerCount = 0;
+    vkEnumerateInstanceLayerProperties(&availableLayerCount, nullptr);
+
+    std::vector<VkLayerProperties> availableLayers(availableLayerCount);
+    vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers.data());
+
+    for (const char *requiredLayer : requiredLayers)
+    {
+        bool supported = false;
+        for (const VkLayerProperties &layer : availableLayers)
+        {
+            if (strcmp(requiredLayer, layer.layerName) == 0)
+            {
+                supported = true;
+                break;
+            }
+        }
+
+        if (!supported)
+        {
+            if (verbose)
+                std::cerr << requiredLayer << " is not supported" << std::endl;
+
+            return false;
+        }
+
+        if (verbose)
+            std::cout << "Have " << requiredLayer << std::endl;
+    }
+
+    return true;
+}
+
+bool VulkanUtils::checkInstanceExtensions(
+        const std::vector<const char *> &requiredExtensions,
+        bool verbose
+)
+{
+    uint32_t availableExtensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(availableExtensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionCount, availableExtensions.data());
+
+    for (const char *requiredExtension : requiredExtensions)
+    {
+        bool supported = false;
+        for (const VkExtensionProperties &availableExtension : availableExtensions)
+        {
+            if (strcmp(requiredExtension, availableExtension.extensionName) == 0)
+            {
+                supported = true;
+                break;
+            }
+        }
+
+        if (!supported)
+        {
+            if (verbose)
+                std::cerr << requiredExtension << " is not supported" << std::endl;
+
+            return false;
+        }
+
+        if (verbose)
+            std::cout << "Have " << requiredExtension << std::endl;
+    }
+
+    return true;
+}
+
+bool VulkanUtils::checkPhysicalDeviceExtensions(
+        VkPhysicalDevice physicalDevice,
+        const std::vector<const char *> &requiredExtensions,
+        bool verbose
+)
+{
+    uint32_t availableDeviceExtensionCount = 0;
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &availableDeviceExtensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableDeviceExtensions(availableDeviceExtensionCount);
+    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &availableDeviceExtensionCount, availableDeviceExtensions.data());
+
+    for (const char *requiredExtension : requiredExtensions)
+    {
+        bool supported = false;
+        for (const VkExtensionProperties &availableDeviceExtension : availableDeviceExtensions)
+        {
+            if (strcmp(requiredExtension, availableDeviceExtension.extensionName) == 0)
+            {
+                supported = true;
+                break;
+            }
+        }
+
+        if (!supported)
+        {
+            if (verbose)
+                std::cerr << requiredExtension << " is not supported on this physical device" << std::endl;
+
+            return false;
+        }
+
+        if (verbose)
+            std::cout << "Have " << requiredExtension << std::endl;
+    }
+
+    return true;
 }

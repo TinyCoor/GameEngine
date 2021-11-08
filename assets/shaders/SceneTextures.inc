@@ -1,14 +1,12 @@
-#ifndef _SHADER_STATE_H_
-#define _SHADER_STATE_H_
+#ifndef _SCENE_TEXTURE_H_
+#define _SCENE_TEXTURE_H_
 
-layout(set =0,binding = 0) uniform RenderState {
-	mat4 world;
-	mat4 view;
-	mat4 proj;
-	vec3 cameraPosWS;
-	float lerpUserValues;
-	float userMetalness;
-	float userRoughness;
-} ubo;
+layout(set=1,binding = 0) uniform sampler2D albedoSampler;
+layout(set=1,binding = 1) uniform sampler2D normalSampler;
+layout(set=1,binding = 2) uniform sampler2D aoSampler;
+layout(set=1,binding = 3) uniform sampler2D shadingSampler;
+layout(set=1,binding = 4) uniform sampler2D emissionSampler;
+layout(set=1,binding = 5) uniform samplerCube environmentSampler;
+layout(set=1,binding = 6) uniform samplerCube diffuseIrradianceSampler;
 
 #endif

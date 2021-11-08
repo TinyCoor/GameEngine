@@ -4,6 +4,7 @@
 
 #ifndef GAMEENGINE_VULKANUTILS_H
 #define GAMEENGINE_VULKANUTILS_H
+
 #include <volk.h>
 #include <vector>
 #include <string>
@@ -18,12 +19,39 @@ struct QueueFamilyIndices{
 };
 
 
-struct VulkanRenderContext;
+struct VulkanContext;
 
 class VulkanUtils {
 
 public:
-    static void createBuffer(const VulkanRenderContext &context,
+
+    static bool checkInstanceValidationLayers(
+            const std::vector<const char *> &requiredLayers,
+            bool verbose = false
+    );
+
+    static bool checkInstanceExtensions(
+            const std::vector<const char *> &requiredExtensions,
+            bool verbose = false
+    );
+
+    static bool checkPhysicalDeviceExtensions(
+            VkPhysicalDevice physicalDevice,
+            const std::vector<const char *> &requiredExtensions,
+            bool verbose = false
+    );
+
+
+
+    static VkFormat selectOptimalSupportedImageFormat(const VkPhysicalDevice& physicalDevice,
+                                                      const std::vector<VkFormat>& candiates,
+                                                      VkImageTiling tiling,
+                                                      VkFormatFeatureFlags features);
+
+    static VkFormat selectOptimalImageFormat(const VkPhysicalDevice& physicalDevice);
+
+
+    static void createBuffer(const VulkanContext* context,
                              VkDeviceSize size,
                              VkBufferUsageFlags usageFlags,
                              VkMemoryPropertyFlags memoryFlags,
@@ -31,23 +59,23 @@ public:
                              VkDeviceMemory &memory);
 
 
-    static uint32_t findMemoryType(const VulkanRenderContext &context,
+    static uint32_t findMemoryType(const VkPhysicalDevice physicalDevice,
                                    uint32_t typeFilter,
                                    VkMemoryPropertyFlags properties);
 
-    static void copyBuffer(const VulkanRenderContext &context,
+    static void copyBuffer(const VulkanContext* context,
                            VkBuffer srcBuffer,
                            VkBuffer dstBuffer,
                            VkDeviceSize size);
 
-    static void copyBufferToImage(const VulkanRenderContext &context,
+    static void copyBufferToImage(const VulkanContext* context,
                                   VkBuffer srcBuffer,
                                   VkImage dstBuffer,
                                   uint32_t width,
                                   uint32_t height);
 
     static void createImage2D(
-            const VulkanRenderContext &context,
+            const VulkanContext *context,
             uint32_t width,
             uint32_t height,
             uint32_t mipLevel,
@@ -60,7 +88,7 @@ public:
             VkDeviceMemory &memory
     );
 
-    static void createCubeImage(const VulkanRenderContext &context,
+    static void createCubeImage(const VulkanContext *context,
                                 uint32_t width,
                                 uint32_t height,
                                 uint32_t mipLevel,
@@ -72,7 +100,7 @@ public:
                                 VkImage &image,
                                 VkDeviceMemory &memory);
 
-    static VkImageView createImageCubeView(const VulkanRenderContext &context,
+    static VkImageView createImageCubeView(VkDevice device,
                                            VkImage image,
                                            VkFormat format,
                                            VkImageAspectFlags aspectFlags,
@@ -80,7 +108,7 @@ public:
                                            uint32_t numMipLevel = 1);
 
 
-    static VkImageView createImageView(const VulkanRenderContext &context,
+    static VkImageView createImageView(VkDevice device,
                                        VkImage image,
                                        VkFormat format,
                                        VkImageAspectFlags aspectFlags,
@@ -90,13 +118,13 @@ public:
                                        uint32_t baseLayer = 0,
                                        uint32_t numLayers = 1);
 
-    static void endSingleTimeCommands(const VulkanRenderContext &context, VkCommandBuffer commandBuffer);
+    static void endSingleTimeCommands(const VulkanContext *context, VkCommandBuffer commandBuffer);
 
-    static VkCommandBuffer beginSingleTimeCommands(const VulkanRenderContext &context);
+    static VkCommandBuffer beginSingleTimeCommands(const VulkanContext *context);
 
     static std::vector<char> readFile(const std::string &filename);
 
-    static void transitionImageLayout(const VulkanRenderContext &context,
+    static void transitionImageLayout(const VulkanContext *context,
                                       VkImage image,
                                       VkFormat format,
                                       VkImageLayout oldLayout,
@@ -106,12 +134,12 @@ public:
                                       uint32_t baseLayer = 0,
                                       uint32_t numLayers = 1);
 
-    static VkSampler createSampler2D(const VulkanRenderContext &context, uint32_t mipLevels);
+    static VkSampler createSampler(VkDevice device, uint32_t mipLevels);
 
     static bool hasStencilComponent(VkFormat format);
 
     static void generateImage2DMipMaps(
-            const VulkanRenderContext &context,
+            const VulkanContext *context,
             VkImage image,
             uint32_t width,
             uint32_t height,
@@ -120,14 +148,14 @@ public:
             VkFilter filter
     );
 
-    static VkSampleCountFlagBits getMaxUsableSampleCount(const VulkanRenderContext &context);
+    static VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physicalDevice);
 
-    static VkShaderModule createShaderModule(const VulkanRenderContext &context,
+    static VkShaderModule createShaderModule(VkDevice device,
                                              uint32_t *code,
                                              uint32_t size);
 
     static void bindUniformBuffer(
-            const VulkanRenderContext &context,
+            VkDevice device,
             VkDescriptorSet descriptorSet,
             int binding,
             VkBuffer buffer,
@@ -136,19 +164,13 @@ public:
     );
 
     static void bindCombinedImageSampler(
-            const VulkanRenderContext &context,
+            const VkDevice device,
             VkDescriptorSet descriptorSet,
             int binding,
             VkImageView imageView,
             VkSampler sampler
     );
 
-    static VkFormat selectOptimalSupportedImageFormat(const VulkanRenderContext& context,
-            const std::vector<VkFormat>& candiates,
-            VkImageTiling tiling,
-            VkFormatFeatureFlags features);
-
-    static VkFormat selectOptimalImageFormat(const VulkanRenderContext& context);
 
     static QueueFamilyIndices fetchFamilyIndices(VkPhysicalDevice& physcalDevice,VkSurfaceKHR & surface);
 

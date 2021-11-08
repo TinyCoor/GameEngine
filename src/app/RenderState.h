@@ -12,10 +12,11 @@ struct RenderState{
     glm::mat4 view;
     glm::mat4 proj;
     glm::vec3 cameraPosWS;
-    int currentEnvironment{0};
+
     float lerpUserValues {0.0f};
     float userMetalness {0.0f};
     float userRoughness {0.0f};
+    int currentEnvironment{0};
 };
 
 #endif //GAMEENGINE_RENDERSTATE_H

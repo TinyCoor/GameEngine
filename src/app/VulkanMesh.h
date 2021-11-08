@@ -6,7 +6,7 @@
 #define GAMEENGINE_VULKANRENDERMODEL_H
 #include <vector>
 #include <glm/glm.hpp>
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 
 
 ///GPU顶点数据
@@ -20,7 +20,7 @@ private:
         glm::vec3 color;
         glm::vec2 uv;
     };
-    VulkanRenderContext context;
+    const VulkanContext* context;
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
 
@@ -31,7 +31,7 @@ private:
     VkDeviceMemory indexBufferMemory= VK_NULL_HANDLE;
 
 public:
-    VulkanMesh(const VulkanRenderContext& ctx): context(ctx){}
+    VulkanMesh(const VulkanContext* ctx): context(ctx){}
     ~VulkanMesh();
     inline uint32_t getNumIndices() const {return indices.size();}
     inline VkBuffer getVertexBuffer() const { return vertexBuffer;}

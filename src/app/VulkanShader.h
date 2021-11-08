@@ -5,7 +5,7 @@
 #ifndef GAMEENGINE_VULKANSHADER_H
 #define GAMEENGINE_VULKANSHADER_H
 
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 #include <volk.h>
 #include <shaderc/shaderc.h>
 #include <string_view>
@@ -22,14 +22,13 @@ enum class ShaderKind{
 
 class VulkanShader {
 public:
-    explicit VulkanShader(const VulkanRenderContext& ctx): context(ctx){}
+    explicit VulkanShader(const VulkanContext* ctx):context(ctx){}
     ~VulkanShader();
 
     bool compileFromFile(const char* path,ShaderKind kind);
     bool compileFromFile(const char* path);
 
     bool reload();
-
 
     void clear();
     inline const VkShaderModule& getShaderModule() const {return shaderModule;}
@@ -39,7 +38,7 @@ private:
 
 private:
 
-    VulkanRenderContext context;
+    const VulkanContext* context;
     VkShaderModule shaderModule{VK_NULL_HANDLE};
     std::string_view shader_path;
 

@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "VulkanRenderContext.h"
+#include "VulkanContext.h"
 #include <memory>
 
 class VulkanMesh;
@@ -13,7 +13,7 @@ class VulkanShader;
 
 class VulkanCubeMapRender {
 private:
-    VulkanRenderContext context;
+    const VulkanContext* context;
     std::shared_ptr<VulkanMesh> renderQuad;
     VkImageView faceViews[6];
     VkExtent2D targetExtent;
@@ -35,7 +35,7 @@ private:
 
 
 public:
-    VulkanCubeMapRender(VulkanRenderContext& ctx);
+    VulkanCubeMapRender(const VulkanContext* ctx);
 
     void init(std::shared_ptr <VulkanShader> vertShader,
               std::shared_ptr <VulkanShader> fragShader,
