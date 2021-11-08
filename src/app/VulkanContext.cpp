@@ -121,12 +121,14 @@ namespace {
 
     VkSurfaceKHR createSurface(VkInstance& instance,GLFWwindow* window){
         VkSurfaceKHR  surface;
-        VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{};
-        surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-        surfaceCreateInfo.hwnd = glfwGetWin32Window(window);
-        surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
-        VK_CHECK(vkCreateWin32SurfaceKHR(instance,&surfaceCreateInfo, nullptr,&surface),"Create win32 Surface Error");
-        return surface;
+        VK_CHECK(glfwCreateWindowSurface(instance,window, nullptr,&surface),"Create Surface Failed");
+//        VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{};
+//        surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+//        surfaceCreateInfo.hwnd = glfwGetWin32Window(window);
+//        surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
+//        VK_CHECK(vkCreateWin32SurfaceKHR(instance,&surfaceCreateInfo, nullptr,&surface),"Create win32 Surface Error");
+//
+         return surface;
     }
 
 }
@@ -307,6 +309,7 @@ void VulkanContext::shutdown() {
     commandPool = VK_NULL_HANDLE;
 
     vkDestroyDebugUtilsMessengerEXT(instance,debugMessenger, nullptr);
+
 
     vkDestroyDevice(device, nullptr);
     device=VK_NULL_HANDLE;

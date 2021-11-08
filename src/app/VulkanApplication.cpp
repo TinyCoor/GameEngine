@@ -6,12 +6,8 @@
 #include "VulkanRenderScene.h"
 #include "VulkanRender.h"
 #include "VulkanImGuiRender.h"
-#include "Macro.h"
-#include "VulkanUtils.h"
-#include <iostream>
-#include <set>
+
 #include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
 #include <algorithm>
 #include <functional>
 #include <volk.h>
@@ -46,8 +42,8 @@ void Application::run(){
     shutdownRenders();
     shutdownScene();
     shutdownSwapChain();
-    shutdownVulkan();
     shutdownImGui();
+    shutdownVulkan();
     shutdownWindow();
 }
 
@@ -88,7 +84,7 @@ void Application::initImGui() {
 
 
 void Application::shutdownImGui() {
-//    ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
 

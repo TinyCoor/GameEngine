@@ -133,9 +133,9 @@ bool VulkanSwapChain::Acquire(const RenderState& state,VulkanRenderFrame& frame)
     {
         return false;
     }
+
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
         throw std::runtime_error("Can't aquire swap chain image");
-
 
     frame = frames[imageIndex];
 
@@ -280,10 +280,13 @@ void VulkanSwapChain::shutdownFrames() {
         vkDestroyFramebuffer(context->device,frames[i].frameBuffer, nullptr);
         vkDestroyBuffer(context->device, frames[i].uniformBuffers, nullptr);
         vkFreeMemory(context->device, frames[i].uniformBuffersMemory, nullptr);
+        vkFreeCommandBuffers(context->device, context->commandPool, 1, &frames[i].commandBuffer);
         vkFreeDescriptorSets(context->device,context->descriptorPool,1,&frames[i].swapchainDescriptorSet);
         frames[i].commandBuffer =VK_NULL_HANDLE;
         frames[i].uniformBuffers =VK_NULL_HANDLE;
         frames[i].uniformBuffersMemory = VK_NULL_HANDLE;
+        frames[i].commandBuffer =VK_NULL_HANDLE;
+        frames[i].swapchainDescriptorSet =VK_NULL_HANDLE;
     }
     frames.clear();
 
@@ -351,6 +354,13 @@ void VulkanSwapChain::shutdownPersistent() {
     renderFinishedSemaphores.clear();
     inFlightFences.clear();
 
+    for (int i = 0; i < swapChainImages.size(); ++i) {
+        vkDestroyImage(context->device,swapChainImages[i], nullptr);
+        vkDestroyImageView(context->device,swapChainImageViews[i], nullptr);
+        swapChainImages[i] =VK_NULL_HANDLE;
+        swapChainImageViews[i]= VK_NULL_HANDLE;
+    }
+
     vkDestroyRenderPass(context->device,renderPass, nullptr);
     renderPass = VK_NULL_HANDLE;
 
@@ -359,7 +369,6 @@ void VulkanSwapChain::shutdownPersistent() {
 
     vkDestroyDescriptorSetLayout(context->device,descriptorSetLayout, nullptr);
     descriptorSetLayout= VK_NULL_HANDLE;
-
 
 }
 

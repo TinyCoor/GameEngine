@@ -54,7 +54,6 @@ private:
     bool windowResized = false;
 
     VulkanContext* context;
-
     VulkanRenderScene* scene{nullptr};
     RenderState state;
 

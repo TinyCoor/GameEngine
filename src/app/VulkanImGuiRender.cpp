@@ -45,18 +45,10 @@ void VulkanImGuiRender::init(VulkanRenderScene *scene,
     //TODO Fix Bug In this Function VkCreateSampler Cause Segmentation
     ImGui_ImplVulkan_Init(&init_info,swapChain->getRenderPass());
 
-    VulkanContext* imGuiContext = new VulkanContext;
-    imGuiContext->commandPool = context->commandPool;
-    imGuiContext->descriptorPool = context->descriptorPool;
-    imGuiContext->device = context->device;
-    imGuiContext->graphicsQueue = context->graphicsQueue;
-    imGuiContext->maxMSAASamples = context->maxMSAASamples;
-    imGuiContext->physicalDevice = context->physicalDevice;
-    imGuiContext->presentQueue = context->presentQueue;
 
-    VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(imGuiContext);
+    VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(context);
     ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
-    VulkanUtils::endSingleTimeCommands(imGuiContext, imGuiCommandBuffer);
+    VulkanUtils::endSingleTimeCommands(context, imGuiCommandBuffer);
 
 }
 
@@ -86,7 +78,6 @@ void VulkanImGuiRender::render(VulkanRenderScene *scene,const VulkanRenderFrame&
 }
 
 void VulkanImGuiRender::shutdown() {
-    ImGui_ImplGlfw_Shutdown();
 }
 
 void VulkanImGuiRender::resize(std::shared_ptr<VulkanSwapChain> swapChain) {

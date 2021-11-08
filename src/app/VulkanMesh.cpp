@@ -104,6 +104,7 @@ void VulkanMesh::createIndexBuffer() {
 //This is a bug in load form File
 bool VulkanMesh::loadFromFile(const char* file) {
     clearCPUData();
+    clearGPUData();
 #ifndef false
     Assimp::Importer importer;
     unsigned int flags = aiProcess_GenSmoothNormals |
@@ -231,8 +232,6 @@ void VulkanMesh::uploadToGPU() {
     if(!indices.empty()){
         createIndexBuffer();
     }
-
-
 }
 
 void VulkanMesh::clearCPUData() {
@@ -267,8 +266,6 @@ void VulkanMesh::createSkybox(float size) {
     };
 
     uploadToGPU();
-
-
 }
 
 void VulkanMesh::createQuad(float size) {

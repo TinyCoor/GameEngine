@@ -208,12 +208,20 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
 
 void VulkanCubeMapRender::shutdown() {
 
+    renderQuad->clearGPUData();
+    renderQuad->clearCPUData();
+
     vkDestroyFramebuffer(context->device, frameBuffer, nullptr);
     frameBuffer= VK_NULL_HANDLE;
+
     vkDestroyBuffer(context->device, uniformBuffer, nullptr);
     uniformBuffer=VK_NULL_HANDLE;
+
     vkFreeMemory(context->device, uniformBuffersMemory, nullptr);
     uniformBuffersMemory=VK_NULL_HANDLE;
+
+    vkFreeCommandBuffers(context->device,context->commandPool,1,&commandBuffer);
+    commandBuffer =VK_NULL_HANDLE;
 
     for (int i = 0; i < 6; i++)
     {
@@ -221,7 +229,13 @@ void VulkanCubeMapRender::shutdown() {
         faceViews[i] = VK_NULL_HANDLE;
     }
 
-    VK_DESTROY_OBJECT(vkDestroyDescriptorSetLayout(context->device,descriptorSetLayout, nullptr),descriptorSetLayout);
+
+    vkDestroyDescriptorSetLayout(context->device,descriptorSetLayout, nullptr);
+    descriptorSetLayout = VK_NULL_HANDLE;
+
+    vkFreeDescriptorSets(context->device,context->descriptorPool,1,&descriptorSet);
+    descriptorSet =VK_NULL_HANDLE;
+
 
     vkDestroyRenderPass(context->device,renderPass, nullptr);
     renderPass = VK_NULL_HANDLE;
@@ -234,8 +248,7 @@ void VulkanCubeMapRender::shutdown() {
 
     vkDestroyFence(context->device, fence, nullptr);
     fence = VK_NULL_HANDLE;
-    renderQuad->clearGPUData();
-    renderQuad->clearCPUData();
+
 }
 
 void VulkanCubeMapRender::render(std::shared_ptr <VulkanTexture> inputTexture) {

@@ -32,7 +32,7 @@ void VulkanRenderScene::init(){
 
 
 void VulkanRenderScene::shutdown(){
-//TODO Cleanup
+    resource.shutdown();
 }
 
 bool  VulkanRenderScene::reloadShader() {

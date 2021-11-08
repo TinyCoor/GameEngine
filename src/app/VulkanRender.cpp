@@ -148,14 +148,17 @@ void VulkanRender::shutdown() {
     diffuseIrradianceRenderer.shutdown();
 
     environmentCubemap->clearGPUData();
+    environmentCubemap->clearCPUData();
     diffuseIrradianceCubemap->clearGPUData();
+    diffuseIrradianceCubemap->clearCPUData();
 
     vkFreeDescriptorSets(context->device,context->descriptorPool,1,&sceneDescriptorSet);
     sceneDescriptorSet= VK_NULL_HANDLE;
 
-
     vkDestroyDescriptorSetLayout(context->device,sceneDescriptorSetLayout, nullptr);
     sceneDescriptorSetLayout = VK_NULL_HANDLE;
+
+
 
     vkDestroyPipelineLayout(context->device,pipelineLayout, nullptr);
     pipelineLayout = VK_NULL_HANDLE;
@@ -165,6 +168,7 @@ void VulkanRender::shutdown() {
 
     vkDestroyPipeline(context->device,skyboxPipeline, nullptr);
     skyboxPipeline = VK_NULL_HANDLE;
+
 
 
 }

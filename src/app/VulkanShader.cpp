@@ -117,6 +117,7 @@ static void vulkan_shaderc_include_releaser(void* use_data,shaderc_include_resul
 
 bool VulkanShader::compileFromSource(const char* path,const char* source,size_t size,shaderc_shader_kind kind)
 {
+    clear();
  //TODO GLSL to spir byte code
     shaderc_compiler_t compiler = shaderc_compiler_initialize();
     auto options = shaderc_compile_options_initialize();

@@ -12,15 +12,13 @@ VulkanResourceManager::VulkanResourceManager(const VulkanContext *ctx) :context(
 }
 
 VulkanResourceManager::~VulkanResourceManager() {
-    meshes.clear();
-    textures.clear();
-    shaders.clear();
+    shutdown();
 }
 
 std::shared_ptr<VulkanShader> VulkanResourceManager::loadShader(int id, ShaderKind kind, const char *path) {
     auto it = meshes.find(id);
     if(it !=meshes.end()){
-        std::cerr << "VulkanResourceManager::loadShader():" <<id << "is alreay owned by other mesh" << std::endl;
+        std::cerr << "VulkanResourceManager::loadShader():" <<id << "is already owned by other mesh" << std::endl;
         return nullptr;
     }
     auto shader = std::make_shared<VulkanShader>(context);
@@ -32,7 +30,7 @@ std::shared_ptr<VulkanShader> VulkanResourceManager::loadShader(int id, ShaderKi
 std::shared_ptr<VulkanShader> VulkanResourceManager::loadShader(int id, const char *path) {
     auto it = meshes.find(id);
     if(it !=meshes.end()){
-        std::cerr << "VulkanResourceManager::loadShader():" <<id << "is alreay owned by other mesh" << std::endl;
+        std::cerr << "VulkanResourceManager::loadShader():" <<id << "is already owned by other mesh" << std::endl;
         return nullptr;
     }
     auto shader = std::make_shared<VulkanShader>(context);
@@ -44,7 +42,7 @@ std::shared_ptr<VulkanShader> VulkanResourceManager::loadShader(int id, const ch
 std::shared_ptr<VulkanMesh> VulkanResourceManager::loadMesh(int id, const char *path) {
     auto it = meshes.find(id);
     if(it !=meshes.end()){
-        std::cerr << "VulkanResourceManager::loadMesh():" <<id << "is alreay owned by other " << std::endl;
+        std::cerr << "VulkanResourceManager::loadMesh():" <<id << "is already owned by other " << std::endl;
         return nullptr;
     }
     auto mesh = std::make_shared<VulkanMesh>(context);
@@ -117,5 +115,26 @@ bool VulkanResourceManager::reloadShader(int id) {
         return true;
     }
     return false;
+}
+
+void VulkanResourceManager::shutdown() {
+    for (auto& texture:textures) {
+        texture.second->clearGPUData();
+        texture.second->clearCPUData();
+    }
+
+    for (auto& mesh:meshes) {
+        mesh.second->clearGPUData();
+        mesh.second->clearCPUData();
+    }
+
+    for (auto& shader:shaders) {
+        shader.second->clear();
+    }
+
+    meshes.clear();
+    textures.clear();
+    shaders.clear();
+
 }
 

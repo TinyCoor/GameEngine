@@ -32,6 +32,8 @@ public:
     std::shared_ptr<VulkanMesh> getMesh(int id) const;
     std::shared_ptr<VulkanTexture> getHDRTexture(int id) const;
 
+    void shutdown();
+
 private:
     //May be This is singleton
     const VulkanContext* context;

@@ -89,6 +89,8 @@ private:
     std::vector<VkImageView> swapChainImageViews;
 
     VkFormat swapChainImageFormat; //color format
+    VkFormat depthFormat;
+
     VkExtent2D swapChainExtent;
     VkDeviceSize uboSize;
 
@@ -97,8 +99,8 @@ private:
     VkImageView colorImageView;
     VkDeviceMemory colorImageMemory;
 
+
     VkImage depthImage;
-    VkFormat depthFormat;
     VkImageView depthImageView;
     VkDeviceMemory depthImageMemory;
 

@@ -29,7 +29,7 @@ private:
     VulkanCubeMapRender hdriToCubeRenderer;
     VulkanCubeMapRender diffuseIrradianceRenderer;
 
-    std::shared_ptr<VulkanTexture> environmentCubemap;
+    std::shared_ptr <VulkanTexture> environmentCubemap;
     std::shared_ptr <VulkanTexture> diffuseIrradianceCubemap;
 
     VkPipeline pbrPipeline{VK_NULL_HANDLE};

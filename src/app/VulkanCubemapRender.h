@@ -15,9 +15,10 @@ class VulkanCubeMapRender {
 private:
     const VulkanContext* context;
     std::shared_ptr<VulkanMesh> renderQuad;
-    VkImageView faceViews[6];
+
     VkExtent2D targetExtent;
 
+    VkImageView faceViews[6];
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
     VkPipeline pipeline{VK_NULL_HANDLE};
@@ -25,13 +26,14 @@ private:
 
     VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
     VkFramebuffer frameBuffer{VK_NULL_HANDLE};
-    VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
-
-
-    VkFence fence {VK_NULL_HANDLE};
 
     VkBuffer uniformBuffer{VK_NULL_HANDLE};
     VkDeviceMemory uniformBuffersMemory{VK_NULL_HANDLE};
+
+    VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
+
+    VkFence fence {VK_NULL_HANDLE};
+//
 
 
 public:
