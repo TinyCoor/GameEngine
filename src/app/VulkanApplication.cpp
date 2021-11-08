@@ -16,6 +16,7 @@
 #include <functional>
 #include <volk.h>
 #include <imgui.h>
+#include <imgui_impl_glfw.h>
 
 
 std::vector<const char*>  requiredPhysicalDeviceExtensions ={
@@ -159,12 +160,12 @@ void Application::run(){
     initScene();
     initRenders();
     mainLoop();
-    shutdownWindow();
-    shutdownScene();
     shutdownRenders();
+    shutdownScene();
     shutdownSwapChain();
-    shutdownImGui();
     shutdownVulkan();
+    shutdownImGui();
+    shutdownWindow();
 }
 
 Application::~Application(){
@@ -393,19 +394,20 @@ void Application::shutdownVulkan() {
 }
 
 void Application::initImGui() {
-//    IMGUI_CHECKVERSION();
-//    ImGui::CreateContext();
-//    ImGuiIO& io = ImGui::GetIO();
-//    ImGui::StyleColorsDark();
-//
-//    ImGui_ImplGlfw_InitForVulkan(window,true);
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::StyleColorsDark();
+
+    //TODO
+    ImGui_ImplGlfw_InitForVulkan(window,true);
 
 }
 
 
 void Application::shutdownImGui() {
-
- //   ImGui::DestroyContext();
+//    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void Application::shutdownWindow() {
@@ -421,8 +423,8 @@ void Application::RenderFrame(){
         return;
     }
 
-    ImGuiRender->render(state,scene,frame);
     render->render(state,scene, frame);
+    ImGuiRender->render(state,scene,frame);
 
     if(!swapChain->Present(frame) || windowResized){
         windowResized = false;
@@ -434,54 +436,53 @@ void Application::update()
 {
     render->update(state,scene);
     //ImGui
-//    static float f = 0.0f;
-//    static int counter = 0;
-//    static bool show_demo_window = false;
-//
-//    if (show_demo_window)
-//        ImGui::ShowDemoWindow(&show_demo_window);
-//
-//    ImGui::Begin("Material Parameters");
-//
-//    if(ImGui::Button("Reload Shader")){
-//        scene->reloadShader();
-//        render->reload(state,scene);
-//    }
-//
-//    int oldCurrentEnvironment =state.currentEnvironment;
-//    if(ImGui::BeginCombo("Chose your Destiny",scene->getHDRTexturePath(state.currentEnvironment))){
-//        for (int i = 0; i < scene->getNumHDRTextures(); ++i) {
-//            bool selected = (i==state.currentEnvironment);
-//            if (ImGui::Selectable(scene->getHDRTexturePath(i),&selected))
-//                state.currentEnvironment = i;
-//            if (selected)
-//                ImGui::SetItemDefaultFocus();
-//        }
-//        ImGui::EndCombo();
-//    }
-//    ImGui::Checkbox("Demo Window", &show_demo_window);
-//
-//    ImGui::SliderFloat("Lerp User Material", &state.lerpUserValues, 0.0f, 1.0f);
-//    ImGui::SliderFloat("Metalness", &state.userMetalness, 0.0f, 1.0f);
-//    ImGui::SliderFloat("Roughness", &state.userRoughness, 0.0f, 1.0f);
-//
-//    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-//    ImGui::End();
-   // ImGuiRender->update(state,scene);
+    static float f = 0.0f;
+    static int counter = 0;
+    static bool show_demo_window = false;
+
+    if (show_demo_window)
+        ImGui::ShowDemoWindow(&show_demo_window);
+
+    ImGui::Begin("Material Parameters");
+
+    if(ImGui::Button("Reload Shader")){
+        scene->reloadShader();
+        render->reload(state,scene);
+    }
+
+    int oldCurrentEnvironment =state.currentEnvironment;
+    if(ImGui::BeginCombo("Chose your Destiny",scene->getHDRTexturePath(state.currentEnvironment))){
+        for (int i = 0; i < scene->getNumHDRTextures(); ++i) {
+            bool selected = (i==state.currentEnvironment);
+            if (ImGui::Selectable(scene->getHDRTexturePath(i),&selected))
+                state.currentEnvironment = i;
+            if (selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::Checkbox("Demo Window", &show_demo_window);
+
+    ImGui::SliderFloat("Lerp User Material", &state.lerpUserValues, 0.0f, 1.0f);
+    ImGui::SliderFloat("Metalness", &state.userMetalness, 0.0f, 1.0f);
+    ImGui::SliderFloat("Roughness", &state.userRoughness, 0.0f, 1.0f);
+
+    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::End();
 }
+
 void Application::mainLoop() {
     if(!window)
         return;
 
     while (!glfwWindowShouldClose(window)){
-//         ImGui_ImplGlfw_NewFrame();
-//         ImGui::NewFrame();
+         ImGui_ImplGlfw_NewFrame();
+         ImGui::NewFrame();
 
          update();
-
-//        ImGui::Render();
-
+        ImGui::Render();
         RenderFrame();
+
         glfwPollEvents();
     }
 
@@ -495,6 +496,9 @@ void Application::shutdownRenders() {
         delete render;
         render = nullptr;
     }
+    if(ImGuiRender){
+        ImGuiRender->shutdown();
+    }
 
 }
 
@@ -504,9 +508,10 @@ void Application::initRenders() {
         render->init(state,scene);
     }
 
+
     if (!ImGuiRender){
         ImGuiRender = new VulkanImGuiRender(context,swapChain->getExtent(),swapChain->getNoClearRenderPass());
-        // ImGuiRender->init(state,scene,swapChain.get());
+         ImGuiRender->init(state,scene,swapChain);
     }
 
 }
@@ -552,8 +557,7 @@ void Application::recreateSwapChain() {
     glfwGetWindowSize(window,&width,&height);
     swapChain->reinit(width,height);
     render->resize(swapChain);
-
-    //ImGuiRender->resize(swapChain);
+    ImGuiRender->resize(swapChain);
 
 }
 

@@ -263,7 +263,6 @@ void VulkanRender::render(RenderState& state,VulkanRenderScene *scene, const Vul
 
     vkCmdEndRenderPass(commandBuffer);
 
-    VK_CHECK(vkEndCommandBuffer(commandBuffer),"Can't record command buffer");
 
 }
 

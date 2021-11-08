@@ -39,7 +39,7 @@ public:
     inline size_t getNumHDRTextures() const{return config::hdrTextures.size();}
     inline const char* getHDRTexturePath(int index) const {return config::hdrTextures[index];}
 
-    void reloadShader();
+    bool reloadShader();
 
 
 };

@@ -106,8 +106,6 @@ void VulkanImGuiRender::render(RenderState &state,
 {
     VkCommandBuffer commandBuffer = frame.commandBuffer;
     VkFramebuffer frameBuffer = frame.frameBuffer;
-    VkDeviceMemory uniformBufferMemory = frame.uniformBuffersMemory;
-    VkDescriptorSet descriptorSet = frame.swapchainDescriptorSet;
 
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -123,10 +121,9 @@ void VulkanImGuiRender::render(RenderState &state,
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
 
-//    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-//    //ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-
-//    vkCmdEndRenderPass(commandBuffer);
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+    vkCmdEndRenderPass(commandBuffer);
 
 }
 

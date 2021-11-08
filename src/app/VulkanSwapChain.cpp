@@ -121,7 +121,6 @@ void VulkanSwapChain::shutdown() {
 bool  VulkanSwapChain::Acquire(const RenderState& state,VulkanRenderFrame& frame) {
 
     vkWaitForFences(context.device_, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-
     VkResult result = vkAcquireNextImageKHR(
             context.device_,
             swapchain,
@@ -161,6 +160,8 @@ bool  VulkanSwapChain::Acquire(const RenderState& state,VulkanRenderFrame& frame
 }
 
 bool VulkanSwapChain::Present( VulkanRenderFrame& frame) {
+    VK_CHECK(vkEndCommandBuffer(frame.commandBuffer),"Can't record command buffer");
+
     //TODO EndCommand Buffer
     VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };

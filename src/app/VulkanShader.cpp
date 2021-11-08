@@ -47,8 +47,8 @@ static shaderc_include_result* vulkan_shaderc_include_resolver(
         const char* requesting_source,
         size_t include_depth)
 {
-    std::cout <<"Include resolve request source: " <<requesting_source <<", target: "
-        <<requested_source <<" ,depth: " << include_depth <<std::endl;
+//    std::cout <<"Include resolve request source: " <<requesting_source <<", target: "
+//        <<requested_source <<" ,depth: " << include_depth <<std::endl;
     auto result = new shaderc_include_result();
     result->source_name= nullptr;
     result->user_data= user_data;
@@ -103,7 +103,7 @@ static shaderc_include_result* vulkan_shaderc_include_resolver(
 
 static void vulkan_shaderc_include_releaser(void* use_data,shaderc_include_result* include_result)
 {
-    std::cout <<"Include result release ,Source: " << include_result->source_name <<std::endl;
+//    std::cout <<"Include result release ,Source: " << include_result->source_name <<std::endl;
 
     delete include_result->source_name;
     delete include_result->content;

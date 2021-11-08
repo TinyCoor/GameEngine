@@ -35,9 +35,12 @@ void VulkanRenderScene::shutdown(){
 //TODO Cleanup
 }
 
-void VulkanRenderScene::reloadShader() {
+bool  VulkanRenderScene::reloadShader() {
     for (int i = 0; i < config::shaders.size() ; ++i) {
-        resource.reloadShader(i);
+        if( resource.reloadShader(i)){
+            return true;
+        }
     }
+    return false;
 }
 
