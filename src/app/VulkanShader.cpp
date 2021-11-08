@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <shaderc.h>
+#include <cstring>
 
 namespace {
      shaderc_shader_kind vulkan_to_shderc_kind(ShaderKind kind) {
@@ -38,16 +39,86 @@ VulkanShader::~VulkanShader(){
     clear();
 }
 
+
+static shaderc_include_result* vulkan_shaderc_include_resolver(
+        void* user_data,
+        const char* requested_source,
+        int type,
+        const char* requesting_source,
+        size_t include_depth)
+{
+    std::cout <<"Include resolve request source: " <<requesting_source <<", target: "
+        <<requested_source <<" ,depth: " << include_depth <<std::endl;
+    auto result = new shaderc_include_result();
+    result->source_name= nullptr;
+    result->user_data= user_data;
+    result->source_name_length = 0;
+    result->content = nullptr;
+    result->content_length =0;
+
+    std::string sourcePath = requesting_source;
+    size_t position = sourcePath.find_last_of("/\\");
+
+    std::string sourceDir = (position != std::string::npos) ? sourcePath.substr(0,position + 1) :"";
+    std::string targetPath = sourceDir + std::string(requested_source);
+
+    std::ifstream  file(targetPath,std::ios::ate | std::ios::binary);
+    if(!file.is_open()){
+        std::cerr << "VulkanShader: Laod Shader File Failed:" << "\n";
+        return result;
+    }
+    size_t fileSize = static_cast<uint32_t>(file.tellg());
+    std::vector<char> buffer(fileSize);
+    file.seekg(0);
+    file.read(buffer.data(),fileSize);
+    file.close();
+
+    char * data =new char[fileSize +1];
+    memset(data,0,fileSize +1);
+    memcpy(data,buffer.data(),buffer.size());
+    char* Path = new char[targetPath.size()+1];
+    memset(Path,0,targetPath.size() +1);
+    memcpy(Path,targetPath.data(),targetPath.size() + 1);
+
+    result->source_name =Path;
+    result->source_name_length= targetPath.size();
+    result->content= data;
+    result->content_length= fileSize;
+    return result;
+}
+
+
+static void vulkan_shaderc_include_releaser(void* use_data,shaderc_include_result* include_result)
+{
+    std::cout <<"Include result release ,Source: " << include_result->source_name <<std::endl;
+
+    delete include_result->source_name;
+    delete include_result->content;
+    include_result->content= nullptr;
+    include_result={0};
+
+}
+
+
+
+
 bool VulkanShader::compileFromSource(const char* path,const char* source,size_t size,shaderc_shader_kind kind)
 {
  //TODO GLSL to spir byte code
     shaderc_compiler_t compiler = shaderc_compiler_initialize();
+    auto options = shaderc_compile_options_initialize();
+
+    //set compile options
+    shaderc_compile_options_set_include_callbacks(options, vulkan_shaderc_include_resolver, vulkan_shaderc_include_releaser, nullptr);
+
+
+
     shaderc_compilation_result_t result = shaderc_compile_into_spv(compiler,
                                                                   source,
                                                                   size,
                                                                   shaderc_glsl_infer_from_source,
                                                                   path,"main",
-                                                                  nullptr);
+                                                                  options);
 
     if(shaderc_result_get_compilation_status(result) != shaderc_compilation_status_success){
         std::cerr << "shderc compile error: at \"" << path << "\"" <<std::endl;
@@ -86,6 +157,9 @@ bool VulkanShader::compileFromFile(const char* path) {
     return compileFromSource(path,buffer.data(),buffer.size(),shaderc_glsl_infer_from_source);
  
 }
+
+
+
 
 bool VulkanShader::compileFromFile(const char* path,ShaderKind kind) {
     std::ifstream  file(path,std::ios::ate | std::ios::binary);
