@@ -22,8 +22,8 @@ public:
     void init(RenderState& state,VulkanRenderScene* scene,
              std::shared_ptr<VulkanSwapChain> swapChain);
 
-    void update(RenderState& state,
-                VulkanRenderScene* scene);
+//    void update(RenderState& state,
+//                VulkanRenderScene* scene);
 
     void resize(std::shared_ptr<VulkanSwapChain> swapChain);
 

@@ -433,6 +433,40 @@ void Application::RenderFrame(){
 void Application::update()
 {
     render->update(state,scene);
+    //ImGui
+//    static float f = 0.0f;
+//    static int counter = 0;
+//    static bool show_demo_window = false;
+//
+//    if (show_demo_window)
+//        ImGui::ShowDemoWindow(&show_demo_window);
+//
+//    ImGui::Begin("Material Parameters");
+//
+//    if(ImGui::Button("Reload Shader")){
+//        scene->reloadShader();
+//        render->reload(state,scene);
+//    }
+//
+//    int oldCurrentEnvironment =state.currentEnvironment;
+//    if(ImGui::BeginCombo("Chose your Destiny",scene->getHDRTexturePath(state.currentEnvironment))){
+//        for (int i = 0; i < scene->getNumHDRTextures(); ++i) {
+//            bool selected = (i==state.currentEnvironment);
+//            if (ImGui::Selectable(scene->getHDRTexturePath(i),&selected))
+//                state.currentEnvironment = i;
+//            if (selected)
+//                ImGui::SetItemDefaultFocus();
+//        }
+//        ImGui::EndCombo();
+//    }
+//    ImGui::Checkbox("Demo Window", &show_demo_window);
+//
+//    ImGui::SliderFloat("Lerp User Material", &state.lerpUserValues, 0.0f, 1.0f);
+//    ImGui::SliderFloat("Metalness", &state.userMetalness, 0.0f, 1.0f);
+//    ImGui::SliderFloat("Roughness", &state.userRoughness, 0.0f, 1.0f);
+//
+//    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+//    ImGui::End();
    // ImGuiRender->update(state,scene);
 }
 void Application::mainLoop() {

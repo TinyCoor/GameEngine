@@ -8,6 +8,7 @@
 #include "VulkanRenderContext.h"
 #include <volk.h>
 #include <shaderc/shaderc.h>
+#include <string_view>
 
 enum class ShaderKind{
     vertex =0,
@@ -27,6 +28,8 @@ public:
     bool compileFromFile(const char* path,ShaderKind kind);
     bool compileFromFile(const char* path);
 
+    bool reload();
+
 
     void clear();
     inline const VkShaderModule& getShaderModule() const {return shaderModule;}
@@ -35,8 +38,11 @@ private:
     bool compileFromSource(const char* path,const char* source,size_t size,shaderc_shader_kind kind);
 
 private:
+
     VulkanRenderContext context;
     VkShaderModule shaderModule{VK_NULL_HANDLE};
+    std::string_view shader_path;
+
 };
 
 

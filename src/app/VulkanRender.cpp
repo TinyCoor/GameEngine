@@ -357,4 +357,9 @@ void VulkanRender::resize(const std::shared_ptr<VulkanSwapChain> swapChain) {
 
 }
 
+void VulkanRender::reload(RenderState &state, VulkanRenderScene *scene) {
+    shutdown();
+    init(state,scene);
+}
+
 

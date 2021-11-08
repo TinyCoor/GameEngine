@@ -30,7 +30,6 @@ private:
     std::shared_ptr<VulkanTexture> environmentCubemap;
     std::shared_ptr <VulkanTexture> diffuseIrradianceCubemap;
 
-
     VkPipeline pbrPipeline{VK_NULL_HANDLE};
     VkPipeline skyboxPipeline{VK_NULL_HANDLE};
 
@@ -61,6 +60,9 @@ public:
     void shutdown();
 
     void resize(const std::shared_ptr<VulkanSwapChain> swapChain);
+
+    void reload(RenderState& state,VulkanRenderScene* scene);
+
 
 private:
     void initEnvironment(RenderState& state,VulkanRenderScene* scene);

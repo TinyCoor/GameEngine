@@ -151,10 +151,13 @@ bool VulkanShader::compileFromSource(const char* path,const char* source,size_t 
     shaderc_result_release(result);
     shaderc_compiler_release(compiler);
 
+    shader_path = path;
     return true;
 }
 
 bool VulkanShader::compileFromFile(const char* path) {
+    shader_path = path;
+
     std::ifstream  file(path,std::ios::ate | std::ios::binary);
     if(!file.is_open()){
         std::cerr << "VulkanShader: Laod Shader File Failed:" << "\n";
@@ -175,6 +178,8 @@ bool VulkanShader::compileFromFile(const char* path) {
 
 
 bool VulkanShader::compileFromFile(const char* path,ShaderKind kind) {
+
+
     std::ifstream  file(path,std::ios::ate | std::ios::binary);
     if(!file.is_open()){
         std::cerr << "VulkanShader: Laod Shder File Failed:"<< path << "\n";
@@ -195,4 +200,8 @@ bool VulkanShader::compileFromFile(const char* path,ShaderKind kind) {
 void VulkanShader::clear() {
     vkDestroyShaderModule(context.device_,shaderModule, nullptr);
     shaderModule = VK_NULL_HANDLE;
+}
+
+bool VulkanShader::reload() {
+    return compileFromFile(shader_path.data());
 }
