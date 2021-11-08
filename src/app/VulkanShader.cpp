@@ -182,8 +182,7 @@ bool VulkanShader::compileFromFile(const char* path,ShaderKind kind) {
 
     std::ifstream  file(path,std::ios::ate | std::ios::binary);
     if(!file.is_open()){
-        std::cerr << "VulkanShader: Laod Shder File Failed:"<< path << "\n";
-
+        std::cerr << "VulkanShader: Load Shader File Failed:"<< path << "\n";
         return  false;
     }
     clear();

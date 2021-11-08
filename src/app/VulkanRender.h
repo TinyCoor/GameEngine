@@ -21,8 +21,10 @@ class VulkanRender {
 private:
     VulkanRenderContext context;
     VkExtent2D extent;
+    //TODO swapchain descriptorSetLayout
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkPipelineLayout  pipelineLayout{VK_NULL_HANDLE};
+    VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
 
     VulkanCubeMapRender hdriToCubeRenderer;
     VulkanCubeMapRender diffuseIrradianceRenderer;
@@ -33,14 +35,10 @@ private:
     VkPipeline pbrPipeline{VK_NULL_HANDLE};
     VkPipeline skyboxPipeline{VK_NULL_HANDLE};
 
-
     VkDescriptorSetLayout sceneDescriptorSetLayout{VK_NULL_HANDLE};
-
-    //TODO swapchain descriptorSetLayout
-    VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
     VkDescriptorSet sceneDescriptorSet{VK_NULL_HANDLE};
 
-    uint32_t currentEnvironment =0;
+
 
 public:
     explicit VulkanRender(VulkanRenderContext& ctx,
@@ -51,22 +49,22 @@ public:
 
     void setextent(int width,int height){extent.width =width;extent.height= height;}
 
-    void init(RenderState& state, VulkanRenderScene* scene);
+    void init(VulkanRenderScene* scene);
 
     void update(RenderState& state,VulkanRenderScene *scene);
 
-    void render(RenderState& state,VulkanRenderScene *scene, const VulkanRenderFrame& frame);
+    void render(VulkanRenderScene *scene, const VulkanRenderFrame& frame);
 
     void shutdown();
 
     void resize(const std::shared_ptr<VulkanSwapChain> swapChain);
 
-    void reload(RenderState& state,VulkanRenderScene* scene);
+    void reload(VulkanRenderScene* scene);
 
+    void setEnvironment(std::shared_ptr< VulkanTexture> texture);
 
 private:
-    void initEnvironment(RenderState& state,VulkanRenderScene* scene);
-    void setEnvironment(RenderState& state,VulkanRenderScene* scene,int index);
+
 };
 
 

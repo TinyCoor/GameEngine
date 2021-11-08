@@ -104,7 +104,7 @@ void VulkanSwapChain::init(int width,int height) {
 void VulkanSwapChain::reinit(int width,int height) {
 
     shutdownTransient();
-    shutFrames();
+    shutdownFrames();
 
     initTransient(width,height);
     initFrames(uboSize);
@@ -113,9 +113,8 @@ void VulkanSwapChain::reinit(int width,int height) {
 
 void VulkanSwapChain::shutdown() {
     shutdownTransient();
-    shutFrames();
+    shutdownFrames();
     shutdownPersistent();
-
 }
 
 bool  VulkanSwapChain::Acquire(const RenderState& state,VulkanRenderFrame& frame) {
@@ -275,7 +274,7 @@ void VulkanSwapChain::initFrames(VkDeviceSize uboSize) {
 
 }
 
-void VulkanSwapChain::shutFrames() {
+void VulkanSwapChain::shutdownFrames() {
 
     for (int i = 0; i <frames.size() ; ++i) {
         vkDestroyFramebuffer(context.device_,frames[i].frameBuffer, nullptr);
@@ -340,7 +339,6 @@ void VulkanSwapChain::initPersistent() {
         .setDepthStencilAttachment(0,2)
         .build();
 
-    // renderPassBuilder.build();
 }
 
 void VulkanSwapChain::shutdownPersistent() {
@@ -355,17 +353,19 @@ void VulkanSwapChain::shutdownPersistent() {
 
     vkDestroyRenderPass(context.device_,renderPass, nullptr);
     renderPass = VK_NULL_HANDLE;
+
     vkDestroyRenderPass(context.device_,noClearRenderPass, nullptr);
     noClearRenderPass = VK_NULL_HANDLE;
 
-
     vkDestroyDescriptorSetLayout(context.device_,descriptorSetLayout, nullptr);
     descriptorSetLayout= VK_NULL_HANDLE;
+
+
 }
 
 void VulkanSwapChain::shutdownTransient() {
-    for(auto& imageView :swapChainImageViews){
-        vkDestroyImageView(context.device_,imageView, nullptr);
+    for (int i = 0; i <swapChainImageViews.size() ; ++i) {
+        vkDestroyImageView(context.device_,swapChainImageViews[i], nullptr);
     }
 
     swapChainImageViews.clear();
@@ -387,7 +387,6 @@ void VulkanSwapChain::shutdownTransient() {
 
     vkDestroySwapchainKHR(context.device_,swapchain, nullptr);
     swapchain= VK_NULL_HANDLE;
-
 
 }
 

@@ -169,6 +169,7 @@ void Application::run(){
 }
 
 Application::~Application(){
+
 }
 
 bool Application::checkRequiredExtension(std::vector<const char*>& extensions) {
@@ -380,16 +381,14 @@ void Application::shutdownVulkan() {
 
     vkDestroyDebugUtilsMessengerEXT(context.instance,debugMessenger, nullptr);
 
-    context.instance= VK_NULL_HANDLE ;
-
     vkDestroyDevice(context.device_, nullptr);
     context.device_=VK_NULL_HANDLE;
 
-//    vkDestroySurfaceKHR(context.instance,context.surface, nullptr);
-//    context.surface =VK_NULL_HANDLE;
+    vkDestroySurfaceKHR(context.instance,context.surface, nullptr);
+    context.surface = VK_NULL_HANDLE;
 
     vkDestroyInstance(context.instance, nullptr);
-    context.surface = VK_NULL_HANDLE;
+    context.instance= VK_NULL_HANDLE;
 
 }
 
@@ -423,8 +422,8 @@ void Application::RenderFrame(){
         return;
     }
 
-    render->render(state,scene, frame);
-    ImGuiRender->render(state,scene,frame);
+    render->render(scene, frame);
+    ImGuiRender->render(scene,frame);
 
     if(!swapChain->Present(frame) || windowResized){
         windowResized = false;
@@ -447,15 +446,19 @@ void Application::update()
 
     if(ImGui::Button("Reload Shader")){
         scene->reloadShader();
-        render->reload(state,scene);
+        render->reload(scene);
+        render->setEnvironment(scene->getHDRTexture(state.currentEnvironment));
     }
 
-    int oldCurrentEnvironment =state.currentEnvironment;
+   // int oldCurrentEnvironment =state.currentEnvironment;
     if(ImGui::BeginCombo("Chose your Destiny",scene->getHDRTexturePath(state.currentEnvironment))){
         for (int i = 0; i < scene->getNumHDRTextures(); ++i) {
             bool selected = (i==state.currentEnvironment);
-            if (ImGui::Selectable(scene->getHDRTexturePath(i),&selected))
+            if (ImGui::Selectable(scene->getHDRTexturePath(i),&selected)){
                 state.currentEnvironment = i;
+                render->setEnvironment(scene->getHDRTexture(state.currentEnvironment));
+            }
+
             if (selected)
                 ImGui::SetItemDefaultFocus();
         }
@@ -496,22 +499,23 @@ void Application::shutdownRenders() {
         delete render;
         render = nullptr;
     }
-    if(ImGuiRender){
-        ImGuiRender->shutdown();
-    }
+
+    ImGuiRender->shutdown();
+
 
 }
 
 void Application::initRenders() {
     if(!render){
         render = new VulkanRender(context,swapChain->getExtent(),swapChain->getDescriptorSetLayout(),swapChain->getRenderPass());
-        render->init(state,scene);
+        render->init(scene);
     }
 
+    render->setEnvironment(scene->getHDRTexture( state.currentEnvironment));
 
     if (!ImGuiRender){
         ImGuiRender = new VulkanImGuiRender(context,swapChain->getExtent(),swapChain->getNoClearRenderPass());
-         ImGuiRender->init(state,scene,swapChain);
+         ImGuiRender->init(scene,swapChain);
     }
 
 }
@@ -531,7 +535,6 @@ void Application::initVulkanSwapChain() {
 void Application::shutdownSwapChain() {
    //TODO
    swapChain->shutdown();
-
 }
 
 void Application::initScene() {

@@ -74,13 +74,13 @@ private:
     void shutdownPersistent();
 
     void initFrames(VkDeviceSize uboSize);
-    void shutFrames();
+    void shutdownFrames();
 private:
+
     VulkanRenderContext context;
     VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
-
     VkRenderPass renderPass{VK_NULL_HANDLE};
-    VkRenderPass  noClearRenderPass;
+    VkRenderPass  noClearRenderPass{VK_NULL_HANDLE};
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
 
     //

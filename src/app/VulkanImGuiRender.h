@@ -6,10 +6,12 @@
 #define GAMEENGINE_VULKANIMGUIRENDER_H
 #include "VulkanRenderContext.h"
 #include <memory>
+
 struct RenderState;
 class VulkanRenderScene;
 struct VulkanRenderFrame;
 class VulkanSwapChain;
+
 
 class VulkanImGuiRender {
 public:
@@ -19,19 +21,15 @@ public:
 
     virtual ~VulkanImGuiRender();
 
-    void init(RenderState& state,VulkanRenderScene* scene,
+    void init(VulkanRenderScene* scene,
              std::shared_ptr<VulkanSwapChain> swapChain);
 
-//    void update(RenderState& state,
-//                VulkanRenderScene* scene);
+    void shutdown();
 
     void resize(std::shared_ptr<VulkanSwapChain> swapChain);
 
-    void render(RenderState& state,
-                           VulkanRenderScene* scene,
-                           const VulkanRenderFrame& frame);
+    void render(VulkanRenderScene* scene,const VulkanRenderFrame& frame);
 
-    void shutdown();
 
 private:
     VulkanRenderContext context;

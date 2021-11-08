@@ -21,6 +21,7 @@ public:
 
     std::shared_ptr<VulkanShader> loadShader(int id, ShaderKind kind,const char* path);
     std::shared_ptr<VulkanShader> loadShader(int id, const char* path);
+    bool reloadShader(int id);
     std::shared_ptr<VulkanMesh> loadMesh(int id,const char* path);
     std::shared_ptr<VulkanMesh> createCubeMesh(int id,float size);
     std::shared_ptr<VulkanTexture>  loadTexture(int id,const char* path);

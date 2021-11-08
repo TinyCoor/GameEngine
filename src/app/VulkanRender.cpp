@@ -37,7 +37,7 @@ VulkanRender::~VulkanRender() {
     shutdown();
 }
 
-void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
+void VulkanRender::init(VulkanRenderScene* scene) {
 
     std::shared_ptr<VulkanShader> vertShader = scene->getPBRVertexShader();
     std::shared_ptr<VulkanShader> fragShader = scene->getPBRFragmentShader();
@@ -95,6 +95,19 @@ void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
             .addBlendColorAttachment()
             .build();
 
+    environmentCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
+    diffuseIrradianceCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
+    hdriToCubeRenderer.init(
+            scene->getCubeVertexShader(),
+            scene->getHDRToCubeFragmentShader(),
+            environmentCubemap
+    );
+
+    diffuseIrradianceRenderer.init(
+            scene->getCubeVertexShader(),
+            scene->getDiffuseToIrridanceShader(),
+            diffuseIrradianceCubemap
+    );
 
     // Create scene descriptor sets
     VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
@@ -106,7 +119,6 @@ void VulkanRender::init(RenderState& state,VulkanRenderScene* scene) {
     VK_CHECK(vkAllocateDescriptorSets(context.device_, &descriptorSetAllocInfo, &sceneDescriptorSet),
              "Can't allocate descriptor sets");
 
-    initEnvironment(state,scene);
 
     std::array<std::shared_ptr<VulkanTexture>, 7> textures =
     {
@@ -138,17 +150,18 @@ void VulkanRender::shutdown() {
     environmentCubemap->clearGPUData();
     diffuseIrradianceCubemap->clearGPUData();
 
+    vkFreeDescriptorSets(context.device_,context.descriptorPool,1,&sceneDescriptorSet);
+    sceneDescriptorSet= VK_NULL_HANDLE;
+
 
     vkDestroyDescriptorSetLayout(context.device_,sceneDescriptorSetLayout, nullptr);
-    sceneDescriptorSetLayout= VK_NULL_HANDLE;
-
+    sceneDescriptorSetLayout = VK_NULL_HANDLE;
 
     vkDestroyPipelineLayout(context.device_,pipelineLayout, nullptr);
     pipelineLayout = VK_NULL_HANDLE;
 
     vkDestroyPipeline(context.device_,pbrPipeline, nullptr);
     pbrPipeline = VK_NULL_HANDLE;
-
 
     vkDestroyPipeline(context.device_,skyboxPipeline, nullptr);
     skyboxPipeline = VK_NULL_HANDLE;
@@ -179,14 +192,10 @@ void VulkanRender::update(RenderState& state,VulkanRenderScene *scene) {
     state.proj = glm::perspective(glm::radians(60.0f), aspect, zNear, zFar);
     state.proj[1][1] *= -1;
     state.cameraPosWS = glm::vec3(glm::vec4(cameraPos, 1.0f) * rotation);
-    if (currentEnvironment !=state.currentEnvironment){
-        currentEnvironment= state.currentEnvironment;
-        setEnvironment(state,scene,currentEnvironment);
-    }
 
 }
 
-void VulkanRender::render(RenderState& state,VulkanRenderScene *scene, const VulkanRenderFrame& frame ) {
+void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame& frame ) {
     VkCommandBuffer commandBuffer = frame.commandBuffer;
     VkFramebuffer frameBuffer = frame.frameBuffer;
     VkDeviceMemory uniformBufferMemory = frame.uniformBuffersMemory;
@@ -266,24 +275,9 @@ void VulkanRender::render(RenderState& state,VulkanRenderScene *scene, const Vul
 
 }
 
-void VulkanRender::initEnvironment(RenderState& state,VulkanRenderScene* scene){
-    environmentCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
-    diffuseIrradianceCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
-    hdriToCubeRenderer.init(
-                scene->getCubeVertexShader(),
-                scene->getHDRToCubeFragmentShader(),
-                environmentCubemap
-        );
 
-    diffuseIrradianceRenderer.init(
-            scene->getCubeVertexShader(),
-            scene->getDiffuseToIrridanceShader(),
-            diffuseIrradianceCubemap
-    );
-    setEnvironment(state,scene,state.currentEnvironment);
-}
+void VulkanRender::setEnvironment(std::shared_ptr< VulkanTexture> texture) {
 
-void VulkanRender::setEnvironment(RenderState& state,VulkanRenderScene* scene, int index) {
     {
         VulkanUtils::transitionImageLayout(
                 context,
@@ -295,7 +289,7 @@ void VulkanRender::setEnvironment(RenderState& state,VulkanRenderScene* scene, i
                 0, environmentCubemap->getNumLayers()
         );
 
-        hdriToCubeRenderer.render(scene->getHDRTexture(index));
+        hdriToCubeRenderer.render(texture);
 
         VulkanUtils::transitionImageLayout(
                 context,
@@ -356,9 +350,9 @@ void VulkanRender::resize(const std::shared_ptr<VulkanSwapChain> swapChain) {
 
 }
 
-void VulkanRender::reload(RenderState &state, VulkanRenderScene *scene) {
+void VulkanRender::reload( VulkanRenderScene *scene) {
     shutdown();
-    init(state,scene);
+    init(scene);
 }
 
 
