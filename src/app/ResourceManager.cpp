@@ -111,10 +111,11 @@ std::shared_ptr<VulkanTexture> VulkanResourceManager::getHDRTexture(int id) cons
 bool VulkanResourceManager::reloadShader(int id) {
     auto it = shaders.find(id);
     if(it != shaders.end()){
-        it->second->reload();
-        return true;
+        if(it->second->reload()){
+            return false;
+        }
     }
-    return false;
+    return true;
 }
 
 void VulkanResourceManager::shutdown() {

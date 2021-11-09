@@ -199,9 +199,6 @@ void Application::initRenders() {
         ImGuiRender = new VulkanImGuiRender(context,swapChain->getExtent(),swapChain->getNoClearRenderPass());
          ImGuiRender->init(scene,swapChain);
     }
-
-   bakedBRDF = ImGuiRender->addTexture(render->getBakedBRDF());
-
 }
 
 

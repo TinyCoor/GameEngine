@@ -6,5 +6,5 @@
 
 bool GLMesh::loadFromFile(const char* file)
 {
-    
+    return true;
 }

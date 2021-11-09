@@ -33,8 +33,6 @@ public:
 
     void render(VulkanRenderScene* scene,const VulkanRenderFrame& frame);
 
-    ImTextureID addTexture(std::shared_ptr<VulkanTexture> texture);
-
 
 private:
     const VulkanContext* context;
