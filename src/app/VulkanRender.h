@@ -5,8 +5,8 @@
 #ifndef GAMEENGINE_VULKANRENDER_H
 #define GAMEENGINE_VULKANRENDER_H
 
-#include "VulkanContext.h"
 #include "VulkanCubemapRender.h"
+#include "VulkanTexture2DRender.h"
 #include <volk.h>
 #include <vector>
 
@@ -16,6 +16,7 @@ class VulkanRenderScene;
 class VulkanSwapChain;
 class VulkanRenderScene;
 struct RenderState;
+class VulkanContext;
 
 class VulkanRender {
 private:
@@ -28,7 +29,10 @@ private:
 
     VulkanCubeMapRender hdriToCubeRenderer;
     VulkanCubeMapRender diffuseIrradianceRenderer;
+    VulkanTexture2DRender brdfRender;
 
+
+    std::shared_ptr <VulkanTexture> brdfBaked;
     std::shared_ptr <VulkanTexture> environmentCubemap;
     std::shared_ptr <VulkanTexture> diffuseIrradianceCubemap;
 
@@ -62,6 +66,8 @@ public:
     void reload(VulkanRenderScene* scene);
 
     void setEnvironment(std::shared_ptr< VulkanTexture> texture);
+
+    std::shared_ptr<VulkanTexture> getBakedBRDF() const{return brdfBaked;}
 
 private:
 

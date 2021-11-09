@@ -21,11 +21,17 @@ public:
 
     inline std::shared_ptr<VulkanShader> getPBRVertexShader(){ return resource.getShader(config::Shaders::PBRVertex);}
     inline std::shared_ptr<VulkanShader> getPBRFragmentShader(){return resource.getShader(config::Shaders::PBRFrag);}
+
+    inline std::shared_ptr<VulkanShader> getSkyboxVertexShader(){ return resource.getShader(config::Shaders::SkyboxVertex);}
+    inline std::shared_ptr<VulkanShader> getSkyboxFragmentShader() {return resource.getShader(config::Shaders::SkyboxFrag);}
+
     inline std::shared_ptr<VulkanShader> getCubeVertexShader() {return resource.getShader(config::Shaders::CubeVertex);}
     inline std::shared_ptr<VulkanShader> getHDRToCubeFragmentShader(){return resource.getShader(config::Shaders::hdriToCubeFrag);}
     inline std::shared_ptr<VulkanShader> getDiffuseToIrridanceShader(){return resource.getShader(config::Shaders::diffuseIrrandianceFrag);}
-    inline std::shared_ptr<VulkanShader> getSkyboxVertexShader(){ return resource.getShader(config::Shaders::SkyboxVertex);}
-    inline std::shared_ptr<VulkanShader> getSkyboxFragmentShader() {return resource.getShader(config::Shaders::SkyboxFrag);}
+
+
+    inline std::shared_ptr<VulkanShader> getBakedVertexShader() {return resource.getShader(config::Shaders::BakedBRDFVertex);}
+    inline std::shared_ptr<VulkanShader> getBakedFragmentShader() {return resource.getShader(config::Shaders::BakedBRDFFrag);}
 
     inline std::shared_ptr<VulkanTexture> getEmissionTexture()  { return resource.getTexture(config::Textures::emissionTexture); }
     inline std::shared_ptr<VulkanTexture> getAlbedoTexture() { return resource.getTexture(config::Textures::albedoTexture); }

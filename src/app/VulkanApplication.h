@@ -8,6 +8,7 @@
 #include "RenderState.h"
 #include <volk.h>
 #include <memory>
+#include <imgui.h>
 
 class GLFWwindow;
 class VulkanRender;
@@ -56,6 +57,8 @@ private:
     VulkanContext* context;
     VulkanRenderScene* scene{nullptr};
     RenderState state;
+    //TODO remove
+    static inline ImTextureID bakedBRDF{nullptr};
 
     VulkanRender* render{nullptr};
     VulkanImGuiRender* ImGuiRender{nullptr};

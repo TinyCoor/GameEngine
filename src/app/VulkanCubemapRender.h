@@ -33,7 +33,6 @@ private:
     VkDescriptorSet descriptorSet{VK_NULL_HANDLE};
 
     VkFence fence {VK_NULL_HANDLE};
-//
 
 
 public:

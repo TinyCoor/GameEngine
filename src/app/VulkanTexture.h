@@ -15,6 +15,7 @@ public:
     ~VulkanTexture();
 
     void createCube(VkFormat format,int w,int h,int numMipLevels);
+    void create2D(VkFormat format,int w,int h,int numMipLevels);
 
     bool loadFromFile(const std::string& file);
     inline VkImage getImage()const {return image;}

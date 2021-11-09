@@ -28,7 +28,9 @@ descriptorSetLayout(layout),
 hdriToCubeRenderer(ctx),
 diffuseIrradianceRenderer(ctx),
 environmentCubemap(new VulkanTexture(ctx)),
-diffuseIrradianceCubemap(new VulkanTexture(ctx))
+diffuseIrradianceCubemap(new VulkanTexture(ctx)),
+brdfBaked(new VulkanTexture(ctx)),
+ brdfRender(ctx)
 {
 
 }
@@ -48,6 +50,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
     VulkanDescriptorSetLayoutBuilder sceneDescriptorSetLayoutBuilder(context);
     sceneDescriptorSetLayout = sceneDescriptorSetLayoutBuilder
+            .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
             .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
@@ -95,8 +98,39 @@ void VulkanRender::init(VulkanRenderScene* scene) {
             .addBlendColorAttachment()
             .build();
 
+
+    brdfBaked->create2D(VK_FORMAT_R16G16_SFLOAT,256,256,1);
     environmentCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
     diffuseIrradianceCubemap->createCube(VK_FORMAT_R32G32B32A32_SFLOAT, 256, 256, 1);
+
+    brdfRender.init(scene->getBakedVertexShader(),
+                    scene->getBakedFragmentShader(),
+                    brdfBaked);
+
+    {
+        VulkanUtils::transitionImageLayout(
+                context,
+                brdfBaked->getImage(),
+                brdfBaked->getImageFormat(),
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                0, brdfBaked->getNumMiplevels(),
+                0, brdfBaked->getNumLayers()
+        );
+
+        brdfRender.render();
+
+        VulkanUtils::transitionImageLayout(
+                context,
+                brdfBaked->getImage(),
+                brdfBaked->getImageFormat(),
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                0, brdfBaked->getNumMiplevels(),
+                0, brdfBaked->getNumLayers()
+        );
+    }
+
     hdriToCubeRenderer.init(
             scene->getCubeVertexShader(),
             scene->getHDRToCubeFragmentShader(),
@@ -109,6 +143,9 @@ void VulkanRender::init(VulkanRenderScene* scene) {
             diffuseIrradianceCubemap
     );
 
+
+
+
     // Create scene descriptor sets
     VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
     descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -120,7 +157,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
              "Can't allocate descriptor sets");
 
 
-    std::array<std::shared_ptr<VulkanTexture>, 7> textures =
+    std::array<std::shared_ptr<VulkanTexture>, 8> textures =
     {
             scene->getAlbedoTexture(),
             scene->getNormalTexture(),
@@ -129,6 +166,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
             scene->getEmissionTexture(),
             environmentCubemap,
             diffuseIrradianceCubemap,
+            brdfBaked,
     };
 
     for (int k = 0; k < textures.size(); k++)
@@ -146,6 +184,11 @@ void VulkanRender::shutdown() {
 
     hdriToCubeRenderer.shutdown();
     diffuseIrradianceRenderer.shutdown();
+    brdfRender.shutdown();
+
+
+    brdfBaked->clearGPUData();
+    brdfBaked->clearCPUData();
 
     environmentCubemap->clearGPUData();
     environmentCubemap->clearCPUData();
@@ -157,7 +200,6 @@ void VulkanRender::shutdown() {
 
     vkDestroyDescriptorSetLayout(context->device,sceneDescriptorSetLayout, nullptr);
     sceneDescriptorSetLayout = VK_NULL_HANDLE;
-
 
 
     vkDestroyPipelineLayout(context->device,pipelineLayout, nullptr);
@@ -358,5 +400,6 @@ void VulkanRender::reload( VulkanRenderScene *scene) {
     shutdown();
     init(scene);
 }
+
 
 

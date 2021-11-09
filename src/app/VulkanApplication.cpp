@@ -143,6 +143,9 @@ void Application::update()
         }
         ImGui::EndCombo();
     }
+    ImGui::Image(bakedBRDF,ImVec2(256.f,256.f));
+
+
     ImGui::Checkbox("Demo Window", &show_demo_window);
 
     ImGui::SliderFloat("Lerp User Material", &state.lerpUserValues, 0.0f, 1.0f);
@@ -196,6 +199,8 @@ void Application::initRenders() {
         ImGuiRender = new VulkanImGuiRender(context,swapChain->getExtent(),swapChain->getNoClearRenderPass());
          ImGuiRender->init(scene,swapChain);
     }
+
+   bakedBRDF = ImGuiRender->addTexture(render->getBakedBRDF());
 
 }
 

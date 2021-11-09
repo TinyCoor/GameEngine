@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 #include "VulkanShader.h"
+
+
 //TODO read config from file
 namespace config{
 
@@ -19,6 +21,8 @@ namespace config{
         CubeVertex,
         hdriToCubeFrag,
         diffuseIrrandianceFrag,
+        BakedBRDFVertex,
+        BakedBRDFFrag,
     };
 
     enum Textures{
@@ -49,6 +53,8 @@ namespace config{
             "../../assets/shaders/common.vert",
             "../../assets/shaders/hdriToCube.frag",
             "../../assets/shaders/diffuseIrrandiance.frag",
+            "../../assets/shaders/bakedBRDF.vert",
+            "../../assets/shaders/bakedBRDF.frag",
     };
 
     static std::vector< const char*> textures={

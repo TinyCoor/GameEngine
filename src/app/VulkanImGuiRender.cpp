@@ -7,6 +7,7 @@
 #include "VulkanUtils.h"
 #include "RenderState.h"
 #include "VulkanSwapChain.h"
+#include "VulkanTexture.h"
 #include "Macro.h"
 
 #include <imgui.h>
@@ -83,4 +84,9 @@ void VulkanImGuiRender::shutdown() {
 void VulkanImGuiRender::resize(std::shared_ptr<VulkanSwapChain> swapChain) {
     extent = swapChain->getExtent();
     ImGui_ImplVulkan_SetMinImageCount(swapChain->getNumImages());
+}
+
+ImTextureID VulkanImGuiRender::addTexture(std::shared_ptr<VulkanTexture> texture) {
+    return ImGui_implVulkan_AddTexture(texture->getSampler(),texture->getImageView(),VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
 }

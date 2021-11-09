@@ -241,8 +241,6 @@ void VulkanMesh::clearCPUData() {
 
 
 void VulkanMesh::createSkybox(float size) {
-    clearCPUData();
-    clearGPUData();
     size *=0.5;
     vertices.resize(8);
     indices.resize(36);
@@ -269,8 +267,7 @@ void VulkanMesh::createSkybox(float size) {
 }
 
 void VulkanMesh::createQuad(float size) {
-    clearCPUData();
-    clearGPUData();
+
     float halfSize = size * 0.5f;
     vertices.resize(4);
     indices.resize(6);

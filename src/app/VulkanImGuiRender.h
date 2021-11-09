@@ -5,12 +5,15 @@
 #ifndef GAMEENGINE_VULKANIMGUIRENDER_H
 #define GAMEENGINE_VULKANIMGUIRENDER_H
 #include "VulkanContext.h"
+
 #include <memory>
+#include <imgui.h>
 
 struct RenderState;
 class VulkanRenderScene;
 struct VulkanRenderFrame;
 class VulkanSwapChain;
+class VulkanTexture;
 
 
 class VulkanImGuiRender {
@@ -29,6 +32,8 @@ public:
     void resize(std::shared_ptr<VulkanSwapChain> swapChain);
 
     void render(VulkanRenderScene* scene,const VulkanRenderFrame& frame);
+
+    ImTextureID addTexture(std::shared_ptr<VulkanTexture> texture);
 
 
 private:

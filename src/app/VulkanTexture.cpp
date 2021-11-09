@@ -281,3 +281,47 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
     imageSampler= VulkanUtils::createSampler(context->device,mipLevels);
 }
 
+void VulkanTexture::create2D(VkFormat format, int w, int h, int numMipLevels) {
+    width = w;
+    height = h;
+    mipLevels = numMipLevels;
+    layers = 1;
+    imageFormat = format;
+    channels  = deduceChannels(format) ;
+    VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
+
+    VulkanUtils::createImage2D(
+            context,
+            width,height,mipLevels,
+            VK_SAMPLE_COUNT_1_BIT,
+            format,
+            tiling,
+            VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            image,
+            imageMemory
+    );
+
+    //Prepare the image for transfer
+    VulkanUtils::transitionImageLayout(context,
+                                       image,
+                                       format,
+                                       VK_IMAGE_LAYOUT_UNDEFINED,
+                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                       0,
+                                       mipLevels,
+                                       0,
+                                       layers);
+
+
+
+    imageView =VulkanUtils::createImageView(context->device,
+                                            image,
+                                            format,
+                                            VK_IMAGE_ASPECT_COLOR_BIT,
+                                            VK_IMAGE_VIEW_TYPE_2D,
+                                            0,mipLevels,
+                                            0,layers);
+    imageSampler= VulkanUtils::createSampler(context->device,mipLevels);
+}
+
