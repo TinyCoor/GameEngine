@@ -42,4 +42,7 @@ struct spot_light : public  point_light{
 
 
 
+
+
+
 #endif //GAMEENGINE_LIGHT_H

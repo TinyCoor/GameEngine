@@ -31,8 +31,8 @@ public:
     }
 
     void SetVertexInputAttribute(bool normalized,void* data){
-        glEnableVertexAttribArray(index);
         glVertexAttribPointer(index,size,VertexType,normalized,stride,data);
+        glEnableVertexAttribArray(index);
     }
 };
 

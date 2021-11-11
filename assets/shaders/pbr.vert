@@ -26,6 +26,9 @@ layout(location = 3) out vec3 fragBinormalWS;
 layout(location = 4) out vec3 fragNormalWS;
 layout(location = 5) out vec3 fragPositionWS;
 
+
+
+
 void main() {
 	gl_Position = ubo.proj * ubo.view * ubo.world * vec4(inPosition, 1.0f);
 

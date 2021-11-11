@@ -1,0 +1,44 @@
+#Vulkan 
+- Vulkan Object  
+    - VkInstance: 
+        - Vulkan 实例对象，连接应用层和驱动层，
+        包含应用层的一些基本信息
+    - VkPhysicalDevice: 物理硬件的抽象，该对象记录物理硬件的一些信息
+  包含内存信息,支持的硬件扩展,同一个实例下可以有多个物理设备
+   
+    - VkDevice: 基于物理设备创建的逻辑设备，保存物理设备的相应资源
+    - VkCommandPool: 用于分配命令缓冲
+    - VkCommandBuffer: 用于记录绘制或者计算的命令，有CommandPool分配
+    - VKCommandBufferBeginInfo:携带记录启动命令缓冲的信息
+    - VkSubmitInfo: 携带提交给队列执行时必要的信息，包含等待信号量列表等
+    - VkQueueFamilyProperties:携带特定队列的家族属性信息，包含队列的数量和能力
+    - VkQueue: 接受提交的任务，将任务交由GPU执行
+    - VkFormat: 记录Vulkan用到的各种内存组织格式
+    - VkExtent2D:记录宽高信息
+    - VkImage: 一种设备内存的使用模式，用于存储像素, 每个Image 必须要分配对应的ImageView和VkDeviceMemory
+    - VkImageView: 搭配VKImage 使用记录图像的信息
+    - VkSwapChainKHR:将画面呈现到特定的平台的机制，目标平台的呈现机制的抽象
+    - VkFrameBuffer:帧缓存可以包含多个附件Color Depth Stencil
+    - VkBuffer: 设备内存的使用模式，储存各种数据
+    - VkDescriptorBufferInfo：描述缓冲信息的结构体，包含对应缓冲，内存偏移，范围
+    - VkRenderPass: 包含一次绘制需要的信息，如颜色附件，深度附件，子通道等信息
+    - VkClearValue: 用于清楚颜色或深度附件的信息
+    - VKRenderPassBegin:启动RenderPass需要的信息
+    - VkSubpssDescription: 描述子通道的信息
+    - VkDescriptorSetLayout:给出着色其中的变量，类型，绑定编号对于什么阶段
+    - VkDescriptorSet:通过SetLayout将需要的资源与着色器链接，协助着色器加载资源
+    - VkWriteDescriptorSet:绘制前更新Uniform变量
+    - VkDescriptorPool 分配DescriptorSet
+    - VkPipelineLayout:描述管线的整体布局，有哪些推送常量和descriptorSet
+    - VkPipeline:渲染管线的抽象，携带渲染需要的信息
+    - VkPipelineShaderStageCreateInfo:创建着色器对象所需的信息
+    - VkVertexInputBindingDescription:用于描述输入顶点数据的布局和绑定位置,类似于OpenGL的VAO
+    - VkPipelineCache:便于高效创建管线
+    - VkFormatProperties:存储指定格式类型
+    - VkPhysicalDeviceMemoryProperties:GPU内存信息
+    - VkDeviceMemoey:真正的设备内存，所有的Buffer都要绑定内存
+    - VkSempore:并发的同步
+    - VkFence:主机和设备之间的同步
+    - VkSurfaceKHR:对应平台的窗口表面，用于呈现画面
+    - VkSurfaceCapacity:平台表面的能力
+    - VkPresentInfoKHR：呈现画面所要的信息

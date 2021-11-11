@@ -8,7 +8,7 @@
 #include <iostream>
 
 void loadTexture(const char * file,ImageInfo& imageInfo){
-    uint8_t* Pixel =  stbi_load(file,&imageInfo.width,&imageInfo.height,&imageInfo.channels,0);
+    uint8_t* Pixel =  stbi_load(file,&imageInfo.width,&imageInfo.height,&imageInfo.channels,STBI_rgb_alpha);
     if(!Pixel){
         std::cerr<< "Load File Failed: "<< file << std::endl;
         exit(-1);

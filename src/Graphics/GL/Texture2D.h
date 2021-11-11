@@ -33,8 +33,9 @@ public:
      * @param handle
      */
     static void Bind(GLHANDLE handle){
+        glActiveTexture(GL_TEXTURE0 + pos);
         glBindTexture(handle,GL_TEXTURE0 + pos);
-        pos+=1;
+        pos += 1;
     }
 
     static bool loadFromFile(const char* file){
@@ -52,7 +53,23 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageInfo.width, imageInfo.height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageInfo.data);
+        GLenum format;
+        switch (imageInfo.channels) {
+            case 1:{
+                format =GL_R;
+            }break;
+            case 2:{
+                format = GL_RG;
+            }break;
+            case 3:{
+                format = GL_RGB;
+            }break;
+            case 4:{
+                format = GL_RGBA;
+            }break;
+        }
+        glTexImage2D(GL_TEXTURE_2D, 0, format, imageInfo.width, imageInfo.height, 0, format, GL_UNSIGNED_BYTE, imageInfo.data);
+
         glGenerateMipmap(GL_TEXTURE_2D);
 
         delete imageInfo.data;

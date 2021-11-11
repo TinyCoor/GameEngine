@@ -74,6 +74,14 @@ public:
 
     }
 
+    //TODO check
+    /**
+     * 对于从ShaderProgram找出的Handle 不需要调用Create
+     * glGetUniformLoaction() 返回的 handle
+     * @param handle
+     */
+    GLBuffer(GLHANDLE handle): GLObject(handle,"Uniform"){}
+
     ~GLBuffer(){
 
     }
