@@ -27,6 +27,7 @@ public:
 };
 
 
+
 template<>
 class BufferPolicy<GL_FRAMEBUFFER>{
 public:
@@ -65,7 +66,7 @@ public:
     }
 };
 
-
+//TODO add comment
 template<GLenum buf_type,template<GLenum > class BufferTypePolicy = BufferPolicy>
 class GLBuffer : public GLObject {
 public:
@@ -159,6 +160,24 @@ public:
     //缓存更新立即刷洗通知GPU
     void Flush(int offset,size_t length){
         glFlushMappedBufferRange(this->handle,offset,length);
+    }
+
+};
+
+
+
+template<template<GLenum> class BufferTypePolicy>
+class GLBuffer<GL_VERTEX_ARRAY,BufferTypePolicy>:public GLObject
+{
+public:
+    GLBuffer(): GLObject(BufferPolicy<GL_VERTEX_ARRAY>::createBufferObject(),"VertexArray"){}
+
+    void Bind(){
+        BufferTypePolicy<GL_VERTEX_ARRAY>::Bind(0);
+    }
+
+    void Drestroy(){
+
     }
 
 };

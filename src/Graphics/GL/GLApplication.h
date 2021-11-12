@@ -6,10 +6,16 @@
 #define GAMEENGINE_GLAPPLICATION_H
 #include <memory>
 #include "ImGuiRender.h"
+#include "../../Entity/camera.h"
+#include <glm/glm.hpp>
+
 class GLFWwindow;
+
 class GLApplication{
 public:
     void run();
+    GLFWwindow* GetWindowHandle(){return window;}
+
 private:
 
     bool init();
@@ -21,6 +27,8 @@ private:
 private:
     GLFWwindow* window;
     std::shared_ptr<ImGuiRender> imGuiRender_{new ImGuiRender};
+    // camera
+
 };
 
 #endif //GAMEENGINE_GLAPPLICATION_H

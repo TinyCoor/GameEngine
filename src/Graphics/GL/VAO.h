@@ -32,8 +32,8 @@ public:
 
 private:
     GLHANDLE createVAO(){
-        GLHANDLE  glhandle =0;
-        glGenVertexArrays(1,&glhandle);
+        GLHANDLE  glhandle = 0;
+        glCreateVertexArrays(1,&glhandle);
         return glhandle;
     }
 };

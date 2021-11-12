@@ -35,6 +35,13 @@ public:
         GetErrorInformation();
     }
 
+//    template<typename Shader>
+//    void link(Shader& shader){
+//        glAttachShader(this->handle,shader.GetHandle());
+//        glLinkProgram(this->handle);
+//        GetErrorInformation();
+//    }
+
     void use(){
         glUseProgram(this->handle);
     }
@@ -62,8 +69,6 @@ public:
     void SetUniformVec4f(const char* name,float f1,float f2,float f3,float f4){
         glUniform4f(GetUniformLocation(name),f1,f2,f3,f4);
     }
-
-
 
 private:
     //返回name所对应的uniform 变量的索引值

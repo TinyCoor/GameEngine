@@ -4,9 +4,6 @@
 #include "GLApplication.h"
 
 #include "VAO.h"
-
-
-
 int main(){
     GLApplication app;
 
