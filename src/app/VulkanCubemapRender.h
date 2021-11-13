@@ -34,6 +34,8 @@ private:
 
     VkFence fence {VK_NULL_HANDLE};
 
+    uint32_t pushConstantsSize {0};
+
 
 public:
     VulkanCubeMapRender(const VulkanContext* ctx);
@@ -41,10 +43,11 @@ public:
     void init(std::shared_ptr <VulkanShader> vertShader,
               std::shared_ptr <VulkanShader> fragShader,
               std::shared_ptr <VulkanTexture> targetTexture,
-              int mip);
+              int mip,
+              uint32_t userDataSize = 0);
 
     void shutdown();
 
     void render(std::shared_ptr <VulkanTexture> inputTexture,
-                int mip= -1);
+               float * userData = nullptr, int mip= -1);
 };

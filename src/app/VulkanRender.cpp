@@ -381,8 +381,11 @@ void VulkanRender::setEnvironment(std::shared_ptr< VulkanTexture> texture) {
                 i + 1, 1,
                 0, environmentCubemap->getNumLayers()
         );
-
-        cubeToPrefilteredRenderers[i]->render(environmentCubemap,i);
+        float data[4] = {
+                static_cast<float>(i) / environmentCubemap->getNumMiplevels(),
+                0.0f, 0.0f, 0.0f
+        };
+        cubeToPrefilteredRenderers[i]->render(environmentCubemap,data,i);
 
         VulkanUtils::transitionImageLayout(
                 context,

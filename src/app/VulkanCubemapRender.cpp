@@ -24,7 +24,9 @@ VulkanCubeMapRender::VulkanCubeMapRender(const VulkanContext* ctx)
 void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
                                std::shared_ptr <VulkanShader> fragShader,
                                std::shared_ptr <VulkanTexture> targetTexture,
-                               int mip) {
+                               int mip,
+                               uint32_t userDataSize) {
+    pushConstantsSize = userDataSize;
 
     renderQuad->createQuad(2.0f);
 
@@ -84,10 +86,13 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
             .addColorAttachmentReference(0, 5)
             .build();
 
-
     VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
-    pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
-    pipelineLayout = pipelineLayoutBuilder.build();
+   pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
+
+   if(pushConstantsSize > 0){
+       pipelineLayoutBuilder.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT,0, pushConstantsSize);
+   }
+    pipelineLayout =   pipelineLayoutBuilder.build();
 
 
     VulkanGraphicsPipelineBuilder pipelineBuilder(context,pipelineLayout,renderPass);
@@ -253,6 +258,7 @@ void VulkanCubeMapRender::shutdown() {
 }
 
 void VulkanCubeMapRender::render(std::shared_ptr <VulkanTexture> inputTexture,
+                                 float * userData,
                                  int mip) {
 
    VulkanUtils::bindCombinedImageSampler(
@@ -292,6 +298,9 @@ void VulkanCubeMapRender::render(std::shared_ptr <VulkanTexture> inputTexture,
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+    if (pushConstantsSize > 0 && userData){
+        vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, pushConstantsSize, userData);
+    }
 
     VkBuffer vertexBuffers[] = {renderQuad->getVertexBuffer()};
     VkBuffer indexBuffer = renderQuad->getIndexBuffer();
