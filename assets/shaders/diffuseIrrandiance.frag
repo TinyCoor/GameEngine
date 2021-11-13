@@ -2,7 +2,7 @@
 #pragma shader_stage(fragment)
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(binding = 0) uniform RenderState {
+layout(binding = 0) uniform UniformBufferObject {
     mat4 faces[6];
 } ubo;
 
@@ -25,13 +25,17 @@ vec4 fillFace(int index)
     vec3 normal = normalize(fragFacePositions[index].xyz);
     normal.z *= -1.0f;
 
+    // TODO: figure out why cubemap sampling direction is inversed and rotated 90 degress around Z axis
+    normal = -normal;
+    normal.xy = vec2(normal.y, -normal.x);
+
     vec3 forward = vec3(0.0f, 1.0f, 0.0f);
     vec3 right = normalize(cross(forward, normal));
     forward = normalize(cross(normal, right));
 
     vec3 irradiance = vec3(0.0f);
 
-    float angleStep = 0.025f;
+    float angleStep = 0.015f;
     float numSamples = 0.0f;
 
     for (float phi = 0.0f; phi < 2.0f * PI; phi += angleStep)
