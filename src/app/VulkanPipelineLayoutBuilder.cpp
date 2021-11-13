@@ -31,3 +31,15 @@ VkPipelineLayout VulkanPipelineLayoutBuilder::build() {
 
 }
 
+VulkanPipelineLayoutBuilder &
+VulkanPipelineLayoutBuilder::addPushConstantRange(VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size) {
+    VkPushConstantRange range = {};
+    range.stageFlags = stageFlags;
+    range.offset = offset;
+    range.size = size;
+
+    pushConstants.push_back(range);
+    return *this;
+
+}
+

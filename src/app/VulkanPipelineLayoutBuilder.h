@@ -15,6 +15,8 @@ private:
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts{};
     VkPipelineLayout  pipelineLayout{};
 
+    std::vector<VkPushConstantRange> pushConstants;
+
 public:
     VulkanPipelineLayoutBuilder(const VulkanContext* ctx)
     : context(ctx){}
@@ -24,6 +26,12 @@ public:
     VulkanPipelineLayoutBuilder &addDescriptorSetLayout(
             VkDescriptorSetLayout descriptorSetLayout
             );
+
+    VulkanPipelineLayoutBuilder &addPushConstantRange(
+            VkShaderStageFlags stageFlags,
+            uint32_t offset,
+            uint32_t size
+    );
 
     VkPipelineLayout build();
 };
