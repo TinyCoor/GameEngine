@@ -16,6 +16,25 @@ class VulkanRenderScene;
 class VulkanSwapChain;
 class VulkanImGuiRender;
 
+
+struct CameraState
+{
+    double phi {0.0f};
+    double theta {0.0f};
+    double radius {2.0f};
+    glm::vec3 target;
+};
+
+struct InputState
+{
+    const double rotationSpeed {0.01};
+    const double scrollSpeed {1.5};
+    bool rotating {false};
+    double lastMouseX {0.0};
+    double lastMouseY {0.0};
+};
+
+
 class Application{
 public:
 
@@ -49,12 +68,16 @@ private:
     void recreateSwapChain();
 
     static void OnFrameBufferResized(GLFWwindow* window,int width,int height);
+    static void onMousePosition(GLFWwindow* window, double mouseX, double mouseY);
+    static void onMouseButton(GLFWwindow* window, int button, int action, int mods);
+    static void onScroll(GLFWwindow* window, double deltaX, double deltaY);
+
 
 private:
     GLFWwindow* window{nullptr};
     bool windowResized = false;
 
-    VulkanContext* context;
+    VulkanContext* context{nullptr};
     VulkanRenderScene* scene{nullptr};
     RenderState state;
     //TODO remove
@@ -65,6 +88,9 @@ private:
 
     std::shared_ptr<VulkanSwapChain> swapChain;
 
+    //TODO move to anther
+    CameraState camera;
+    InputState input;
 
 
 };

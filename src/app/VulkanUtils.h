@@ -41,6 +41,15 @@ public:
             bool verbose = false
     );
 
+    static uint32_t fetchGraphicsQueueFamily(
+            VkPhysicalDevice physicalDevice
+    );
+
+    static uint32_t fetchPresentQueueFamily(
+            VkPhysicalDevice physicalDevice,
+            VkSurfaceKHR surface,
+            uint32_t graphicsQueueFamily
+    );
 
     static VkFormat selectOptimalSupportedImageFormat(const VkPhysicalDevice& physicalDevice,
                                                       const std::vector<VkFormat>& candiates,

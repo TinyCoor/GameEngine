@@ -6,14 +6,15 @@
 #include "VulkanRenderScene.h"
 #include "VulkanRender.h"
 #include "VulkanImGuiRender.h"
-
+#include <chrono>
+#include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <functional>
 #include <volk.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
-
+#include <glm/gtc/matrix_transform.hpp>
 
 
 void Application::initWindow() {
@@ -28,7 +29,11 @@ void Application::initWindow() {
     window = glfwCreateWindow(mode->width,mode->height,"Vulkan", nullptr, nullptr);
 
     glfwSetWindowUserPointer(window,this);
+
     glfwSetFramebufferSizeCallback(this->window,&Application::OnFrameBufferResized);
+    glfwSetCursorPosCallback(window, &Application::onMousePosition);
+    glfwSetMouseButtonCallback(window, &Application::onMouseButton);
+    glfwSetScrollCallback(window, &Application::onScroll);
 }
 
 void Application::run(){
@@ -112,8 +117,32 @@ void Application::RenderFrame(){
 }
 void Application::update()
 {
-    render->update(state,scene);
-    //ImGui
+    static auto startTime = std::chrono::high_resolution_clock::now();
+    auto currentTime = std::chrono::high_resolution_clock::now();
+
+    const float rotationSpeed = 0.1f;
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    const glm::vec3 &up = {0.0f, 0.0f, 1.0f};
+    const glm::vec3 &zero = {0.0f, 0.0f, 0.0f};
+
+    VkExtent2D extent = swapChain->getExtent();
+
+    const float aspect = extent.width / (float) extent.height;
+    const float zNear = 0.1f;
+    const float zFar = 100000.0f;
+
+    glm::vec3 cameraPos;
+    cameraPos.x = static_cast<float>(glm::cos(camera.phi) * glm::cos(camera.theta) * camera.radius);
+    cameraPos.y = static_cast<float>(glm::sin(camera.phi) * glm::cos(camera.theta) * camera.radius);
+    cameraPos.z = static_cast<float>(glm::sin(camera.theta) * camera.radius);
+
+    state.world = glm::mat4(1.0f);
+    state.view = glm::lookAt(cameraPos, zero, up);
+    state.proj = glm::perspective(glm::radians(60.0f), aspect, zNear, zFar);
+    state.proj[1][1] *= -1;
+    state.cameraPosWS = cameraPos;
+
     static float f = 0.0f;
     static int counter = 0;
     static bool show_demo_window = false;
@@ -252,5 +281,46 @@ void Application::recreateSwapChain() {
 void Application::OnFrameBufferResized(GLFWwindow *window, int width, int height) {
     Application* app =(Application*)glfwGetWindowUserPointer(window);
     assert(app != nullptr);
+
     app->windowResized= true;
+}
+
+
+
+void Application::onMousePosition(GLFWwindow* window, double mouseX, double mouseY)
+{
+    Application *application = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
+    assert(application != nullptr);
+
+    if (application->input.rotating)
+    {
+        double deltaX = mouseX - application->input.lastMouseX;
+        double deltaY = mouseY - application->input.lastMouseY;
+
+        application->camera.phi -= deltaX * application->input.rotationSpeed;
+        application->camera.theta += deltaY * application->input.rotationSpeed;
+
+        application->camera.phi = std::fmod(application->camera.phi, glm::two_pi<double>());
+        application->camera.theta = std::clamp<double>(application->camera.theta, -glm::half_pi<double>(), glm::half_pi<double>());
+    }
+
+    application->input.lastMouseX = mouseX;
+    application->input.lastMouseY = mouseY;
+}
+
+void Application::onMouseButton(GLFWwindow* window, int button, int action, int mods)
+{
+    Application *application = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
+    assert(application != nullptr);
+
+    if (button == GLFW_MOUSE_BUTTON_RIGHT)
+        application->input.rotating = (action == GLFW_PRESS);
+}
+
+void Application::onScroll(GLFWwindow* window, double deltaX, double deltaY)
+{
+    Application *application = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
+    assert(application);
+
+    application->camera.radius -= deltaY * application->input.scrollSpeed;
 }
