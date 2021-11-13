@@ -139,20 +139,41 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t imag
                                               VK_IMAGE_ASPECT_COLOR_BIT,
                                                VK_IMAGE_VIEW_TYPE_2D,
                                               0,mipLevels,0,layers);
-    imageSampler= VulkanUtils::createSampler(context->device,mipLevels);
+
+    imageSampler = VulkanUtils::createSampler(context->device,0,mipLevels);
+
+    // Create mip image views
+    mipViews.resize(mipLevels);
+    for (int i = 0; i < mipLevels; i++)
+    {
+        mipViews[i] = VulkanUtils::createImageView(
+                context->device,
+                image,
+                imageFormat,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_IMAGE_VIEW_TYPE_2D,
+                i, 1,
+                0, layers
+        );
+    }
 
 }
 
 void VulkanTexture::clearGPUData() {
     vkDestroySampler(context->device,imageSampler, nullptr);
+    imageSampler =VK_NULL_HANDLE;
     vkDestroyImageView(context->device,imageView, nullptr);
+    imageView =VK_NULL_HANDLE;
     vkDestroyImage(context->device, image, nullptr);
+    image =VK_NULL_HANDLE;
     vkFreeMemory(context->device, imageMemory, nullptr);
+    imageMemory =VK_NULL_HANDLE;
 
-    image = VK_NULL_HANDLE;
-    imageView = VK_NULL_HANDLE;
-    imageSampler = VK_NULL_HANDLE;
-    imageMemory= VK_NULL_HANDLE;
+    for (int i = 0; i < mipViews.size(); ++i) {
+        vkDestroyImageView(context->device,mipViews[i], nullptr);
+    }
+    mipViews.clear();
+
     imageFormat = VK_FORMAT_UNDEFINED;
 }
 
@@ -165,6 +186,7 @@ void VulkanTexture::clearCPUData() {
 }
 
 bool  VulkanTexture::loadFromFile(const std::string &path) {
+    //TODO
     if(stbi_info(path.c_str(), nullptr, nullptr, nullptr) == 0){
         std::cerr<< "loadFromFile: unsupported texture format " << path <<'\n';
         return false;
@@ -186,12 +208,6 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
 
     //TODO RGB convert rbga
 
-//    bool convert = false;
-//    if(channels == 3){
-//        channels =4;
-//        convert = true;
-//    }
-
     if(!stb_pixels){
         std::cerr<< "load file failed:" << path <<'\n';
         return false;
@@ -208,22 +224,7 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
     pixels = new unsigned char[imageSize];
 
     //TODO refractor rgb to rgba
-//    if(convert){
-//        size_t numPixels = height *width;
-//        uint8_t * d = pixels;
-//        uint8_t * s = (uint8_t*)stb_pixels;
-//        size_t stride = pixelSize * 3;
-//
-//        for (int i = 0; i < numPixels; ++i) {
-//            memcpy(d,s,stride);
-//            s += stride;
-//            d += stride;
-//
-//            memset(d,0,pixelSize);
-//            d += pixelSize;
-//        }
-//        stbi_image_free(stb_pixels);
-//    }
+
 
     memcpy(pixels,stb_pixels,imageSize);
 
@@ -278,7 +279,22 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
                                             VK_IMAGE_VIEW_TYPE_CUBE,
                                             0,mipLevels,
                                             0,layers);
-    imageSampler= VulkanUtils::createSampler(context->device,mipLevels);
+    imageSampler = VulkanUtils::createSampler(context->device, 0, mipLevels);
+
+    // Create mip image views
+    mipViews.resize(mipLevels);
+    for (int i = 0; i < mipLevels; i++)
+    {
+        mipViews[i] = VulkanUtils::createImageView(
+                context->device,
+                image,
+                imageFormat,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_IMAGE_VIEW_TYPE_CUBE,
+                i, 1,
+                0, layers
+        );
+    }
 }
 
 void VulkanTexture::create2D(VkFormat format, int w, int h, int numMipLevels) {
@@ -322,6 +338,21 @@ void VulkanTexture::create2D(VkFormat format, int w, int h, int numMipLevels) {
                                             VK_IMAGE_VIEW_TYPE_2D,
                                             0,mipLevels,
                                             0,layers);
-    imageSampler= VulkanUtils::createSampler(context->device,mipLevels);
+    imageSampler= VulkanUtils::createSampler(context->device,0,mipLevels);
+
+    // Create mip image views
+    mipViews.resize(mipLevels);
+    for (int i = 0; i < mipLevels; i++)
+    {
+        mipViews[i] = VulkanUtils::createImageView(
+                context->device,
+                image,
+                imageFormat,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_IMAGE_VIEW_TYPE_2D,
+                i, 1,
+                0, layers
+        );
+    }
 }
 

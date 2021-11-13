@@ -284,6 +284,7 @@ void VulkanSwapChain::shutdownFrames() {
         vkFreeDescriptorSets(context->device,context->descriptorPool,1,&frames[i].swapchainDescriptorSet);
         frames[i].commandBuffer =VK_NULL_HANDLE;
         frames[i].uniformBuffers =VK_NULL_HANDLE;
+        frames[i].frameBuffer =VK_NULL_HANDLE;
         frames[i].uniformBuffersMemory = VK_NULL_HANDLE;
         frames[i].commandBuffer =VK_NULL_HANDLE;
         frames[i].swapchainDescriptorSet =VK_NULL_HANDLE;
@@ -370,11 +371,14 @@ void VulkanSwapChain::shutdownPersistent() {
     vkDestroyDescriptorSetLayout(context->device,descriptorSetLayout, nullptr);
     descriptorSetLayout= VK_NULL_HANDLE;
 
+
+
 }
 
 void VulkanSwapChain::shutdownTransient() {
     for (int i = 0; i <swapChainImageViews.size() ; ++i) {
         vkDestroyImageView(context->device,swapChainImageViews[i], nullptr);
+      //  vkDestroyImage(context->device,swapChainImages[i], nullptr);
     }
 
     swapChainImageViews.clear();

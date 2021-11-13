@@ -402,7 +402,8 @@ void VulkanUtils::copyBufferToImage(const VulkanContext *context, VkBuffer srcBu
 
 
 VkSampler VulkanUtils::createSampler(VkDevice device,
-                                       uint32_t mipLevels){
+                                     int minMipLevel,
+                                     int maxMipLevel){
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -418,8 +419,8 @@ VkSampler VulkanUtils::createSampler(VkDevice device,
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod =static_cast<float>(mipLevels);
+    samplerInfo.minLod = static_cast<float > (minMipLevel);
+    samplerInfo.maxLod =static_cast<float>(maxMipLevel);
     VkSampler textureSampler{VK_NULL_HANDLE};
     VK_CHECK(vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler),"failed to create texture sampler!") ;
 

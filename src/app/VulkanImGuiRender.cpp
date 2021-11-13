@@ -79,6 +79,7 @@ void VulkanImGuiRender::render(VulkanRenderScene *scene,const VulkanRenderFrame&
 }
 
 void VulkanImGuiRender::shutdown() {
+    ImGui_ImplVulkan_Shutdown();
 }
 
 void VulkanImGuiRender::resize(std::shared_ptr<VulkanSwapChain> swapChain) {

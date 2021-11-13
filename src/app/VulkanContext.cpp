@@ -169,7 +169,6 @@ void VulkanContext::init(GLFWwindow* window) {
     physicalDevice = PickPhysicalDevice(instance,surface);
     TH_WITH_MSG( physicalDevice == VK_NULL_HANDLE,"failed to find GPU\n");
 
-
     //获取家族队列信息及支持task 也支持graphics
     QueueFamilyIndices indices = VulkanUtils::fetchFamilyIndices(physicalDevice,surface);
     auto queuesInfo = createDeviceQueueCreateInfo(indices);
@@ -308,17 +307,18 @@ void VulkanContext::shutdown() {
     vkDestroyCommandPool(device,commandPool, nullptr);
     commandPool = VK_NULL_HANDLE;
 
-    vkDestroyDebugUtilsMessengerEXT(instance,debugMessenger, nullptr);
+//    vkDestroyDebugUtilsMessengerEXT(instance,debugMessenger, nullptr);
+//
 
-
-    vkDestroyDevice(device, nullptr);
-    device=VK_NULL_HANDLE;
-
-    vkDestroySurfaceKHR(instance,surface, nullptr);
-    surface = VK_NULL_HANDLE;
-
-    vkDestroyInstance(instance, nullptr);
-    instance= VK_NULL_HANDLE;
+//    vkDestroyDevice(device, nullptr);
+//    device=VK_NULL_HANDLE;
+//
+//    vkDestroySurfaceKHR(instance,surface, nullptr);
+//    surface = VK_NULL_HANDLE;
+//
+//
+//    vkDestroyInstance(instance, nullptr);
+//    instance= VK_NULL_HANDLE;
 }
 
 VulkanContext::VulkanContext() {

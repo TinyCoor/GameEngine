@@ -33,6 +33,7 @@ private:
 public:
     VulkanMesh(const VulkanContext* ctx): context(ctx){}
     ~VulkanMesh();
+
     inline uint32_t getNumIndices() const {return indices.size();}
     inline VkBuffer getVertexBuffer() const { return vertexBuffer;}
     inline VkBuffer getIndexBuffer() const { return indexBuffer;}

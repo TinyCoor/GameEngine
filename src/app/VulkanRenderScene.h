@@ -13,6 +13,7 @@ private:
     VulkanResourceManager resource;
 public:
     explicit VulkanRenderScene(const VulkanContext* ctx);
+    ~VulkanRenderScene();
 
     void init();
     void shutdown() ;
@@ -24,6 +25,7 @@ public:
 
     inline std::shared_ptr<VulkanShader> getSkyboxVertexShader(){ return resource.getShader(config::Shaders::SkyboxVertex);}
     inline std::shared_ptr<VulkanShader> getSkyboxFragmentShader() {return resource.getShader(config::Shaders::SkyboxFrag);}
+    inline  std::shared_ptr<VulkanShader> getCubeToPrefilteredSpecularShader() const { return resource.getShader(config::Shaders::CubeToPrefilteredSpecular); }
 
     inline std::shared_ptr<VulkanShader> getCubeVertexShader() {return resource.getShader(config::Shaders::CubeVertex);}
     inline std::shared_ptr<VulkanShader> getHDRToCubeFragmentShader(){return resource.getShader(config::Shaders::hdriToCubeFrag);}

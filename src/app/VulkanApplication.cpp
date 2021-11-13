@@ -224,9 +224,12 @@ void Application::initScene() {
 }
 
 void Application::shutdownScene() {
-    scene->shutdown();
-    delete scene;
-    scene = nullptr;
+//    scene->shutdown();
+    if(scene){
+        delete scene;
+        scene = nullptr;
+    }
+
 }
 
 void Application::recreateSwapChain() {

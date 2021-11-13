@@ -44,9 +44,6 @@ private:
 
 private:
 
-
-
-
     VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
 
 

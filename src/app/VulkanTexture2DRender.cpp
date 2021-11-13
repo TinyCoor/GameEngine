@@ -101,6 +101,10 @@ void VulkanTexture2DRender::shutdown() {
     renderQuad->clearGPUData();
     renderQuad->clearCPUData();
 
+    vkDestroyFramebuffer(context->device,framebuffer, nullptr);
+    framebuffer=VK_NULL_HANDLE;
+
+
     vkFreeCommandBuffers(context->device,context->commandPool,1,&commandBuffer);
     commandBuffer =VK_NULL_HANDLE;
 
@@ -125,7 +129,6 @@ void VulkanTexture2DRender::render() {
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     beginInfo.pInheritanceInfo = nullptr; // Optional
     VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo),"Can't begin recording command buffer");
-
 
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

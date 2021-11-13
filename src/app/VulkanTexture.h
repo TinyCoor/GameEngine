@@ -20,10 +20,13 @@ public:
     bool loadFromFile(const std::string& file);
     inline VkImage getImage()const {return image;}
     inline VkImageView getImageView() const { return imageView;}
+    inline VkImageView getMipImageView(int mip) const{return mipViews[mip];}
     inline VkFormat getImageFormat() const {return imageFormat;}
     inline VkSampler getSampler() const {return imageSampler;}
     inline size_t getWidth() const{return width;}
+    inline int getWidth(int mip) const { return std::max<int>(1, width / (1 << mip)); }
     inline size_t getHeight() const{return height;}
+    inline int getHeight(int mip) const { return std::max<int>(1, height / (1 << mip)); }
     inline size_t getNumLayers() const{return layers;}
     inline size_t getNumMiplevels() const{return mipLevels;}
 
@@ -45,6 +48,7 @@ private:
     VkDeviceMemory imageMemory{};
     VkImageView imageView{};
     VkSampler  imageSampler{};
+    std::vector<VkImageView> mipViews;
 };
 
 

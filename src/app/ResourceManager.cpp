@@ -129,7 +129,7 @@ void VulkanResourceManager::shutdown() {
         mesh.second->clearCPUData();
     }
 
-    for (auto& shader:shaders) {
+    for (auto& shader : shaders) {
         shader.second->clear();
     }
 

@@ -9,6 +9,9 @@ VulkanRenderScene::VulkanRenderScene(const VulkanContext* ctx)
 : resource(ctx)
 {}
 
+VulkanRenderScene::~VulkanRenderScene() {
+    shutdown();
+}
 
 void VulkanRenderScene::init(){
     for(int i =0; i< config::shaders.size();++i){
@@ -43,4 +46,6 @@ bool  VulkanRenderScene::reloadShader() {
     }
     return false;
 }
+
+
 

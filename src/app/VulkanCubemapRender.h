@@ -40,9 +40,11 @@ public:
 
     void init(std::shared_ptr <VulkanShader> vertShader,
               std::shared_ptr <VulkanShader> fragShader,
-              std::shared_ptr <VulkanTexture> targetTexture);
+              std::shared_ptr <VulkanTexture> targetTexture,
+              int mip);
 
     void shutdown();
 
-    void render(std::shared_ptr <VulkanTexture> inputTexture);
+    void render(std::shared_ptr <VulkanTexture> inputTexture,
+                int mip= -1);
 };

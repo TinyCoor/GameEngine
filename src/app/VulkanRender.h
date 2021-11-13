@@ -22,6 +22,7 @@ class VulkanRender {
 private:
     const VulkanContext* context;
     VkExtent2D extent;
+
     //TODO swapchain descriptorSetLayout
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkPipelineLayout  pipelineLayout{VK_NULL_HANDLE};
@@ -29,6 +30,7 @@ private:
 
     VulkanCubeMapRender hdriToCubeRenderer;
     VulkanCubeMapRender diffuseIrradianceRenderer;
+    std::vector<VulkanCubeMapRender*> cubeToPrefilteredRenderers;
     VulkanTexture2DRender brdfRender;
 
 

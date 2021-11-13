@@ -23,7 +23,8 @@ VulkanCubeMapRender::VulkanCubeMapRender(const VulkanContext* ctx)
 
 void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
                                std::shared_ptr <VulkanShader> fragShader,
-                               std::shared_ptr <VulkanTexture> targetTexture) {
+                               std::shared_ptr <VulkanTexture> targetTexture,
+                               int mip) {
 
     renderQuad->createQuad(2.0f);
 
@@ -34,13 +35,13 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
                 targetTexture->getImageFormat(),
                 VK_IMAGE_ASPECT_COLOR_BIT,
                 VK_IMAGE_VIEW_TYPE_2D,
-                0,targetTexture->getNumMiplevels(),
+                mip,1,
                 i,1
                 );
     }
 
-    targetExtent.width = targetTexture->getWidth();
-    targetExtent.height = targetTexture->getHeight();
+    targetExtent.width = targetTexture->getWidth(mip);
+    targetExtent.height = targetTexture->getHeight(mip);
 
 
     VkViewport viewport{};
@@ -251,13 +252,14 @@ void VulkanCubeMapRender::shutdown() {
 
 }
 
-void VulkanCubeMapRender::render(std::shared_ptr <VulkanTexture> inputTexture) {
+void VulkanCubeMapRender::render(std::shared_ptr <VulkanTexture> inputTexture,
+                                 int mip) {
 
    VulkanUtils::bindCombinedImageSampler(
             context->device,
             descriptorSet,
             1,
-            inputTexture->getImageView(),
+            (mip == -1) ? inputTexture->getImageView() : inputTexture->getMipImageView(mip),
             inputTexture->getSampler()
     );
 

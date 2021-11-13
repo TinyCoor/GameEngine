@@ -42,7 +42,6 @@ public:
     );
 
 
-
     static VkFormat selectOptimalSupportedImageFormat(const VkPhysicalDevice& physicalDevice,
                                                       const std::vector<VkFormat>& candiates,
                                                       VkImageTiling tiling,
@@ -134,7 +133,9 @@ public:
                                       uint32_t baseLayer = 0,
                                       uint32_t numLayers = 1);
 
-    static VkSampler createSampler(VkDevice device, uint32_t mipLevels);
+    static VkSampler createSampler(VkDevice device,
+                                   int minMipLevel,
+                                   int maxMipLevel);
 
     static bool hasStencilComponent(VkFormat format);
 
