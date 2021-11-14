@@ -147,7 +147,7 @@ bool VulkanShader::compileFromSource(const char* path,const char* source,size_t 
     auto * bytes = shaderc_result_get_bytes(result);
 
     clear();
-    shaderModule = VulkanUtils::createShaderModule(context->device,(uint32_t*)bytes,byte_size);
+    shaderModule = VulkanUtils::createShaderModule(context->Device(),(uint32_t*)bytes,byte_size);
 
     shaderc_result_release(result);
     shaderc_compiler_release(compiler);
@@ -198,7 +198,7 @@ bool VulkanShader::compileFromFile(const char* path,ShaderKind kind) {
 }
 
 void VulkanShader::clear() {
-    vkDestroyShaderModule(context->device,shaderModule, nullptr);
+    vkDestroyShaderModule(context->Device(),shaderModule, nullptr);
     shaderModule = VK_NULL_HANDLE;
 }
 

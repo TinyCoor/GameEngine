@@ -79,21 +79,21 @@ void VulkanTexture2DRender::init(std::shared_ptr<VulkanShader> vertShader, std::
     framebufferInfo.width = targetExtent.width;
     framebufferInfo.height =targetExtent.height;
     framebufferInfo.layers = 1;
-    VK_CHECK(vkCreateFramebuffer(context->device, &framebufferInfo, nullptr, &framebuffer),"Can't create framebuffer");
+    VK_CHECK(vkCreateFramebuffer(context->Device(), &framebufferInfo, nullptr, &framebuffer),"Can't create framebuffer");
 
     // Create command buffers
     VkCommandBufferAllocateInfo allocateInfo = {};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocateInfo.commandPool = context->commandPool;
+    allocateInfo.commandPool = context->CommandPool();
     allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocateInfo.commandBufferCount = 1;
-    VK_CHECK(vkAllocateCommandBuffers(context->device, &allocateInfo, &commandBuffer),"Can't create command buffers");
+    VK_CHECK(vkAllocateCommandBuffers(context->Device(), &allocateInfo, &commandBuffer),"Can't create command buffers");
 
 
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = 0;
-    VK_CHECK(vkCreateFence(context->device, &fenceInfo, nullptr, &fence) ,"Can't create fence");
+    VK_CHECK(vkCreateFence(context->Device(), &fenceInfo, nullptr, &fence) ,"Can't create fence");
 
 }
 
@@ -101,23 +101,23 @@ void VulkanTexture2DRender::shutdown() {
     renderQuad->clearGPUData();
     renderQuad->clearCPUData();
 
-    vkDestroyFramebuffer(context->device,framebuffer, nullptr);
+    vkDestroyFramebuffer(context->Device(),framebuffer, nullptr);
     framebuffer=VK_NULL_HANDLE;
 
 
-    vkFreeCommandBuffers(context->device,context->commandPool,1,&commandBuffer);
+    vkFreeCommandBuffers(context->Device(),context->CommandPool(),1,&commandBuffer);
     commandBuffer =VK_NULL_HANDLE;
 
-    vkDestroyRenderPass(context->device,renderPass, nullptr);
+    vkDestroyRenderPass(context->Device(),renderPass, nullptr);
     renderPass = VK_NULL_HANDLE;
 
-    vkDestroyPipelineLayout(context->device,pipelineLayout, nullptr);
+    vkDestroyPipelineLayout(context->Device(),pipelineLayout, nullptr);
     pipelineLayout = VK_NULL_HANDLE;
 
-    vkDestroyPipeline(context->device,pipeline, nullptr);
+    vkDestroyPipeline(context->Device(),pipeline, nullptr);
     pipeline = VK_NULL_HANDLE;
 
-    vkDestroyFence(context->device, fence, nullptr);
+    vkDestroyFence(context->Device(), fence, nullptr);
     fence = VK_NULL_HANDLE;
 }
 
@@ -161,8 +161,8 @@ void VulkanTexture2DRender::render() {
     submitInfo.commandBufferCount=1;
     submitInfo.pCommandBuffers =&commandBuffer;
 
-    VK_CHECK( vkResetFences(context->device,1,&fence),"Reset Fence Failed");
-    VK_CHECK( vkQueueSubmit(context->graphicsQueue,1,&submitInfo,fence),"Submit Queue Failed");
-    VK_CHECK(vkWaitForFences(context->device, 1, &fence, VK_TRUE, 100000000000),"Can't wait for a fence");
+    VK_CHECK( vkResetFences(context->Device(),1,&fence),"Reset Fence Failed");
+    VK_CHECK( vkQueueSubmit(context->GraphicsQueue(),1,&submitInfo,fence),"Submit Queue Failed");
+    VK_CHECK(vkWaitForFences(context->Device(), 1, &fence, VK_TRUE, 100000000000),"Can't wait for a fence");
 
 }

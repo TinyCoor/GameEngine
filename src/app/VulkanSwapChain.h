@@ -26,7 +26,7 @@ struct RenderState;
 
 class VulkanSwapChain{
 public:
-    VulkanSwapChain(const VulkanContext* ctx,VkDeviceSize uboSize);
+    VulkanSwapChain(const VulkanContext* ctx,void* nativeWindow,VkDeviceSize uboSize);
     virtual ~VulkanSwapChain();
 
     void init(int width,int height);
@@ -48,7 +48,7 @@ public:
 
 private:
 
-    struct SupportedDetails {
+    struct SupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR> presentModes;
@@ -57,14 +57,11 @@ private:
     struct Settings{
         VkSurfaceFormatKHR format;
         VkPresentModeKHR presentMode;
-        VkExtent2D extent;
     };
 
 
-    SupportedDetails fetchSwapchainSupportedDetails(VkPhysicalDevice physical_device,
-                                                             VkSurfaceKHR surface);
-
-    Settings selectOptimalSwapchainSettings(SupportedDetails& details,int width,int height);
+    VulkanSwapChain::SupportDetails fetchSwapChainSupportDetails(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) const;
+    VulkanSwapChain::Settings selectOptimalSwapChainSettings(const VulkanSwapChain::SupportDetails &details) const;
 
 private:
 
@@ -79,10 +76,19 @@ private:
 private:
 
     const VulkanContext* context;
-    VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
     VkRenderPass renderPass{VK_NULL_HANDLE};
     VkRenderPass  noClearRenderPass{VK_NULL_HANDLE};
     VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
+
+    void *nativeWindow {nullptr};
+    VkSurfaceKHR surface {VK_NULL_HANDLE};
+    VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
+
+    uint32_t presentQueueFamily {0xFFFF};
+    VkQueue presentQueue {VK_NULL_HANDLE};
+
+    VulkanSwapChain::SupportDetails details;
+    VulkanSwapChain::Settings settings;
 
     //
     std::vector<VkImage> swapChainImages;

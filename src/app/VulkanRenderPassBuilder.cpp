@@ -156,7 +156,7 @@ VkRenderPass VulkanRenderPassBuilder::build() {
     renderPassInfo.subpassCount = infos.size();
     renderPassInfo.pSubpasses = infos.data();
 
-    if (vkCreateRenderPass(context->device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+    if (vkCreateRenderPass(context->Device(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
         throw std::runtime_error("Can't create render pass");
 
     return renderPass;

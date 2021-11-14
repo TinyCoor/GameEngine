@@ -105,18 +105,18 @@ void VulkanUtils::createBuffer(const VulkanContext* context,
     bufferInfo.size = size;
     bufferInfo.usage = usageFlags;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    VK_CHECK(vkCreateBuffer(context->device, &bufferInfo, nullptr, &buffer),
+    VK_CHECK(vkCreateBuffer(context->Device(), &bufferInfo, nullptr, &buffer),
              "failed to create vertex buffer!");
 
     VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(context->device, buffer, &memRequirements);
+    vkGetBufferMemoryRequirements(context->Device(), buffer, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(context->physicalDevice,memRequirements.memoryTypeBits, memoryFlags);
-    VK_CHECK(vkAllocateMemory(context->device, &allocInfo, nullptr, &memory) ,"failed to allocate vertex buffer memory!");
-    VK_CHECK( vkBindBufferMemory(context->device, buffer, memory, 0),"Bind Buffer VertexBuffer Failed");
+    allocInfo.memoryTypeIndex = findMemoryType(context->PhysicalDevice(),memRequirements.memoryTypeBits, memoryFlags);
+    VK_CHECK(vkAllocateMemory(context->Device(), &allocInfo, nullptr, &memory) ,"failed to allocate vertex buffer memory!");
+    VK_CHECK( vkBindBufferMemory(context->Device(), buffer, memory, 0),"Bind Buffer VertexBuffer Failed");
 
 }
 
@@ -170,11 +170,11 @@ VkCommandBuffer VulkanUtils::beginSingleTimeCommands(const VulkanContext* contex
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool =context->commandPool;
+    allocInfo.commandPool =context->CommandPool();
     allocInfo.commandBufferCount = 1;
 
     VkCommandBuffer commandBuffer;
-    vkAllocateCommandBuffers(context->device, &allocInfo, &commandBuffer);
+    vkAllocateCommandBuffers(context->Device(), &allocInfo, &commandBuffer);
     assert(commandBuffer !=VK_NULL_HANDLE);
 
     VkCommandBufferBeginInfo beginInfo{};
@@ -209,18 +209,18 @@ void VulkanUtils::createImage2D(const VulkanContext *context,
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags = 0;
 
-    VK_CHECK(vkCreateImage(context->device, &imageInfo, nullptr, &image),
+    VK_CHECK(vkCreateImage(context->Device(), &imageInfo, nullptr, &image),
              "failed to create textures!");
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(context->device, image, &memRequirements);
+    vkGetImageMemoryRequirements(context->Device(), image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(context->physicalDevice,memRequirements.memoryTypeBits, properties);
-    VK_CHECK(vkAllocateMemory(context->device, &allocInfo, nullptr, &memory) ,"failed to allocate vertex buffer memory!");
-    VK_CHECK(vkBindImageMemory(context->device, image, memory, 0),"Bind Buffer VertexBuffer Failed");
+    allocInfo.memoryTypeIndex = findMemoryType(context->PhysicalDevice(),memRequirements.memoryTypeBits, properties);
+    VK_CHECK(vkAllocateMemory(context->Device(), &allocInfo, nullptr, &memory) ,"failed to allocate vertex buffer memory!");
+    VK_CHECK(vkBindImageMemory(context->Device(), image, memory, 0),"Bind Buffer VertexBuffer Failed");
 }
 
 
@@ -245,18 +245,18 @@ void VulkanUtils::createCubeImage(const VulkanContext *context, uint32_t width, 
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
-    VK_CHECK(vkCreateImage(context->device, &imageInfo, nullptr, &image),
+    VK_CHECK(vkCreateImage(context->Device(), &imageInfo, nullptr, &image),
              "failed to create textures!");
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(context->device, image, &memRequirements);
+    vkGetImageMemoryRequirements(context->Device(), image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(context->physicalDevice,memRequirements.memoryTypeBits, properties);
-    VK_CHECK(vkAllocateMemory(context->device, &allocInfo, nullptr, &memory) ,"failed to allocate image buffer memory!");
-    VK_CHECK(vkBindImageMemory(context->device, image, memory, 0),"Bind Buffer  Failed");
+    allocInfo.memoryTypeIndex = findMemoryType(context->PhysicalDevice(),memRequirements.memoryTypeBits, properties);
+    VK_CHECK(vkAllocateMemory(context->Device(), &allocInfo, nullptr, &memory) ,"failed to allocate image buffer memory!");
+    VK_CHECK(vkBindImageMemory(context->Device(), image, memory, 0),"Bind Buffer  Failed");
 
 }
 
@@ -503,7 +503,7 @@ VulkanUtils::generateImage2DMipMaps(const VulkanContext *context,
     bool supportCubicFiltering = (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT) == 0;
 
     //TODO Fix
-    vkGetPhysicalDeviceFormatProperties(context->physicalDevice, format, &formatProperties);
+    vkGetPhysicalDeviceFormatProperties(context->PhysicalDevice(), format, &formatProperties);
     if ((filter == VK_FILTER_LINEAR) && !supportsLinearFiltering) {
         throw std::runtime_error("texture image format does not support linear blitting!");
     }
@@ -676,16 +676,16 @@ void VulkanUtils::endSingleTimeCommands(const VulkanContext* context,VkCommandBu
     fenceInfo.flags = 0;
 
     VkFence fence{};
-    VK_CHECK(vkCreateFence(context->device,&fenceInfo, nullptr,&fence),"Create Fence Failed\n");
+    VK_CHECK(vkCreateFence(context->Device(),&fenceInfo, nullptr,&fence),"Create Fence Failed\n");
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    VK_CHECK( vkQueueSubmit(context->graphicsQueue, 1, &submitInfo, fence),"failed to submit command buffer");
-    VK_CHECK(vkWaitForFences(context->device,1,&fence,VK_TRUE,10000000000),"Wait for Fence failed");
-    vkDestroyFence(context->device,fence, nullptr);
-    vkFreeCommandBuffers(context->device, context->commandPool, 1, &commandBuffer);
+    VK_CHECK( vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo, fence),"failed to submit command buffer");
+    VK_CHECK(vkWaitForFences(context->Device(),1,&fence,VK_TRUE,10000000000),"Wait for Fence failed");
+    vkDestroyFence(context->Device(),fence, nullptr);
+    vkFreeCommandBuffers(context->Device(), context->CommandPool(), 1, &commandBuffer);
 }
 
 

@@ -77,7 +77,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
         .addDynamicState(VK_DYNAMIC_STATE_VIEWPORT)
         .setRasterizerState(false, false, VK_POLYGON_MODE_FILL,
                             1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE)
-        .setMultisampleState(context->maxMSAASamples, true)
+        .setMultisampleState(context->MaxMSAASamples(), true)
         .setDepthStencilState(true, true, VK_COMPARE_OP_LESS)
         .addBlendColorAttachment()
         .build();
@@ -93,7 +93,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
             .addDynamicState(VK_DYNAMIC_STATE_SCISSOR)
             .addDynamicState(VK_DYNAMIC_STATE_VIEWPORT)
             .setRasterizerState(false, false, VK_POLYGON_MODE_FILL, 1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE)
-            .setMultisampleState(context->maxMSAASamples,true)
+            .setMultisampleState(context->MaxMSAASamples(),true)
             .setDepthStencilState(true, true, VK_COMPARE_OP_LESS)
             .addBlendColorAttachment()
             .build();
@@ -163,11 +163,11 @@ void VulkanRender::init(VulkanRenderScene* scene) {
     // Create scene descriptor sets
     VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
     descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    descriptorSetAllocInfo.descriptorPool = context->descriptorPool;
+    descriptorSetAllocInfo.descriptorPool = context->DescriptorPool();
     descriptorSetAllocInfo.descriptorSetCount = 1;
     descriptorSetAllocInfo.pSetLayouts = &sceneDescriptorSetLayout;
 
-    VK_CHECK(vkAllocateDescriptorSets(context->device, &descriptorSetAllocInfo, &sceneDescriptorSet),
+    VK_CHECK(vkAllocateDescriptorSets(context->Device(), &descriptorSetAllocInfo, &sceneDescriptorSet),
              "Can't allocate descriptor sets");
 
 
@@ -185,7 +185,7 @@ void VulkanRender::init(VulkanRenderScene* scene) {
 
     for (int k = 0; k < textures.size(); k++)
         VulkanUtils::bindCombinedImageSampler(
-                context->device,
+                context->Device(),
                 sceneDescriptorSet,
                 k,
                 textures[k]->getImageView(),
@@ -216,21 +216,21 @@ void VulkanRender::shutdown() {
     diffuseIrradianceCubemap->clearGPUData();
     diffuseIrradianceCubemap->clearCPUData();
 
-    vkFreeDescriptorSets(context->device,context->descriptorPool,1,&sceneDescriptorSet);
+    vkFreeDescriptorSets(context->Device(),context->DescriptorPool(),1,&sceneDescriptorSet);
     sceneDescriptorSet= VK_NULL_HANDLE;
 
-    vkDestroyDescriptorSetLayout(context->device,sceneDescriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(context->Device(),sceneDescriptorSetLayout, nullptr);
     sceneDescriptorSetLayout = VK_NULL_HANDLE;
 
 
 
-    vkDestroyPipelineLayout(context->device,pipelineLayout, nullptr);
+    vkDestroyPipelineLayout(context->Device(),pipelineLayout, nullptr);
     pipelineLayout = VK_NULL_HANDLE;
 
-    vkDestroyPipeline(context->device,pbrPipeline, nullptr);
+    vkDestroyPipeline(context->Device(),pbrPipeline, nullptr);
     pbrPipeline = VK_NULL_HANDLE;
 
-    vkDestroyPipeline(context->device,skyboxPipeline, nullptr);
+    vkDestroyPipeline(context->Device(),skyboxPipeline, nullptr);
     skyboxPipeline = VK_NULL_HANDLE;
 
 
@@ -431,7 +431,7 @@ void VulkanRender::setEnvironment(std::shared_ptr< VulkanTexture> texture) {
 
     for (int k = 0; k < textures.size(); k++)
         VulkanUtils::bindCombinedImageSampler(
-                context->device,
+                context->Device(),
                 sceneDescriptorSet,
                 k + 5,
                 textures[k]->getImageView(),

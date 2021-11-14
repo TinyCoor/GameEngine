@@ -96,7 +96,7 @@ namespace {
 
     VkDevice createDevice(
             VkPhysicalDevice physicalDevice,
-            std::vector<VkDeviceQueueCreateInfo>&queuesInfo,
+            VkDeviceQueueCreateInfo &queuesInfo,
             std::vector<const char*>& requiredPhysicalExtensions,
             std::vector<const char*>& layers)
     {
@@ -107,8 +107,8 @@ namespace {
         deviceFeatures.sampleRateShading = VK_TRUE;
 
         deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        deviceCreateInfo.pQueueCreateInfos = queuesInfo.data();
-        deviceCreateInfo.queueCreateInfoCount = queuesInfo.size();
+        deviceCreateInfo.pQueueCreateInfos = &queuesInfo;
+        deviceCreateInfo.queueCreateInfoCount = 1;
         deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
         deviceCreateInfo.enabledExtensionCount =requiredPhysicalExtensions.size();
         deviceCreateInfo.ppEnabledExtensionNames = requiredPhysicalExtensions.data();
@@ -122,19 +122,13 @@ namespace {
     VkSurfaceKHR createSurface(VkInstance& instance,GLFWwindow* window){
         VkSurfaceKHR  surface;
         VK_CHECK(glfwCreateWindowSurface(instance,window, nullptr,&surface),"Create Surface Failed");
-//        VkWin32SurfaceCreateInfoKHR surfaceCreateInfo{};
-//        surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-//        surfaceCreateInfo.hwnd = glfwGetWin32Window(window);
-//        surfaceCreateInfo.hinstance = GetModuleHandle(nullptr);
-//        VK_CHECK(vkCreateWin32SurfaceKHR(instance,&surfaceCreateInfo, nullptr,&surface),"Create win32 Surface Error");
-//
          return surface;
     }
 
 }
 
 
-void VulkanContext::init(GLFWwindow* window) {
+void VulkanContext::init() {
 
     VK_CHECK(volkInitialize(),"can not init volk help lib");
 
@@ -162,33 +156,31 @@ void VulkanContext::init(GLFWwindow* window) {
     VK_CHECK(vkCreateDebugUtilsMessengerEXT(instance, &debugMessengerInfo, nullptr, &debugMessenger),
              " CreateDebugUtilsMessengerEXT  Failed\n");
 
-    //create Vulkan Surface
-    // TODO cross platform support
-    surface = createSurface(instance,window);
-
-    physicalDevice = PickPhysicalDevice(instance,surface);
-    TH_WITH_MSG( physicalDevice == VK_NULL_HANDLE,"failed to find GPU\n");
-
-    //获取家族队列信息及支持task 也支持graphics
-    QueueFamilyIndices indices = VulkanUtils::fetchFamilyIndices(physicalDevice,surface);
-    auto queuesInfo = createDeviceQueueCreateInfo(indices);
 
 
-    device= createDevice(physicalDevice ,queuesInfo,requiredPhysicalDeviceExtensions,requiredValidationLayers);
+    physicalDevice = PickPhysicalDevice(instance);
+    graphicsQueueFamily = VulkanUtils::fetchGraphicsQueueFamily(physicalDevice);
+    VkDeviceQueueCreateInfo graphicsQueueInfo = {};
+    static const float queuePriority = 1.0f;
+    graphicsQueueInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    graphicsQueueInfo.queueFamilyIndex = graphicsQueueFamily;
+    graphicsQueueInfo.queueCount = 1;
+    graphicsQueueInfo.pQueuePriorities = &queuePriority;
+
+
+    device= createDevice(physicalDevice ,graphicsQueueInfo,requiredPhysicalDeviceExtensions,requiredValidationLayers);
     volkLoadDevice(device);
 
     //Get Logical Device
-    vkGetDeviceQueue(device,indices.graphicsFamily.value(),0,&graphicsQueue);
-    TH_WITH_MSG(graphicsQueue == VK_NULL_HANDLE,"Get graphics queue from logical device failed");
 
-    vkGetDeviceQueue(device,indices.presentFamily.value(),0,&presentQueue);
-    TH_WITH_MSG(presentQueue == VK_NULL_HANDLE,"Get present queue from logical device failed");
+    vkGetDeviceQueue(device,graphicsQueueFamily,0,&graphicsQueue);
+    TH_WITH_MSG(graphicsQueue == VK_NULL_HANDLE,"Get graphics queue from logical device failed");
 
 
     ////Create CommandPool
     VkCommandPoolCreateInfo commandPoolInfo{};
     commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.value();
+    commandPoolInfo.queueFamilyIndex = graphicsQueueFamily;
     commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // Optional
     VK_CHECK(vkCreateCommandPool(device, &commandPoolInfo, nullptr, &commandPool),"failed to create command pool!");
 
@@ -214,43 +206,16 @@ void VulkanContext::init(GLFWwindow* window) {
 
 
 //TODO Pick Suitable GPU
-int VulkanContext::checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurfaceKHR& v_surface) {
-
-    QueueFamilyIndices indices = VulkanUtils::fetchFamilyIndices(physical_device,surface);
-    if(!indices.isComplete())
-        return -1;
-
-
+int VulkanContext::checkPhysicalDevice(VkPhysicalDevice physical_device) {
     if( !VulkanUtils::checkPhysicalDeviceExtensions(physical_device,requiredPhysicalDeviceExtensions)){
         return -1;
     }
 
-    uint32_t formatCount=0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device,surface,&formatCount, nullptr);
-
-    uint32_t present_count =0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device,surface,&present_count, nullptr);
-
-    if(formatCount ==0 || present_count == 0){
-        return -1;
-    }
-
-    /*
-     * TODO
-    SwapchainSupportedDetails details = fetchSwapchainSupportedDetails(physical_device,surface);
-
-    if(details.formats.empty() || details.presentModes.empty()){
-        return false;
-    }
-     */
-
-    //TODO only checks for test remove later
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(physical_device,&deviceProperties);
 
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceFeatures(physical_device,&deviceFeatures);
-
 
     int count = 0;
 
@@ -274,7 +239,7 @@ int VulkanContext::checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurfac
 }
 
 
-VkPhysicalDevice VulkanContext::PickPhysicalDevice(VkInstance instance,VkSurfaceKHR surface){
+VkPhysicalDevice VulkanContext::PickPhysicalDevice(VkInstance instance){
     //枚举物理设备
     uint32_t deviceCount =0;
     vkEnumeratePhysicalDevices(instance,&deviceCount, nullptr);
@@ -287,7 +252,7 @@ VkPhysicalDevice VulkanContext::PickPhysicalDevice(VkInstance instance,VkSurface
     VkPhysicalDevice best_device = VK_NULL_HANDLE;
     int GPU = -1;
     for (const auto& physical_device :physicalDevices) {
-        int current_gpu =  checkPhysicalDevice(physical_device,surface);
+        int current_gpu =  checkPhysicalDevice(physical_device);
         if(current_gpu == -1)
             continue;
         if(GPU > current_gpu)
@@ -305,19 +270,16 @@ void VulkanContext::shutdown() {
 
     vkDestroyCommandPool(device,commandPool, nullptr);
     commandPool = VK_NULL_HANDLE;
-
-//    vkDestroyDebugUtilsMessengerEXT(instance,debugMessenger, nullptr);
-//
-
 //    vkDestroyDevice(device, nullptr);
 //    device=VK_NULL_HANDLE;
-//
-//    vkDestroySurfaceKHR(instance,surface, nullptr);
-//    surface = VK_NULL_HANDLE;
-//
-//
+//    vkDestroyDebugUtilsMessengerEXT(instance,debugMessenger, nullptr);
+
+    graphicsQueueFamily = 0xFFFF;
+    graphicsQueue = VK_NULL_HANDLE;
+
 //    vkDestroyInstance(instance, nullptr);
 //    instance= VK_NULL_HANDLE;
+
 }
 
 VulkanContext::VulkanContext() {

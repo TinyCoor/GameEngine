@@ -91,9 +91,9 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t imag
                                stagingBufferMemory);
 
     void* data;
-    vkMapMemory(context->device, stagingBufferMemory, 0, imageSize, 0, &data);
+    vkMapMemory(context->Device(), stagingBufferMemory, 0, imageSize, 0, &data);
     memcpy(data, pixels, static_cast<size_t>(imageSize));
-    vkUnmapMemory(context->device, stagingBufferMemory);
+    vkUnmapMemory(context->Device(), stagingBufferMemory);
 
     VulkanUtils::createImage2D(context,width,
                                height,
@@ -129,25 +129,25 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t imag
                                        0,mipLevels);
 
     //clean up
-    vkDestroyBuffer(context->device,stagingBuffer, nullptr);
-    vkFreeMemory(context->device, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(context->Device(),stagingBuffer, nullptr);
+    vkFreeMemory(context->Device(), stagingBufferMemory, nullptr);
 
     //create ImageView
-    imageView =VulkanUtils::createImageView(context->device,
+    imageView =VulkanUtils::createImageView(context->Device(),
                                               image,
                                               imageFormat,
                                               VK_IMAGE_ASPECT_COLOR_BIT,
                                                VK_IMAGE_VIEW_TYPE_2D,
                                               0,mipLevels,0,layers);
 
-    imageSampler = VulkanUtils::createSampler(context->device,0,mipLevels);
+    imageSampler = VulkanUtils::createSampler(context->Device(),0,mipLevels);
 
     // Create mip image views
     mipViews.resize(mipLevels);
     for (int i = 0; i < mipLevels; i++)
     {
         mipViews[i] = VulkanUtils::createImageView(
-                context->device,
+                context->Device(),
                 image,
                 imageFormat,
                 VK_IMAGE_ASPECT_COLOR_BIT,
@@ -160,17 +160,17 @@ void VulkanTexture::uploadToGPU(VkFormat format,VkImageTiling tiling,size_t imag
 }
 
 void VulkanTexture::clearGPUData() {
-    vkDestroySampler(context->device,imageSampler, nullptr);
+    vkDestroySampler(context->Device(),imageSampler, nullptr);
     imageSampler =VK_NULL_HANDLE;
-    vkDestroyImageView(context->device,imageView, nullptr);
+    vkDestroyImageView(context->Device(),imageView, nullptr);
     imageView =VK_NULL_HANDLE;
-    vkDestroyImage(context->device, image, nullptr);
+    vkDestroyImage(context->Device(), image, nullptr);
     image =VK_NULL_HANDLE;
-    vkFreeMemory(context->device, imageMemory, nullptr);
+    vkFreeMemory(context->Device(), imageMemory, nullptr);
     imageMemory =VK_NULL_HANDLE;
 
     for (int i = 0; i < mipViews.size(); ++i) {
-        vkDestroyImageView(context->device,mipViews[i], nullptr);
+        vkDestroyImageView(context->Device(),mipViews[i], nullptr);
     }
     mipViews.clear();
 
@@ -272,21 +272,21 @@ void VulkanTexture::createCube(VkFormat format,int w,int h,int numMipLevels)
 
 
 
-    imageView =VulkanUtils::createImageView(context->device,
+    imageView =VulkanUtils::createImageView(context->Device(),
                                             image,
                                             format,
                                             VK_IMAGE_ASPECT_COLOR_BIT,
                                             VK_IMAGE_VIEW_TYPE_CUBE,
                                             0,mipLevels,
                                             0,layers);
-    imageSampler = VulkanUtils::createSampler(context->device, 0, mipLevels);
+    imageSampler = VulkanUtils::createSampler(context->Device(), 0, mipLevels);
 
     // Create mip image views
     mipViews.resize(mipLevels);
     for (int i = 0; i < mipLevels; i++)
     {
         mipViews[i] = VulkanUtils::createImageView(
-                context->device,
+                context->Device(),
                 image,
                 imageFormat,
                 VK_IMAGE_ASPECT_COLOR_BIT,
@@ -331,21 +331,21 @@ void VulkanTexture::create2D(VkFormat format, int w, int h, int numMipLevels) {
 
 
 
-    imageView =VulkanUtils::createImageView(context->device,
+    imageView =VulkanUtils::createImageView(context->Device(),
                                             image,
                                             format,
                                             VK_IMAGE_ASPECT_COLOR_BIT,
                                             VK_IMAGE_VIEW_TYPE_2D,
                                             0,mipLevels,
                                             0,layers);
-    imageSampler= VulkanUtils::createSampler(context->device,0,mipLevels);
+    imageSampler= VulkanUtils::createSampler(context->Device(),0,mipLevels);
 
     // Create mip image views
     mipViews.resize(mipLevels);
     for (int i = 0; i < mipLevels; i++)
     {
         mipViews[i] = VulkanUtils::createImageView(
-                context->device,
+                context->Device(),
                 image,
                 imageFormat,
                 VK_IMAGE_ASPECT_COLOR_BIT,

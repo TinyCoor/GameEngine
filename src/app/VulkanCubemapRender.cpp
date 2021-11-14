@@ -32,7 +32,7 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
 
     for (int i = 0; i < 6; ++i) {
         faceViews[i]=VulkanUtils::createImageView(
-                context->device,
+                context->Device(),
                 targetTexture->getImage(),
                 targetTexture->getImageFormat(),
                 VK_IMAGE_ASPECT_COLOR_BIT,
@@ -129,10 +129,10 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
     // Create descriptor sets
     VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
     descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    descriptorSetAllocInfo.descriptorPool = context->descriptorPool;
+    descriptorSetAllocInfo.descriptorPool = context->DescriptorPool();
     descriptorSetAllocInfo.descriptorSetCount = 1;
     descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayout;
-    VK_CHECK(vkAllocateDescriptorSets(context->device, &descriptorSetAllocInfo, &descriptorSet),"Can't allocate descriptor sets");
+    VK_CHECK(vkAllocateDescriptorSets(context->Device(), &descriptorSetAllocInfo, &descriptorSet),"Can't allocate descriptor sets");
 
 
     //create frameBuffer
@@ -144,19 +144,19 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
     framebufferInfo.width = targetExtent.width;
     framebufferInfo.height =targetExtent.height;
     framebufferInfo.layers = 1;
-    VK_CHECK(vkCreateFramebuffer(context->device, &framebufferInfo, nullptr, &frameBuffer),"Can't create framebuffer");
+    VK_CHECK(vkCreateFramebuffer(context->Device(), &framebufferInfo, nullptr, &frameBuffer),"Can't create framebuffer");
 
     // Create command buffers
     VkCommandBufferAllocateInfo allocateInfo = {};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocateInfo.commandPool = context->commandPool;
+    allocateInfo.commandPool = context->CommandPool();
     allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocateInfo.commandBufferCount = 1;
-    VK_CHECK(vkAllocateCommandBuffers(context->device, &allocateInfo, &commandBuffer),"Can't create command buffers");
+    VK_CHECK(vkAllocateCommandBuffers(context->Device(), &allocateInfo, &commandBuffer),"Can't create command buffers");
 
     //fill uniform buffer
     CubemapFaceOrientationData* ubo{nullptr};
-    vkMapMemory(context->device, uniformBuffersMemory, 0, sizeof(CubemapFaceOrientationData), 0,reinterpret_cast<void **>(&ubo));
+    vkMapMemory(context->Device(), uniformBuffersMemory, 0, sizeof(CubemapFaceOrientationData), 0,reinterpret_cast<void **>(&ubo));
 
     const glm::mat4 &translateZ = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -190,10 +190,10 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
         ubo->faces[i] = faceRotations[i] * glm::lookAtRH(glm::vec3(0.0f), faceDirs[i], faceUps[i]) * translateZ;
 
 
-    vkUnmapMemory(context->device, uniformBuffersMemory);
+    vkUnmapMemory(context->Device(), uniformBuffersMemory);
 
     VulkanUtils::bindUniformBuffer(
-            context->device,
+            context->Device(),
             descriptorSet,
             0,
             uniformBuffer,
@@ -205,7 +205,7 @@ void VulkanCubeMapRender::init(std::shared_ptr <VulkanShader> vertShader,
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = 0;
-    VK_CHECK(vkCreateFence(context->device, &fenceInfo, nullptr, &fence) ,"Can't create fence");
+    VK_CHECK(vkCreateFence(context->Device(), &fenceInfo, nullptr, &fence) ,"Can't create fence");
 
 
 }
@@ -217,42 +217,42 @@ void VulkanCubeMapRender::shutdown() {
     renderQuad->clearGPUData();
     renderQuad->clearCPUData();
 
-    vkDestroyFramebuffer(context->device, frameBuffer, nullptr);
+    vkDestroyFramebuffer(context->Device(), frameBuffer, nullptr);
     frameBuffer= VK_NULL_HANDLE;
 
-    vkDestroyBuffer(context->device, uniformBuffer, nullptr);
+    vkDestroyBuffer(context->Device(), uniformBuffer, nullptr);
     uniformBuffer=VK_NULL_HANDLE;
 
-    vkFreeMemory(context->device, uniformBuffersMemory, nullptr);
+    vkFreeMemory(context->Device(), uniformBuffersMemory, nullptr);
     uniformBuffersMemory=VK_NULL_HANDLE;
 
-    vkFreeCommandBuffers(context->device,context->commandPool,1,&commandBuffer);
+    vkFreeCommandBuffers(context->Device(),context->CommandPool(),1,&commandBuffer);
     commandBuffer =VK_NULL_HANDLE;
 
     for (int i = 0; i < 6; i++)
     {
-        vkDestroyImageView(context->device, faceViews[i], nullptr);
+        vkDestroyImageView(context->Device(), faceViews[i], nullptr);
         faceViews[i] = VK_NULL_HANDLE;
     }
 
 
-    vkDestroyDescriptorSetLayout(context->device,descriptorSetLayout, nullptr);
+    vkDestroyDescriptorSetLayout(context->Device(),descriptorSetLayout, nullptr);
     descriptorSetLayout = VK_NULL_HANDLE;
 
-    vkFreeDescriptorSets(context->device,context->descriptorPool,1,&descriptorSet);
+    vkFreeDescriptorSets(context->Device(),context->DescriptorPool(),1,&descriptorSet);
     descriptorSet =VK_NULL_HANDLE;
 
 
-    vkDestroyRenderPass(context->device,renderPass, nullptr);
+    vkDestroyRenderPass(context->Device(),renderPass, nullptr);
     renderPass = VK_NULL_HANDLE;
 
-    vkDestroyPipelineLayout(context->device,pipelineLayout, nullptr);
+    vkDestroyPipelineLayout(context->Device(),pipelineLayout, nullptr);
     pipelineLayout = VK_NULL_HANDLE;
 
-    vkDestroyPipeline(context->device,pipeline, nullptr);
+    vkDestroyPipeline(context->Device(),pipeline, nullptr);
     pipeline = VK_NULL_HANDLE;
 
-    vkDestroyFence(context->device, fence, nullptr);
+    vkDestroyFence(context->Device(), fence, nullptr);
     fence = VK_NULL_HANDLE;
 
 }
@@ -262,7 +262,7 @@ void VulkanCubeMapRender::render(std::shared_ptr <VulkanTexture> inputTexture,
                                  int mip) {
 
    VulkanUtils::bindCombinedImageSampler(
-            context->device,
+            context->Device(),
             descriptorSet,
             1,
             (mip == -1) ? inputTexture->getImageView() : inputTexture->getMipImageView(mip),
@@ -316,8 +316,8 @@ void VulkanCubeMapRender::render(std::shared_ptr <VulkanTexture> inputTexture,
     submitInfo.commandBufferCount=1;
     submitInfo.pCommandBuffers =&commandBuffer;
 
-    VK_CHECK( vkResetFences(context->device,1,&fence),"Reset Fence Failed");
-    VK_CHECK( vkQueueSubmit(context->graphicsQueue,1,&submitInfo,fence),"Submit Queue Failed");
-    VK_CHECK(vkWaitForFences(context->device, 1, &fence, VK_TRUE, 100000000000),"Can't wait for a fence");
+    VK_CHECK( vkResetFences(context->Device(),1,&fence),"Reset Fence Failed");
+    VK_CHECK( vkQueueSubmit(context->GraphicsQueue(),1,&submitInfo,fence),"Submit Queue Failed");
+    VK_CHECK(vkWaitForFences(context->Device(), 1, &fence, VK_TRUE, 100000000000),"Can't wait for a fence");
 
 }

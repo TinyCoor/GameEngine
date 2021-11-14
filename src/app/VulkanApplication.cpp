@@ -65,7 +65,7 @@ Application::~Application(){
 void Application::initVulkan() {
     if(context == nullptr){
         context =new VulkanContext;
-        context->init(window);
+        context->init();
     }
 }
 
@@ -200,7 +200,7 @@ void Application::mainLoop() {
         glfwPollEvents();
     }
 
-    vkDeviceWaitIdle(context->device);
+    vkDeviceWaitIdle(context->Device());
 }
 
 
@@ -234,7 +234,7 @@ void Application::initRenders() {
 void Application::initVulkanSwapChain() {
   //TODO
     if (!swapChain){
-        swapChain= std::shared_ptr<VulkanSwapChain>(new VulkanSwapChain(context, sizeof(RenderState)));
+        swapChain= std::shared_ptr<VulkanSwapChain>(new VulkanSwapChain(context, window,sizeof(RenderState)));
     }
 
     int width,height;
@@ -268,7 +268,7 @@ void Application::recreateSwapChain() {
         glfwGetFramebufferSize(window,&width,&height);
         glfwPollEvents();
     }
-    vkDeviceWaitIdle(context->device);
+    vkDeviceWaitIdle(context->Device());
 
     glfwGetWindowSize(window,&width,&height);
     swapChain->reinit(width,height);
