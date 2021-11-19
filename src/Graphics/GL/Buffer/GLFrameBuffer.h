@@ -1,0 +1,14 @@
+//
+// Created by 12132 on 2021/11/17.
+//
+
+#ifndef GAMEENGINE_GLFRAMEBUFFER_H
+#define GAMEENGINE_GLFRAMEBUFFER_H
+
+
+class GLFrameBuffer {
+
+};
+
+
+#endif //GAMEENGINE_GLFRAMEBUFFER_H

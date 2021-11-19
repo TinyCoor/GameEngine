@@ -1,0 +1,14 @@
+//
+// Created by 12132 on 2021/11/17.
+//
+
+#ifndef GAMEENGINE_GLPIXELBUFFER_H
+#define GAMEENGINE_GLPIXELBUFFER_H
+
+
+class GLPixelBuffer {
+
+};
+
+
+#endif //GAMEENGINE_GLPIXELBUFFER_H

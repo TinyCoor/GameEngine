@@ -11,6 +11,7 @@ template<GLenum type>
 class BufferPolicy{
 public:
     static constexpr GLenum buffer_type = type;
+
     static GLHANDLE  createBufferObject(){
         GLHANDLE buffer_handle;
         glCreateBuffers(1,&buffer_handle);
@@ -67,10 +68,29 @@ public:
 };
 
 //TODO add comment
+/**
+ *
+ * @tparam buf_type
+ *      GL_ARRAY_BUFFER:顶点数组缓存，存放顶点数据
+ *      GL_COPY_READ_BUFFER:用于拷贝缓存之间的数据，不会引起OpenGL状态变化
+ *      GL_COPY_WRITE_BUFFER:用于拷贝缓存之间的数据，不会引起OpenGL状态变化
+ *      GL_DRAW_INDIRECT_BUFFER:如果采取间接绘制，该缓存存放间接绘制的命令
+ *      GL_ELEMENT_ARRAY_BUFFER:存放的是顶点索引数据
+ *      GL_PIXEL_PACK_BUFFER: 用于从图像中读取数据
+ *      GL_PIXEL_UNPACK_BUFFER: 作为图像的数据来源
+ *      GL_TEXTURE_BUFFER:纹理缓存，绑定到纹理对象的缓存,可以在shader 中读取数据
+ *      GL_TRANSFORM_FEEDBACK_BUFFER:用于存放被捕获的顶点
+ *      GL_UNIFORM_BUFFER: uniform 缓存变量
+ *      GL_FRAMEBUFFER：帧缓存
+ *      GL_RENDERBUFFER：渲染缓存
+ * @tparam BufferTypePolicy
+ */
+
+
 template<GLenum buf_type,template<GLenum > class BufferTypePolicy = BufferPolicy>
 class GLBuffer : public GLObject {
 public:
-
+    uint32_t byte_buffer_size = 0;
     GLBuffer(): GLObject(BufferTypePolicy<buf_type>::createBufferObject(),"GLBuffer"){
 
     }
@@ -100,13 +120,14 @@ public:
      * @param flag
      *      缓存用途标识符
      *      GL_DYNAMIC_STORAGE_BIT:
-     *      GL_MAP_READ_BIT: 将缓存映射到CPU端读取数据，未设置调用glMapNamedBufferRange() 会失败
+     *      GL_MAP_READ_BIT: 将缓存映射到 CPU端读取数据，未设置调用glMapNamedBufferRange() 会失败
      *      GL_MAP_WRITE_BIT：将缓存映射到CPU端写入数据，未设置调用glMapNamedBufferRange() 会失败
      *      GL_MAP_PERSISTENT_BIT: 对缓存的数据映射是永久的，渲染过程一直有效
      *      GL_MAP_COHERENT_BIT: 缓存数据在GPU和CPU端保持一直
      *      GL_CLIENT_STORAGE_BIT:优先选择cpu端访问
      */
-    void CopyToGPU(uint8_t* data,uint32_t size, GLbitfield flag){
+    void CopyToGPU(void* data,uint32_t size, GLbitfield flag){
+        byte_buffer_size = size;
         glNamedBufferStorage(this->handle,size,data,flag);
     }
 
@@ -145,19 +166,25 @@ public:
     }
 
     //将当前缓存映射到CPU端
+    //TODO Remove it in other place is not suitable for all
+    // GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_PIXEL_PACK_BUFFER, or GL_PIXEL_UNPACK_BUFFER.
+
     void*  Map(GLenum access){
        return glMapBuffer(this->handle,access);
     }
 
     //解除内存映射
+    // TODO
     bool UnMap(){
       return  glUnmapNamedBuffer(this->handle);
     }
 
+    //TODO
     void* MapBufferPart(size_t offset,size_t length,GLbitfield flags){
         return glMapNamedBufferRange(this->handle, offset,length,flags);
     }
     //缓存更新立即刷洗通知GPU
+    //TODO
     void Flush(int offset,size_t length){
         glFlushMappedBufferRange(this->handle,offset,length);
     }
