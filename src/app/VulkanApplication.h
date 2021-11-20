@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_VULKANAPPLICATION_H
 #define GAMEENGINE_VULKANAPPLICATION_H
-#include "VulkanContext.h"
+#include "../Graphics/Vulkan/VulkanContext.h"
 #include "RenderState.h"
 #include <volk.h>
 #include <memory>

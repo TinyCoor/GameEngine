@@ -2,8 +2,8 @@
 // Created by 12132 on 2021/10/30.
 //
 
-#ifndef GAMEENGINE_RESOURCEMANAGER_H
-#define GAMEENGINE_RESOURCEMANAGER_H
+#ifndef GAMEENGINE_VULKANRESOURCEMANAGER_H
+#define GAMEENGINE_VULKANRESOURCEMANAGER_H
 #include "VulkanContext.h"
 #include "VulkanShader.h"
 #include <unordered_map>
@@ -43,4 +43,4 @@ private:
 };
 
 
-#endif //GAMEENGINE_RESOURCEMANAGER_H
+#endif //GAMEENGINE_VULKANRESOURCEMANAGER_H

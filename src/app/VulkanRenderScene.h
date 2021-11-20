@@ -5,7 +5,7 @@
 #ifndef GAMEENGINE_RENDER_DATA_H
 #define GAMEENGINE_RENDER_DATA_H
 #include <volk.h>
-#include "ResourceManager.h"
+#include "../Graphics/Vulkan/VulkanResourceManager.h"
 #include "config.h"
 
 class VulkanRenderScene {
@@ -31,7 +31,6 @@ public:
     inline std::shared_ptr<VulkanShader> getHDRToCubeFragmentShader(){return resource.getShader(config::Shaders::hdriToCubeFrag);}
     inline std::shared_ptr<VulkanShader> getDiffuseToIrridanceShader(){return resource.getShader(config::Shaders::diffuseIrrandianceFrag);}
 
-
     inline std::shared_ptr<VulkanShader> getBakedVertexShader() {return resource.getShader(config::Shaders::BakedBRDFVertex);}
     inline std::shared_ptr<VulkanShader> getBakedFragmentShader() {return resource.getShader(config::Shaders::BakedBRDFFrag);}
 
@@ -48,7 +47,6 @@ public:
     inline const char* getHDRTexturePath(int index) const {return config::hdrTextures[index];}
 
     bool reloadShader();
-
 
 };
 

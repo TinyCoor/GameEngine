@@ -17,7 +17,6 @@ enum class ShaderKind{
     geometry,
     tessellation_control,
     tessellation_evaluation,
-
 };
 
 class VulkanShader {
@@ -37,11 +36,9 @@ private:
     bool compileFromSource(const char* path,const char* source,size_t size,shaderc_shader_kind kind);
 
 private:
-
     const VulkanContext* context;
     VkShaderModule shaderModule{VK_NULL_HANDLE};
     std::string_view shader_path;
-
 };
 
 

@@ -2,10 +2,10 @@
 // Created by y123456 on 2021/10/11.
 //
 #include "VulkanApplication.h"
-#include "VulkanSwapChain.h"
+#include "../Graphics/Vulkan/VulkanSwapChain.h"
 #include "VulkanRenderScene.h"
-#include "VulkanRender.h"
-#include "VulkanImGuiRender.h"
+#include "../Graphics/Vulkan/VulkanRender.h"
+#include "../Graphics/Vulkan/VulkanImGuiRender.h"
 #include <chrono>
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
@@ -107,7 +107,30 @@ void Application::RenderFrame(){
     }
 
     render->render(scene, frame);
-    ImGuiRender->render(scene,frame);
+//    todo
+//   opaque geometry -> node1 -> gbuffer -> node2 ->accumulation buffer
+//                                  --    light ---
+//                                              --- node3->scene ->frame-> node4 -> postprocess
+//    VulkanRenderPass mainRenderPass;
+//    VulkanGraphicsProgram skyboxProgram;
+//    VulkanGraphicsProgram pbrProgram;
+
+//
+//   VulkanTexture ao;
+//   VulkanTexture normal
+//   VulkanTexture roughnessandMetalness
+//
+//
+//    VulkanMesh skybox;
+//    VulkanMesh model;
+//
+//    render->BindGraphicsProgram(skyboxProgram);
+//    render->drawIndexedPrimitive(skybox);
+//
+//    render->BindGraphicsProgram(pbrProgram);
+//    render->drawIndexedPrimitive(model);
+
+    ImGuiRender->render(frame);
 
     if(!swapChain->Present(frame) || windowResized){
         windowResized = false;
@@ -225,14 +248,14 @@ void Application::initRenders() {
     render->setEnvironment(scene->getHDRTexture( state.currentEnvironment));
 
     if (!ImGuiRender){
-        ImGuiRender = new VulkanImGuiRender(context,swapChain->getExtent(),swapChain->getNoClearRenderPass());
-         ImGuiRender->init(scene,swapChain);
+        ImGuiRender = new VulkanImGuiRender(context,ImGui::GetCurrentContext(),swapChain->getExtent(),swapChain->getNoClearRenderPass());
+         ImGuiRender->init(swapChain);
     }
 }
 
 
 void Application::initVulkanSwapChain() {
-  //TODO
+
     if (!swapChain){
         swapChain= std::shared_ptr<VulkanSwapChain>(new VulkanSwapChain(context, window,sizeof(RenderState)));
     }

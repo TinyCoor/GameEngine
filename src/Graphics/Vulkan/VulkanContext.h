@@ -18,10 +18,10 @@ public:
     VulkanContext();
     ~VulkanContext();
 
-
-
     void init();
     void shutdown();
+    void wait();
+
     inline const VkInstance& Instance()const{return instance;}
     inline const VkPhysicalDevice& PhysicalDevice() const { return physicalDevice;}
     inline const VkDevice& Device() const{return device;}
@@ -46,6 +46,10 @@ private:
     VkQueue graphicsQueue =VK_NULL_HANDLE;
     VkSampleCountFlagBits maxMSAASamples{VK_SAMPLE_COUNT_1_BIT};
     VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
+
+    /// 同一物理设备下有多个队列，每个队列可能支持的功能不一致
+
+    /// 图形 和 呈现 需要找到支持这两个设备的队列索引(族)和队列
 
 };
 

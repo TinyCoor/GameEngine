@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "ResourceManager.h"
+#include "VulkanResourceManager.h"
 #include "VulkanTexture.h"
 #include "VulkanMesh.h"
 

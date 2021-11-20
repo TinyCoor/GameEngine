@@ -3,9 +3,9 @@
 //
 
 #include "VulkanImGuiRender.h"
-#include "VulkanRenderScene.h"
+#include "../../app/VulkanRenderScene.h"
 #include "VulkanUtils.h"
-#include "RenderState.h"
+#include "../../app/RenderState.h"
 #include "VulkanSwapChain.h"
 #include "VulkanTexture.h"
 #include "Macro.h"
@@ -16,20 +16,25 @@
 
 
 VulkanImGuiRender::VulkanImGuiRender(const VulkanContext *ctx,
+                                     ImGuiContext* imgui_ctx,
                                      VkExtent2D size,
                                      VkRenderPass pass)
-:context(ctx),extent(size),renderPass(pass)
+    : context(ctx),
+      imGuiContext(imgui_ctx),
+      extent(size),
+      renderPass(pass)
 {
 
 }
 
 VulkanImGuiRender::~VulkanImGuiRender()
 {
+    shutdown();
 }
 
-void VulkanImGuiRender::init(VulkanRenderScene *scene,
-                             std::shared_ptr<VulkanSwapChain> swapChain)
+void VulkanImGuiRender::init(std::shared_ptr<VulkanSwapChain> swapChain)
 {
+
     // Init ImGui bindings for Vulkan
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = context->Instance();
@@ -41,11 +46,8 @@ void VulkanImGuiRender::init(VulkanRenderScene *scene,
     init_info.MSAASamples = context->MaxMSAASamples();
     init_info.MinImageCount = swapChain->getNumImages();
     init_info.ImageCount = swapChain->getNumImages();
-    init_info.Allocator = nullptr;
 
-    //TODO Fix Bug In this Function VkCreateSampler Cause Segmentation
     ImGui_ImplVulkan_Init(&init_info,swapChain->getRenderPass());
-
 
     VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(context);
     ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
@@ -53,7 +55,7 @@ void VulkanImGuiRender::init(VulkanRenderScene *scene,
 
 }
 
-void VulkanImGuiRender::render(VulkanRenderScene *scene,const VulkanRenderFrame& frame)
+void VulkanImGuiRender::render(const VulkanRenderFrame& frame)
 {
     VkCommandBuffer commandBuffer = frame.commandBuffer;
     VkFramebuffer frameBuffer = frame.frameBuffer;
@@ -80,6 +82,7 @@ void VulkanImGuiRender::render(VulkanRenderScene *scene,const VulkanRenderFrame&
 
 void VulkanImGuiRender::shutdown() {
     ImGui_ImplVulkan_Shutdown();
+    imGuiContext = nullptr;
 }
 
 void VulkanImGuiRender::resize(std::shared_ptr<VulkanSwapChain> swapChain) {

@@ -66,14 +66,12 @@ uint32_t VulkanUtils::fetchPresentQueueFamily(
     return 0xFFFF;
 }
 
-/*
- */
 
-QueueFamilyIndices VulkanUtils::fetchFamilyIndices(VkPhysicalDevice& physcalDevice,VkSurfaceKHR & surface) {
+QueueFamilyIndices VulkanUtils::fetchFamilyIndices(VkPhysicalDevice& physicalDevice,VkSurfaceKHR & surface) {
     uint32_t queueCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physcalDevice,&queueCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice,&queueCount, nullptr);
     std::vector<VkQueueFamilyProperties> queueFamilies(queueCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physcalDevice,&queueCount,queueFamilies.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice,&queueCount,queueFamilies.data());
     QueueFamilyIndices indices{};
     for (int i = 0; i< queueFamilies.size();++i) {
 
@@ -82,11 +80,11 @@ QueueFamilyIndices VulkanUtils::fetchFamilyIndices(VkPhysicalDevice& physcalDevi
         }
 
         VkBool32  presentSupport= false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physcalDevice,i,surface,&presentSupport);
-        if(queueFamilies[i].queueCount > 0 && presentSupport){
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice,i,surface,&presentSupport);
+        if (queueFamilies[i].queueCount > 0 && presentSupport){
             indices.presentFamily = std::make_optional(i);
         }
-        if(indices.isComplete()){
+        if (indices.isComplete()){
             break;
         }
     }

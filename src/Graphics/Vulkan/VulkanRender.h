@@ -10,13 +10,14 @@
 #include <volk.h>
 #include <vector>
 
-struct VulkanRenderFrame;
-class VulkanTexture;
-class VulkanRenderScene;
-class VulkanSwapChain;
-class VulkanRenderScene;
+
 struct RenderState;
 class VulkanContext;
+class VulkanTexture;
+class VulkanSwapChain;
+class VulkanRenderScene;
+class VulkanRenderScene;
+struct VulkanRenderFrame;
 
 class VulkanRender {
 private:

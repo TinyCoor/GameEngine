@@ -207,24 +207,18 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
     }
 
     //TODO RGB convert rbga
-
     if(!stb_pixels){
         std::cerr<< "load file failed:" << path <<'\n';
         return false;
     }
 
     layers = 1;
-
     VkFormat format = deduceFormat(pixelSize,channels);
     VkImageTiling tiling = deduceTiling(format);
 
     clearCPUData();
-
     size_t imageSize = width * height * channels * pixelSize;
     pixels = new unsigned char[imageSize];
-
-    //TODO refractor rgb to rgba
-
 
     memcpy(pixels,stb_pixels,imageSize);
 
@@ -233,7 +227,6 @@ bool  VulkanTexture::loadFromFile(const std::string &path) {
 
     clearGPUData();
     uploadToGPU(format,tiling,imageSize);
-
     return true;
 }
 

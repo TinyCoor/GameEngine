@@ -4,38 +4,39 @@
 
 #ifndef GAMEENGINE_VULKANIMGUIRENDER_H
 #define GAMEENGINE_VULKANIMGUIRENDER_H
-#include "VulkanContext.h"
 
 #include <memory>
-#include <imgui.h>
+#include <volk.h>
 
 struct RenderState;
+struct ImGuiContext;
 class VulkanRenderScene;
 struct VulkanRenderFrame;
 class VulkanSwapChain;
 class VulkanTexture;
+class VulkanContext;
 
 
 class VulkanImGuiRender {
 public:
     explicit VulkanImGuiRender(const VulkanContext* ctx,
+                               ImGuiContext* imgui_ctx,
                                VkExtent2D extent,
                                VkRenderPass renderPass);
 
     virtual ~VulkanImGuiRender();
 
-    void init(VulkanRenderScene* scene,
-             std::shared_ptr<VulkanSwapChain> swapChain);
+    void init(std::shared_ptr<VulkanSwapChain> swapChain);
 
     void shutdown();
 
     void resize(std::shared_ptr<VulkanSwapChain> swapChain);
 
-    void render(VulkanRenderScene* scene,const VulkanRenderFrame& frame);
-
+    void render(const VulkanRenderFrame& frame);
 
 private:
-    const VulkanContext* context;
+    const VulkanContext* context{nullptr};
+    ImGuiContext* imGuiContext{nullptr};
     VkRenderPass renderPass;
     VkExtent2D extent;
 };

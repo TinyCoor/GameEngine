@@ -6,11 +6,11 @@
 #define GAMEENGINE_VULKANTEXTURE2DRENDER_H
 #include <memory>
 #include <volk.h>
+
 class VulkanContext;
 class VulkanMesh;
 class VulkanTexture;
 class VulkanShader;
-
 
 
 class VulkanTexture2DRender {

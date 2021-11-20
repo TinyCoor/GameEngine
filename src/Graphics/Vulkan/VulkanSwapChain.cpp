@@ -1,7 +1,7 @@
 
 #include "VulkanSwapChain.h"
 #include "VulkanUtils.h"
-#include "VulkanApplication.h"
+#include "../../app/VulkanApplication.h"
 #include "Macro.h"
 #include "VulkanDescriptorSetLayoutBuilder.h"
 #include "VulkanRenderPassBuilder.h"
@@ -11,16 +11,14 @@
 #include <cassert>
 
 VulkanSwapChain::VulkanSwapChain(const VulkanContext* ctx,void* navWindow,VkDeviceSize Size)
-:context(ctx),nativeWindow(navWindow), uboSize(Size){
-
-}
+    : context(ctx),
+      nativeWindow(navWindow),
+      uboSize(Size){}
 
 VulkanSwapChain::~VulkanSwapChain() {
-
-//    shutdown();
 }
 
-void VulkanSwapChain::init(int width,int height) {
+void VulkanSwapChain::init(int width, int height) {
     initPersistent();
     initTransient(width,height);
     initFrames(uboSize);
@@ -87,7 +85,6 @@ bool VulkanSwapChain::Acquire(const RenderState& state,VulkanRenderFrame& frame)
 bool VulkanSwapChain::Present( VulkanRenderFrame& frame) {
     VK_CHECK(vkEndCommandBuffer(frame.commandBuffer),"Can't record command buffer");
 
-    //TODO EndCommand Buffer
     VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
@@ -104,8 +101,8 @@ bool VulkanSwapChain::Present( VulkanRenderFrame& frame) {
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     vkResetFences(context->Device(), 1, &inFlightFences[currentFrame]);
-    //TODO Maybe this is a hardware error, In Surface there is a bug
-    VK_CHECK( vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]),"Can't submit command buffer");
+    VK_CHECK( vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]),
+              "Can't submit command buffer");
 
 
     VkSwapchainKHR swapChains[] = {swapchain};
@@ -158,7 +155,9 @@ void VulkanSwapChain::initFrames(VkDeviceSize uboSize) {
         swapchainDescriptorSetAllocInfo.descriptorSetCount = 1;
         swapchainDescriptorSetAllocInfo.pSetLayouts =&descriptorSetLayout;
 
-        VK_CHECK(vkAllocateDescriptorSets(context->Device(), &swapchainDescriptorSetAllocInfo, &frame.swapchainDescriptorSet),
+        VK_CHECK(vkAllocateDescriptorSets(context->Device(),
+                                          &swapchainDescriptorSetAllocInfo,
+                                          &frame.swapchainDescriptorSet),
                  "Can't allocate swap chain descriptor sets");
 
         VulkanUtils::bindUniformBuffer(
@@ -220,7 +219,9 @@ void VulkanSwapChain::shutdownFrames() {
 }
 
 void VulkanSwapChain::initPersistent() {
+    //TODO support ios android linux platform
     VK_CHECK( glfwCreateWindowSurface(context->Instance(),(GLFWwindow*)nativeWindow, nullptr,&surface),"Create Surface failed");
+
     // Fetch present queue
     presentQueueFamily = VulkanUtils::fetchPresentQueueFamily(
             context->PhysicalDevice(),

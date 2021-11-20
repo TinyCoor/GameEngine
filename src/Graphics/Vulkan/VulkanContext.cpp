@@ -24,6 +24,7 @@ static int maxCombinedImageSamplers = 32;
 static int maxUniformBuffers = 32;
 
 
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -128,10 +129,22 @@ namespace {
 }
 
 
+
+VulkanContext::VulkanContext() {
+
+}
+
+VulkanContext::~VulkanContext() {
+    shutdown();
+}
+
+void VulkanContext::wait() {
+    vkDeviceWaitIdle(device);
+}
+
+
 void VulkanContext::init() {
-
     VK_CHECK(volkInitialize(),"can not init volk help lib");
-
     //Get Instance extension
     uint32_t glfwExtensionCount =0;
     auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -155,8 +168,6 @@ void VulkanContext::init() {
 //    Create Debug Message
     VK_CHECK(vkCreateDebugUtilsMessengerEXT(instance, &debugMessengerInfo, nullptr, &debugMessenger),
              " CreateDebugUtilsMessengerEXT  Failed\n");
-
-
 
     physicalDevice = PickPhysicalDevice(instance);
     graphicsQueueFamily = VulkanUtils::fetchGraphicsQueueFamily(physicalDevice);
@@ -280,12 +291,4 @@ void VulkanContext::shutdown() {
 //    vkDestroyInstance(instance, nullptr);
 //    instance= VK_NULL_HANDLE;
 
-}
-
-VulkanContext::VulkanContext() {
-
-}
-
-VulkanContext::~VulkanContext() {
-    shutdown();
 }

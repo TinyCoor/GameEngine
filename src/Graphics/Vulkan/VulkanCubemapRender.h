@@ -8,8 +8,8 @@
 #include <memory>
 
 class VulkanMesh;
-class VulkanTexture;
 class VulkanShader;
+class VulkanTexture;
 
 class VulkanCubeMapRender {
 private:

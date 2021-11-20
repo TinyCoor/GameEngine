@@ -3,13 +3,13 @@
 //
 
 #include "VulkanRender.h"
-#include "RenderState.h"
+#include "../../app/RenderState.h"
 #include "VulkanSwapChain.h"
 #include "VulkanGraphicsPipelineBuilder.h"
 #include "VulkanDescriptorSetLayoutBuilder.h"
 #include "VulkanPipelineLayoutBuilder.h"
 #include "VulkanMesh.h"
-#include "VulkanRenderScene.h"
+#include "../../app/VulkanRenderScene.h"
 #include "Macro.h"
 #include "VulkanUtils.h"
 #include "VulkanTexture.h"
@@ -266,9 +266,7 @@ void VulkanRender::update(RenderState& state,VulkanRenderScene *scene) {
 void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame& frame ) {
     VkCommandBuffer commandBuffer = frame.commandBuffer;
     VkFramebuffer frameBuffer = frame.frameBuffer;
-    VkDeviceMemory uniformBufferMemory = frame.uniformBuffersMemory;
     VkDescriptorSet descriptorSet = frame.swapchainDescriptorSet;
-
 
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -441,9 +439,9 @@ void VulkanRender::setEnvironment(std::shared_ptr< VulkanTexture> texture) {
 
 }
 
+
 void VulkanRender::resize(const std::shared_ptr<VulkanSwapChain> swapChain) {
     extent = swapChain->getExtent();
-
 }
 
 void VulkanRender::reload( VulkanRenderScene *scene) {
