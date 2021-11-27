@@ -7,7 +7,7 @@
 
 #include <string>
 #include <vector>
-#include "VulkanShader.h"
+#include "../backend/Vulkan/VulkanShader.h"
 
 
 //TODO read config from file
@@ -42,7 +42,7 @@ namespace config{
 
 
     static std::vector< const char*> meshes={
-            "../../assets/models/SciFiHelmet.gltf",
+            "../../assets/models/SciFiHelmet.fbx",
     };
 
 

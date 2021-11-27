@@ -171,7 +171,7 @@ def main():
     print("#define E2S( en ) Enum2String( en ).c_str()")
     print("extern std::string Enum2String( GLenum e );")
     print("")
-    lines = open("../Graphics/GL/glcorearb.h").readlines()
+    lines = open("../backend/GL/glcorearb.h").readlines()
     for l in lines:
         if l[0:5:] == "GLAPI":
             generateStub(l.strip())
@@ -212,7 +212,7 @@ def main():
     print("}")
     print("")
     # generate API struct
-    out = open("../Graphics/GL/GLAPI.h", "wt")
+    out = open("../backend/GL/GLAPI.h", "wt")
     for line in WrapFuncs:
         line.strip()
         if str.find( line, "//" ) == 0 or line == "": continue

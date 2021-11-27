@@ -1,7 +1,7 @@
 #Vulkan 
 - Vulkan Object  
     - VkInstance: 
-        - Vulkan 实例对象，连接应用层和驱动层，
+      Vulkan 实例对象，连接应用层和驱动层，
         包含应用层的一些基本信息
     - VkPhysicalDevice: 物理硬件的抽象，该对象记录物理硬件的一些信息
   包含内存信息,支持的硬件扩展,同一个实例下可以有多个物理设备
@@ -42,3 +42,47 @@
     - VkSurfaceKHR:对应平台的窗口表面，用于呈现画面
     - VkSurfaceCapacity:平台表面的能力
     - VkPresentInfoKHR：呈现画面所要的信息
+##创建Vulkan app
+  - 创建 Vulkan Instance
+   首先初始化所需扩展列表，创建应用程序结构体实例
+```cpp
+//枚举实例支持的扩展  
+vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionCount, nullptr);
+//枚举实例支持的层
+vkEnumerateInstanceLayerProperties(&availableLayerCount, nullptr);
+VkInstance createInstance(std::vector<const char*>& extensions,
+  std::vector<const char*>& layers,
+  VkApplicationInfo& appInfo,
+  VkDebugUtilsMessengerCreateInfoEXT& debugMessengerInfo ){
+  VkInstance  instance;
+  VkInstanceCreateInfo instanceInfo={};
+  instanceInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+  instanceInfo.pApplicationInfo = &appInfo;
+  instanceInfo.enabledExtensionCount = extensions.size();
+  instanceInfo.ppEnabledExtensionNames =extensions.data();
+  instanceInfo.enabledLayerCount = layers.size();
+  instanceInfo.ppEnabledLayerNames = layers.data();
+  instanceInfo.pNext = &debugMessengerInfo;
+  VK_CHECK(vkCreateInstance(&instanceInfo, nullptr,&instance),"Failed to Create Instance\n");
+  return instance;
+}
+```
+  - 获取物理设备列表
+   首先获取Vulkan Instance 下的物理设备数量，获取物理设备的内存属性
+  - 创建逻辑设备 Vkdevice:获取指定物理设备的队列家族数量和属性，遍历队列家族
+记录支持图形工作的队列家族索引，设置逻辑设备需要的扩展，最后创建逻辑设备
+  - 创建命令缓冲 ：首先创建所需要的命令缓冲池VkCommandPool  
+  - 获取设备中支持图形工作的队列：根据逻辑设备及队列加载索引和队列索引获取VkQueue
+  - 初始化VkSwapChain:创建对应平台的surface,遍历所有队列，找到即支持图形绘制和显示工作的队列家族
+  获取surface 所支持的格式和数量，获取表面能力，支持的显示模式数量和模式，确定
+  宽度和高度，获取swapchain的图像数量和图像列表，创建图像视图
+  - 创建深度缓冲;
+  - 创建渲染通道(VkRenderPass)：构建通道需要的附件描述结构体数组，第一个用于描述颜色附件
+  第二个用于描述深度附件
+  - 创建帧缓冲(VkFramebuffer)
+  - 创建绘制用的物体
+  - 初始化渲染管线
+  - 创建栅栏和初始化呈现信息
+  - 初始化基本变换矩阵，摄像机举证和投影矩阵
+  - 执行绘制
+  - 销毁相关对象

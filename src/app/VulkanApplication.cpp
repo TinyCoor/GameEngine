@@ -2,12 +2,11 @@
 // Created by y123456 on 2021/10/11.
 //
 #include "VulkanApplication.h"
-#include "../Graphics/Vulkan/VulkanSwapChain.h"
+#include "../backend/Vulkan/VulkanSwapChain.h"
 #include "VulkanRenderScene.h"
-#include "../Graphics/Vulkan/VulkanRender.h"
-#include "../Graphics/Vulkan/VulkanImGuiRender.h"
+#include "../backend/Vulkan/VulkanRender.h"
+#include "../backend/Vulkan/VulkanImGuiRender.h"
 #include <chrono>
-#include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <functional>
@@ -16,7 +15,7 @@
 #include <imgui_impl_glfw.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-
+using namespace render::backend::vulkan;
 void Application::initWindow() {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -130,7 +129,7 @@ void Application::RenderFrame(){
 //    render->BindGraphicsProgram(pbrProgram);
 //    render->drawIndexedPrimitive(model);
 
-    ImGuiRender->render(frame);
+    imGuiRender->render(frame);
 
     if(!swapChain->Present(frame) || windowResized){
         windowResized = false;
@@ -234,7 +233,7 @@ void Application::shutdownRenders() {
         render = nullptr;
     }
 
-    ImGuiRender->shutdown();
+    imGuiRender->shutdown();
 
 
 }
@@ -247,9 +246,11 @@ void Application::initRenders() {
 
     render->setEnvironment(scene->getHDRTexture( state.currentEnvironment));
 
-    if (!ImGuiRender){
-        ImGuiRender = new VulkanImGuiRender(context,ImGui::GetCurrentContext(),swapChain->getExtent(),swapChain->getNoClearRenderPass());
-         ImGuiRender->init(swapChain);
+    if (!imGuiRender){
+        imGuiRender = new ImGuiRender(context,
+                                            ImGui::GetCurrentContext(),
+                                            swapChain->getExtent(),swapChain->getNoClearRenderPass());
+         imGuiRender->init(swapChain);
     }
 }
 
@@ -296,7 +297,7 @@ void Application::recreateSwapChain() {
     glfwGetWindowSize(window,&width,&height);
     swapChain->reinit(width,height);
     render->resize(swapChain);
-    ImGuiRender->resize(swapChain);
+    imGuiRender->resize(swapChain);
 
 }
 

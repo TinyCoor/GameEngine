@@ -13,6 +13,7 @@ class GameEngineConan(ConanFile):
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
     generators = "cmake"
+    build_requires = "glfw/3.3.4", "glm/0.9.9.8","volk/1.2.170","imgui/1.83","assimp/5.0.0"
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -23,14 +24,14 @@ class GameEngineConan(ConanFile):
         # This small hack might be useful to guarantee proper /MT /MD linkage
         # in MSVC if the packaged project doesn't have variables to set it
         # properly
-        tools.replace_in_file("hello/CMakeLists.txt", "PROJECT(HelloWorld)",
-                              '''PROJECT(HelloWorld)
+        tools.replace_in_file("CMakeLists.txt", "project(GameEngine)",
+                              '''project(GameEngine)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()''')
 
     def build(self):
         cmake = CMake(self)
-        cmake.configure(source_folder="hello")
+        cmake.configure(source_folder="GameEngine")
         cmake.build()
 
         # Explicit way:

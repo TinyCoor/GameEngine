@@ -1,0 +1,12 @@
+//
+// Created by 12132 on 2021/11/27.
+//
+
+#ifndef GAMEENGINE_SRC_BACKEND_GL_GLUITILS_H
+#define GAMEENGINE_SRC_BACKEND_GL_GLUITILS_H
+
+class GLUitils {
+
+};
+
+#endif //GAMEENGINE_SRC_BACKEND_GL_GLUITILS_H

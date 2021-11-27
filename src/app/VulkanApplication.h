@@ -4,94 +4,88 @@
 
 #ifndef GAMEENGINE_VULKANAPPLICATION_H
 #define GAMEENGINE_VULKANAPPLICATION_H
-#include "../Graphics/Vulkan/VulkanContext.h"
+#include "../backend/Vulkan/VulkanContext.h"
 #include "RenderState.h"
+#include "../backend/Vulkan/VulkanSwapChain.h"
+#include "../backend/Vulkan/VulkanImGuiRender.h"
+#include "../backend/Vulkan/VulkanRender.h"
 #include <volk.h>
 #include <memory>
 #include <imgui.h>
 
 class GLFWwindow;
-class VulkanRender;
-class VulkanRenderScene;
-class VulkanSwapChain;
-class VulkanImGuiRender;
+using namespace render::backend::vulkan;
 
-
-struct CameraState
-{
-    double phi {0.0f};
-    double theta {0.0f};
-    double radius {2.0f};
-    glm::vec3 target;
+struct CameraState {
+  double phi{0.0f};
+  double theta{0.0f};
+  double radius{2.0f};
+  glm::vec3 target;
 };
 
-struct InputState
-{
-    const double rotationSpeed {0.01};
-    const double scrollSpeed {1.5};
-    bool rotating {false};
-    double lastMouseX {0.0};
-    double lastMouseY {0.0};
+struct InputState {
+  const double rotationSpeed{0.01};
+  const double scrollSpeed{1.5};
+  bool rotating{false};
+  double lastMouseX{0.0};
+  double lastMouseY{0.0};
 };
 
-
-class Application{
+class Application {
 public:
 
-    Application();
-    ~Application();
-    void run();
+  Application();
+  ~Application();
+  void run();
 
 private:
 
-    void initWindow();
-    void initVulkan();
-    void shutdownVulkan();
+  void initWindow();
+  void initVulkan();
+  void shutdownVulkan();
 
-    void initVulkanSwapChain();
-    void shutdownSwapChain();
+  void initVulkanSwapChain();
+  void shutdownSwapChain();
 
-    void initScene();
-    void shutdownScene();
+  void initScene();
+  void shutdownScene();
 
-    void initImGui();
-    void shutdownImGui();
+  void initImGui();
+  void shutdownImGui();
 
-    void initRenders();
-    void shutdownRenders();
+  void initRenders();
+  void shutdownRenders();
 
-    void mainLoop();
-    void update();
-    void RenderFrame();
-    void shutdownWindow();
+  void mainLoop();
+  void update();
+  void RenderFrame();
+  void shutdownWindow();
 
-    void recreateSwapChain();
+  void recreateSwapChain();
 
-    static void OnFrameBufferResized(GLFWwindow* window,int width,int height);
-    static void onMousePosition(GLFWwindow* window, double mouseX, double mouseY);
-    static void onMouseButton(GLFWwindow* window, int button, int action, int mods);
-    static void onScroll(GLFWwindow* window, double deltaX, double deltaY);
-
+  static void OnFrameBufferResized(GLFWwindow *window, int width, int height);
+  static void onMousePosition(GLFWwindow *window, double mouseX, double mouseY);
+  static void onMouseButton(GLFWwindow *window, int button, int action, int mods);
+  static void onScroll(GLFWwindow *window, double deltaX, double deltaY);
 
 private:
-    GLFWwindow* window{nullptr};
-    bool windowResized = false;
+  GLFWwindow *window{nullptr};
+  bool windowResized = false;
 
-    VulkanContext* context{nullptr};
-    VulkanRenderScene* scene{nullptr};
-    RenderState state;
-    //TODO remove
-    static inline ImTextureID bakedBRDF{nullptr};
+  VulkanContext *context{nullptr};
+  VulkanRenderScene *scene{nullptr};
+  RenderState state;
+  //TODO remove
+  static inline ImTextureID bakedBRDF{nullptr};
 
-    VulkanRender* render{nullptr};
-    VulkanImGuiRender* ImGuiRender{nullptr};
+  VulkanRender *render{nullptr};
+  ImGuiRender *imGuiRender{nullptr};
 
-    std::shared_ptr<VulkanSwapChain> swapChain;
+  std::shared_ptr<VulkanSwapChain> swapChain;
 
-    //TODO move to anther
-    CameraState camera;
-    InputState input;
-
+  //TODO move to anther
+  CameraState camera;
+  InputState input;
 
 };
 

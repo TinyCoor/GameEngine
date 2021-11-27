@@ -1,32 +1,31 @@
 cmake_minimum_required(VERSION 3.12)
+
 find_package(Vulkan REQUIRED)
-
-
-set(ROOT_FOLD ${CMAKE_CURRENT_LIST_DIR})
-
 if (Vulkan_FOUND)
     message(STATUS "Find Vulkan")
     message(STATUS ${Vulkan_INCLUDE_DIRS} )
     include_directories(${Vulkan_INCLUDE_DIRS})
 endif ()
 
+
+
 add_executable(niagara
-        app/VulkanTexture.cpp
-        app/VulkanUtils.cpp
-        app/VulkanMesh.cpp
-        app/VulkanGraphicsPipelineBuilder.cpp
-        app/VulkanRender.cpp
+        backend/Vulkan/VulkanTexture.cpp
+        backend/Vulkan/VulkanUtils.cpp
+        backend/Vulkan/VulkanMesh.cpp
+        backend/Vulkan/VulkanGraphicsPipelineBuilder.cpp
+        backend/Vulkan/VulkanRender.cpp
         app/VulkanRenderScene.cpp
-        app/VulkanContext.cpp
-        app/VulkanShader.cpp
-        app/VulkanTexture.cpp
+        backend/Vulkan/VulkanContext.cpp
+        backend/Vulkan/VulkanShader.cpp
+        backend/Vulkan/VulkanTexture.cpp
         app/pbrRender.cpp
         app/VulkanApplication.cpp
-        app/VulkanDescriptorSetLayoutBuilder.cpp
-        app/VulkanRenderPassBuilder.cpp
-        app/VulkanPipelineLayoutBuilder.cpp
-        app/VulkanCubemapRender.cpp
-        app/VulkanSwapChain.cpp
+        backend/Vulkan/VulkanDescriptorSetLayoutBuilder.cpp
+        backend/Vulkan/VulkanRenderPassBuilder.cpp
+        backend/Vulkan/VulkanPipelineLayoutBuilder.cpp
+        backend/Vulkan/VulkanCubemapRender.cpp
+        backend/Vulkan/VulkanSwapChain.cpp
         ../extern/volk/volk.c
         ../extern/imgui/imgui.cpp
         ../extern/imgui/imgui_draw.cpp
@@ -35,14 +34,24 @@ add_executable(niagara
         ../extern/imgui/imgui_demo.cpp
         ../extern/imgui/backends/imgui_impl_glfw.cpp
         ../extern/imgui/backends/imgui_impl_vulkan.cpp
-         app/config.h 
-         app/ResourceManager.cpp 
-         app/ResourceManager.h Entity/camera.cpp Entity/camera.h app/RenderState.h app/VulkanImGuiRender.cpp app/VulkanImGuiRender.h app/VulkanTexture2DRender.cpp app/VulkanTexture2DRender.h Entity/light.cpp Entity/light.h Entity/material.h)
+         app/config.h
+        backend/Vulkan/VulkanResourceManager.cpp
+        backend/Vulkan/VulkanResourceManager.h
+        Entity/camera.cpp
+        Entity/camera.h
+        app/RenderState.h
+        backend/Vulkan/VulkanImGuiRender.cpp
+        backend/Vulkan/VulkanImGuiRender.h
+        backend/Vulkan/VulkanTexture2DRender.cpp
+        backend/Vulkan/VulkanTexture2DRender.h
+        Entity/light.cpp
+        Entity/light.h
+        Entity/material.h app/driver.cpp backend/API.h backend/core/file.cpp backend/core/file.h backend/core/Vertex.h backend/core/Vertex.cpp backend/Vulkan/driver.cpp backend/Vulkan/driver.h)
 
 
 message(STATUS ${ShaderC_LIBRARIES})
 
-add_compile_definitions(VK_USE_PLATFORM_WIN32)
+target_compile_definitions(niagara PRIVATE VK_USE_PLATFORM_WIN32)
 target_include_directories(niagara PRIVATE ../extern/glfw/include)
 target_include_directories(niagara PRIVATE ../extern/imgui)
 target_include_directories(niagara PRIVATE ../extern/imgui/backends)
@@ -59,5 +68,6 @@ target_link_libraries(niagara PRIVATE assimp)
 target_link_libraries(niagara PRIVATE shaderc_shared)
 target_link_libraries(niagara PRIVATE opengl32 )
 
-add_subdirectory(Graphics/GL)
+add_subdirectory(backend/core)
+add_subdirectory(backend/GL)
 

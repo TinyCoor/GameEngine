@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(GameEngine )
+project(GameEngine)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,15 +16,17 @@ if(CMAKE_HOST_WIN32)
     add_compile_definitions(VK_USE_PLATFORM_WIN32_KHR GLFW_EXPOSE_NATIVE_WIN32)
 elseif(CMAKE_HOST_UNIX)
     message(STATUS "This is Unix Platform")
+    add_compile_options()
 elseif(CMAKE_HOST_APPLE)
-    message(STATUS "This is Apple Platform")
+
 endif()
 
 
-
+set(PROJECT_ROOT ${CMAKE_CURRENT_LIST_DIR})
+set(THIRD_PARTY_ROOT ${CMAKE_CURRENT_LIST_DIR}/extern)
+message(STATUS ${THIRD_PARTY_ROOT})
 set(ShaderC_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/extern/shaderc/lib)
 set(Vulkan_LIBRARIES ${CMAKE_CURRENT_LIST_DIR}/extern/vulkan/lib)
-message(STATUS ${ShaderC_LIBRARIES})
 
 if(MSVC)
     #MSVC Setting
@@ -42,7 +44,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
 
 add_subdirectory(extern/volk)
 add_subdirectory(extern/glfw )
-
 add_subdirectory(extern/assimp)
-
+add_subdirectory(extern/tinyobjloader)
 add_subdirectory(src)
