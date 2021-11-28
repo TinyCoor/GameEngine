@@ -7,29 +7,28 @@
 #include <vector>
 #include "VulkanContext.h"
 #include "../core/Vertex.h"
+#include "driver.h"
+
 
 ///GPU顶点数据
 namespace render::backend::vulkan {
 class VulkanMesh {
 private:
-
-  const VulkanContext *context;
+  render::backend::Driver *driver {nullptr};
   std::vector<core::Vertex> vertices;
   std::vector<uint32_t> indices;
 
-  VkBuffer vertexBuffer = VK_NULL_HANDLE;
-  VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
-
-  VkBuffer indexBuffer = VK_NULL_HANDLE;
-  VkDeviceMemory indexBufferMemory = VK_NULL_HANDLE;
+  render::backend::VertexBuffer *vertex_buffer {nullptr};
+  render::backend::IndexBuffer *index_buffer {nullptr};
 
 public:
-  VulkanMesh(const VulkanContext *ctx) : context(ctx) {}
+  VulkanMesh(render::backend::Driver *driver)
+      : driver(driver) { }
   ~VulkanMesh();
 
   inline uint32_t getNumIndices() const { return indices.size(); }
-  inline VkBuffer getVertexBuffer() const { return vertexBuffer; }
-  inline VkBuffer getIndexBuffer() const { return indexBuffer; }
+  VkBuffer getVertexBuffer() const ;
+  VkBuffer getIndexBuffer() const ;
 
   static VkVertexInputBindingDescription getVertexInputBindingDescription();
   static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
@@ -46,5 +45,6 @@ private:
   void createIndexBuffer();
   void createVertexBuffer();
 };
+
 }
 #endif //GAMEENGINE_VULKANRENDERMODEL_H

@@ -42,66 +42,51 @@ std::vector<VkVertexInputAttributeDescription> VulkanMesh::getAttributeDescripti
 }
 
 void VulkanMesh::createVertexBuffer() {
-  VkDeviceSize bufferSize = sizeof(core::Vertex) * vertices.size();
-  VkBuffer stagingBuffer;
-  VkDeviceMemory stagingBufferMemory;
 
-  VulkanUtils::createBuffer(context, bufferSize,
-                            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                            vertexBuffer,
-                            vertexBufferMemory);
+  static render::backend::VertexAttribute attributes[] =
+      {
+          { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, position) },
+          { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, tangent) },
+          { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, binormal) },
+          { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, normal) },
+          { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, color) },
+          { render::backend::Format::R32G32_SFLOAT,     offsetof(core::Vertex, uv) },
+      };
 
-  VulkanUtils::createBuffer(context, bufferSize,
-                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                            stagingBuffer,
-                            stagingBufferMemory);
+  vertex_buffer = driver->createVertexBuffer(
+      render::backend::BufferType::STATIC,
+      sizeof(core::Vertex), static_cast<uint32_t>(vertices.size()),
+      6, attributes,
+      vertices.data()
+  );
+}
 
-  void *data = nullptr;
-  vkMapMemory(context->Device(), stagingBufferMemory, 0, bufferSize, 0, &data);
-  memcpy(data, vertices.data(), bufferSize);
-  vkUnmapMemory(context->Device(), stagingBufferMemory);
+VkBuffer VulkanMesh::getVertexBuffer() const {
+  if (vertex_buffer == nullptr)
+    return VK_NULL_HANDLE;
 
-  VulkanUtils::copyBuffer(context, stagingBuffer, vertexBuffer, bufferSize);
+  return static_cast<const render::backend::vulkan::VertexBuffer *>(vertex_buffer)->buffer;
 
-  vkDestroyBuffer(context->Device(), stagingBuffer, nullptr);
-  vkFreeMemory(context->Device(), stagingBufferMemory, nullptr);
+}
+VkBuffer VulkanMesh::getIndexBuffer() const {
+  if (index_buffer == nullptr)
+    return VK_NULL_HANDLE;
+
+  return static_cast<const render::backend::vulkan::IndexBuffer *>(index_buffer)->buffer;
+
 }
 
 void VulkanMesh::createIndexBuffer() {
-  //Create Index Buffer
-  VkDeviceSize bufferSize = sizeof(uint32_t) * indices.size();
-
-  VkBuffer stagingBuffer;
-  VkDeviceMemory stagingBufferMemory;
-
-  VulkanUtils::createBuffer(context, bufferSize,
-                            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                            indexBuffer,
-                            indexBufferMemory);
-
-  VulkanUtils::createBuffer(context, bufferSize,
-                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                            stagingBuffer,
-                            stagingBufferMemory);
-
-  void *data = nullptr;
-  vkMapMemory(context->Device(), stagingBufferMemory, 0, bufferSize, 0, &data);
-  memcpy(data, indices.data(), bufferSize);
-  vkUnmapMemory(context->Device(), stagingBufferMemory);
-
-  VulkanUtils::copyBuffer(context, stagingBuffer, indexBuffer, bufferSize);
-
-  vkDestroyBuffer(context->Device(), stagingBuffer, nullptr);
-  vkFreeMemory(context->Device(), stagingBufferMemory, nullptr);
+  index_buffer = driver->createIndexBuffer(
+      render::backend::BufferType::STATIC,
+      render::backend::IndexSize::UINT32,
+      static_cast<uint32_t>(indices.size()),
+      indices.data()
+  );
 }
 
 //This is a bug in load form File
 bool VulkanMesh::loadFromFile(const char *file) {
-  clearCPUData();
   clearGPUData();
   core::loadMesh(file, vertices, indices);
   uploadToGPU();
@@ -109,23 +94,15 @@ bool VulkanMesh::loadFromFile(const char *file) {
 }
 
 void VulkanMesh::clearGPUData() {
-  vkDestroyBuffer(context->Device(), vertexBuffer, nullptr);
-  vkFreeMemory(context->Device(), vertexBufferMemory, nullptr);
-  vkDestroyBuffer(context->Device(), indexBuffer, nullptr);
-  vkFreeMemory(context->Device(), indexBufferMemory, nullptr);
-  vertexBuffer = VK_NULL_HANDLE;
-  vertexBufferMemory = VK_NULL_HANDLE;
-  indexBuffer = VK_NULL_HANDLE;
-  indexBufferMemory = VK_NULL_HANDLE;
+  driver->destroyVertexBuffer(vertex_buffer);
+  vertex_buffer = nullptr;
+  driver->destroyIndexBuffer(index_buffer);
+  index_buffer = nullptr;
 }
 
 void VulkanMesh::uploadToGPU() {
-  if (!vertices.empty()) {
     createVertexBuffer();
-  }
-  if (!indices.empty()) {
     createIndexBuffer();
-  }
 }
 
 void VulkanMesh::clearCPUData() {
@@ -180,6 +157,5 @@ void VulkanMesh::createQuad(float size) {
   };
 
   uploadToGPU();
-
 }
 }

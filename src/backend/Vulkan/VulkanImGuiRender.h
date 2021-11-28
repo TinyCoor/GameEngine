@@ -29,11 +29,11 @@ public:
 
   virtual ~ImGuiRender();
 
-  void init(std::shared_ptr<VulkanSwapChain> swapChain);
+  void init(VulkanSwapChain* swapChain);
 
   void shutdown();
 
-  void resize(std::shared_ptr<VulkanSwapChain> swapChain);
+  void resize(VulkanSwapChain* swapChain);
 
   void render(const VulkanRenderFrame &frame);
 

@@ -6,7 +6,7 @@
 
 namespace render::backend{
 
- Driver* Driver::create(const char* app_name,const char* engine_name, Api api)
+ Driver* createDriver(const char* app_name,const char* engine_name, Api api)
  {
    switch (api) {
       case Api::VULKAN: return new vulkan::VulkanDriver(app_name,engine_name);

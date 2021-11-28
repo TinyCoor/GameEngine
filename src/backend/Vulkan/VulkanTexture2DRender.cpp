@@ -10,55 +10,53 @@
 #include "VulkanGraphicsPipelineBuilder.h"
 #include "VulkanShader.h"
 #include "Macro.h"
+#include "driver.h"
+
 
 using namespace render::backend::vulkan;
-VulkanTexture2DRender::VulkanTexture2DRender(const VulkanContext* ctx):
-context(ctx),
-renderQuad(new VulkanMesh(ctx)) {
 
-}
+void VulkanTexture2DRender::init(VulkanShader &vertShader,
+                                 VulkanShader &fragShader,
+                                 VulkanTexture &target_texture) {
 
-void VulkanTexture2DRender::init(std::shared_ptr<VulkanShader> vertShader, std::shared_ptr<VulkanShader> fragShader,
-                                 std::shared_ptr<VulkanTexture> targetTexture) {
+    quad.createQuad(2.0f);
 
-    renderQuad->createQuad(2.0f);
-
-    targetExtent.width = targetTexture->getWidth();
-    targetExtent.height = targetTexture->getHeight();
+    target_extent.width = target_texture.getWidth();
+    target_extent.height = target_texture.getHeight();
 
 
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)targetExtent.width;
-    viewport.height = (float)targetExtent.height;
+    viewport.width = (float)target_extent.width;
+    viewport.height = (float)target_extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     //create scissor
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent.width = targetTexture->getWidth();
-    scissor.extent.height= targetTexture->getHeight();
+    scissor.extent.width = target_extent.width;
+    scissor.extent.height= target_extent.height;
 
     VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VulkanRenderPassBuilder renderPassBuilder(context);
-    renderPass = renderPassBuilder
-           .addColorAttachment(targetTexture->getImageFormat(), VK_SAMPLE_COUNT_1_BIT,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_STORE_OP_STORE)
+    render_pass = renderPassBuilder
+           .addColorAttachment(target_texture.getImageFormat(), VK_SAMPLE_COUNT_1_BIT,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_STORE_OP_STORE)
             .addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
             .addColorAttachmentReference(0, 0)
             .build();
 
 
     VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
-    pipelineLayout = pipelineLayoutBuilder.build();
+    pipeline_layout = pipelineLayoutBuilder.build();
 
 
-    VulkanGraphicsPipelineBuilder pipelineBuilder(context,pipelineLayout,renderPass);
+    VulkanGraphicsPipelineBuilder pipelineBuilder(context,pipeline_layout,render_pass);
     pipeline = pipelineBuilder
-            .addShaderStage(vertShader->getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
-            .addShaderStage(fragShader->getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
+            .addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
             .addVertexInput(VulkanMesh::getVertexInputBindingDescription(), VulkanMesh::getAttributeDescriptions())
             .setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
             .addViewport(viewport)
@@ -69,17 +67,14 @@ void VulkanTexture2DRender::init(std::shared_ptr<VulkanShader> vertShader, std::
             .addBlendColorAttachment()
             .build();
 
-    //create frameBuffer
-    auto view= targetTexture->getImageView();
-    VkFramebufferCreateInfo framebufferInfo = {};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPass;
-    framebufferInfo.attachmentCount = 1;
-    framebufferInfo.pAttachments = &view;
-    framebufferInfo.width = targetExtent.width;
-    framebufferInfo.height =targetExtent.height;
-    framebufferInfo.layers = 1;
-    VK_CHECK(vkCreateFramebuffer(context->Device(), &framebufferInfo, nullptr, &framebuffer),"Can't create framebuffer");
+
+  // Create framebuffer
+       render::backend::FrameBufferColorAttachment attachments[] =
+      {
+          { target_texture.getBackend(), 0, 1, 0, 1},
+      };
+
+    framebuffer = driver->createFrameBuffer(1, attachments);
 
     // Create command buffers
     VkCommandBufferAllocateInfo allocateInfo = {};
@@ -98,21 +93,19 @@ void VulkanTexture2DRender::init(std::shared_ptr<VulkanShader> vertShader, std::
 }
 
 void VulkanTexture2DRender::shutdown() {
-    renderQuad->clearGPUData();
-    renderQuad->clearCPUData();
+    quad.clearGPUData();
+    quad.clearCPUData();
 
-    vkDestroyFramebuffer(context->Device(),framebuffer, nullptr);
-    framebuffer=VK_NULL_HANDLE;
-
+    driver->destroyFrameBuffer(framebuffer);
 
     vkFreeCommandBuffers(context->Device(),context->CommandPool(),1,&commandBuffer);
     commandBuffer =VK_NULL_HANDLE;
 
-    vkDestroyRenderPass(context->Device(),renderPass, nullptr);
-    renderPass = VK_NULL_HANDLE;
+    vkDestroyRenderPass(context->Device(),render_pass, nullptr);
+    render_pass = VK_NULL_HANDLE;
 
-    vkDestroyPipelineLayout(context->Device(),pipelineLayout, nullptr);
-    pipelineLayout = VK_NULL_HANDLE;
+    vkDestroyPipelineLayout(context->Device(),pipeline_layout, nullptr);
+    pipeline_layout = VK_NULL_HANDLE;
 
     vkDestroyPipeline(context->Device(),pipeline, nullptr);
     pipeline = VK_NULL_HANDLE;
@@ -132,11 +125,11 @@ void VulkanTexture2DRender::render() {
 
     VkRenderPassBeginInfo renderPassInfo = {};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
-    renderPassInfo.framebuffer = framebuffer;
+    renderPassInfo.renderPass = render_pass;
+    renderPassInfo.framebuffer =static_cast<render::backend::vulkan::FrameBuffer *>(framebuffer)->framebuffer;
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent.width = targetExtent.width;
-    renderPassInfo.renderArea.extent.height = targetExtent.height;
+    renderPassInfo.renderArea.extent.width = target_extent.width;
+    renderPassInfo.renderArea.extent.height = target_extent.height;
 
     VkClearValue clearValue {};
     clearValue.color= {0.f,0.f,0.f,1.f};
@@ -147,12 +140,12 @@ void VulkanTexture2DRender::render() {
 
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-    VkBuffer vertexBuffers[] = {renderQuad->getVertexBuffer()};
-    VkBuffer indexBuffer = renderQuad->getIndexBuffer();
+    VkBuffer vertexBuffers[] = {quad.getVertexBuffer()};
+    VkBuffer indexBuffer = quad.getIndexBuffer();
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
     vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexed(commandBuffer, renderQuad->getNumIndices(), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, quad.getNumIndices(), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
     VK_CHECK(vkEndCommandBuffer(commandBuffer),"Can't record command buffer");

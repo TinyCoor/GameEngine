@@ -65,12 +65,7 @@ bool VulkanSwapChain::Acquire(const RenderState& state,VulkanRenderFrame& frame)
 
     frame = frames[imageIndex];
 
-    //Copy Render State to ubo
-    void *ubo = nullptr;
-    vkMapMemory(context->Device(), frame.uniformBuffersMemory, 0, uboSize, 0, &ubo);
-    memcpy(ubo, &state, sizeof(RenderState));
-    vkUnmapMemory(context->Device(), frame.uniformBuffersMemory);
-
+    memcpy(frame.uniformBufferData,&state,uboSize);
 
     //reset command buffer
     VK_CHECK(vkResetCommandBuffer(frame.commandBuffer,0),"Can't Reset Command Buffer");
@@ -150,7 +145,10 @@ void VulkanSwapChain::initFrames(VkDeviceSize uboSize) {
                 frame.uniformBuffers,
                 frame.uniformBuffersMemory
         );
-         //Create descriptor Set
+
+      vkMapMemory(context->Device(), frame.uniformBuffersMemory, 0, uboSize, 0, &frame.uniformBufferData);
+
+      //Create descriptor Set
         VkDescriptorSetAllocateInfo swapchainDescriptorSetAllocInfo = {};
         swapchainDescriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         swapchainDescriptorSetAllocInfo.descriptorPool = context->DescriptorPool();

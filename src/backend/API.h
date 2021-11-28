@@ -36,7 +36,7 @@ namespace render::backend {
         MAX,
     };
 
-    enum class IndexFormat {
+    enum class IndexSize {
         UINT16 = 0,
         UINT32,
         MAX,
@@ -119,25 +119,23 @@ namespace render::backend {
     };
 
     enum class ShaderType {
-        // Graphics pipeline
-        Vertex = 0,
-        TessellationControl,
-        TessellationEvaulation,
-        Geometry,
-        Fragment,
+      // Graphics pipeline
+      VERTEX = 0,
+      TESSELLATION_CONTROL,
+      TESSELLATION_EVALUATION,
+      GEOMETRY,
+      FRAGMENT,
 
-        // Compute pipeline
-        Compute,
+      // Compute pipeline
+      COMPUTE,
 
-        // Raytracing pipeline
-        RayGeneration,
-        Intersection,
-        AnyHit,
-        ClosestHit,
-        Miss,
-
-        // Misc
-        Callable,
+      // Raytracing pipeline
+      RAY_GENERATION,
+      INTERSECTION,
+      ANY_HIT,
+      CLOSEST_HIT,
+      MISS,
+      CALLABLE,
     };
 
     struct VertexBuffer {
@@ -155,7 +153,24 @@ namespace render::backend {
     struct Texture {
 
     };
+    struct FrameBufferColorAttachment
+    {
+      const Texture *texture {nullptr};
+      int base_mip {0};
+      int num_mips {1};
+      int base_layer {0};
+      int num_layers {1};
+      // TODO: add support for load / store operations
+      // TODO: add clear values
+    };
 
+    struct FrameBufferDepthStencilAttachment
+    {
+      const Texture *texture {nullptr};
+      // TODO: add support for load / store operations
+      // TODO: add support for load / store stencil operations
+      // TODO: add clear values
+    };
     struct FrameBuffer {
     };
     //todo render pass ?
@@ -187,19 +202,6 @@ namespace render::backend {
         unsigned int offset{0};
     };
 
-    struct FrameBufferColorAttachment {
-        const Texture *attachment{nullptr};
-        // TODO: add support for load / store operations
-        // TODO: add clear values
-    };
-
-    struct FrameBufferDepthStencilAttachment {
-        const Texture *attachment{nullptr};
-        // TODO: add support for load / store operations
-        // TODO: add support for load / store stencil operations
-        // TODO: add clear values
-    };
-
     // main backend class
     class Driver {
     public:
@@ -216,7 +218,7 @@ namespace render::backend {
 
         virtual IndexBuffer *createIndexBuffer(
                 BufferType type,
-                uint8_t index_size,
+                IndexSize index_size,
                 uint32_t num_indices,
                 const void *data
         ) = 0;
@@ -275,13 +277,14 @@ namespace render::backend {
         virtual UniformBuffer *createUniformBuffer(
                 BufferType type,
                 uint32_t size,
-                const void *data
+                const void *data = nullptr
         ) = 0;
 
         virtual Shader *createShaderFromSource(
                 ShaderType type,
                 uint32_t length,
-                const char *source
+                const char *data,
+                const char *path
         ) = 0;
 
         virtual Shader *createShaderFromBytecode(
@@ -307,6 +310,7 @@ namespace render::backend {
         virtual void destroySwapChain(SwapChain* swapchain) = 0;
 
     public:
+      virtual void generateTexture2DMipmaps(Texture *texture)  = 0;
 
       virtual void* map(render::backend::UniformBuffer* uniform_buffer) =0;
 
@@ -352,6 +356,10 @@ namespace render::backend {
                 uint32_t offset
         ) = 0;
     };
+
+
+extern Driver *createDriver(const char *application_name, const char *engine_name, Api api = Api::DEFAULT);
+extern void destroyDriver(Driver *driver);
 
 }
 

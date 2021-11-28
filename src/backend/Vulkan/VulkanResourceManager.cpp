@@ -8,63 +8,50 @@
 #include "VulkanMesh.h"
 using namespace render::backend::vulkan;
 
-VulkanResourceManager::VulkanResourceManager(const VulkanContext *ctx) :context(ctx){
-
-}
 
 VulkanResourceManager::~VulkanResourceManager() {
     shutdown();
 }
 
-std::shared_ptr<VulkanShader> VulkanResourceManager::loadShader(int id, ShaderKind kind, const char *path) {
-    auto it = meshes.find(id);
-    if(it !=meshes.end()){
+VulkanShader* VulkanResourceManager::loadShader(int id,render::backend::ShaderType type, const char *path) {
+    auto it = shaders.find(id);
+    if(it !=shaders.end()){
         std::cerr << "VulkanResourceManager::loadShader():" <<id << "is already owned by other mesh" << std::endl;
         return nullptr;
     }
-    auto shader = std::make_shared<VulkanShader>(context);
-    shader->compileFromFile(path,kind);
+    auto shader =new VulkanShader(driver);
+    shader->compileFromFile(path,type);
     shaders.insert(std::make_pair( id,shader));
     return shader;
 }
 
-std::shared_ptr<VulkanShader> VulkanResourceManager::loadShader(int id, const char *path) {
-    auto it = meshes.find(id);
-    if(it !=meshes.end()){
-        std::cerr << "VulkanResourceManager::loadShader():" <<id << "is already owned by other mesh" << std::endl;
-        return nullptr;
-    }
-    auto shader = std::make_shared<VulkanShader>(context);
-    shader->compileFromFile(path);
-    shaders.insert(std::make_pair( id,shader));
-    return shader;
-}
 
-std::shared_ptr<VulkanMesh> VulkanResourceManager::loadMesh(int id, const char *path) {
+
+VulkanMesh* VulkanResourceManager::loadMesh(int id, const char *path) {
     auto it = meshes.find(id);
     if(it !=meshes.end()){
         std::cerr << "VulkanResourceManager::loadMesh():" <<id << "is already owned by other " << std::endl;
         return nullptr;
     }
-    auto mesh = std::make_shared<VulkanMesh>(context);
+    auto mesh = new VulkanMesh(driver);
     mesh->loadFromFile(path);
     meshes.insert(std::make_pair( id,mesh));
     return mesh;
 }
 
-std::shared_ptr<VulkanTexture> VulkanResourceManager::loadTexture(int id, const char *path) {
+VulkanTexture* VulkanResourceManager::loadTexture(int id, const char *path) {
     auto it = textures.find(id);
     if(it !=textures.end()){
         std::cerr << "VulkanResourceManager::loadTexture():" <<id << "is alreay owned by other mesh" << std::endl;
         return nullptr;
     }
-    auto texture = std::make_shared<VulkanTexture>(context);
+    auto texture = new VulkanTexture(driver);
     texture->loadFromFile(path);
     textures.insert(std::make_pair( id,texture));
     return texture;
 }
 
-std::shared_ptr<VulkanShader> VulkanResourceManager::getShader(int id) const {
+VulkanShader* VulkanResourceManager::getShader(int id) const {
     auto it = shaders.find(id);
     if (it !=shaders.end()){
         return it->second;
@@ -72,7 +59,7 @@ std::shared_ptr<VulkanShader> VulkanResourceManager::getShader(int id) const {
     return nullptr;
 }
 
-std::shared_ptr<VulkanTexture> VulkanResourceManager::getTexture(int id) const{
+VulkanTexture* VulkanResourceManager::getTexture(int id) const{
     auto it = textures.find(id);
     if (it !=textures.end()){
         return it->second;
@@ -80,7 +67,7 @@ std::shared_ptr<VulkanTexture> VulkanResourceManager::getTexture(int id) const{
     return nullptr;
 }
 
-std::shared_ptr<VulkanMesh> VulkanResourceManager::getMesh(int id) const {
+VulkanMesh* VulkanResourceManager::getMesh(int id) const {
     auto it = meshes.find(id);
     if (it !=meshes.end()){
         return it->second;
@@ -89,19 +76,19 @@ std::shared_ptr<VulkanMesh> VulkanResourceManager::getMesh(int id) const {
 }
 
 
-std::shared_ptr<VulkanMesh> VulkanResourceManager::createCubeMesh(int id, float size) {
+VulkanMesh* VulkanResourceManager::createCubeMesh(int id, float size) {
     auto it = meshes.find(id);
     if(it !=meshes.end()){
         std::cerr << "VulkanResourceManager::loadMesh():" <<id << "is alreay owned by other " << std::endl;
         return nullptr;
     }
-    auto mesh = std::make_shared<VulkanMesh>(context);
+    auto mesh = new VulkanMesh(driver);
     mesh->createSkybox(size);
     meshes.insert(std::make_pair( id,mesh));
     return mesh;
 }
 
-std::shared_ptr<VulkanTexture> VulkanResourceManager::getHDRTexture(int id) const {
+VulkanTexture* VulkanResourceManager::getHDRTexture(int id) const {
     auto it = textures.find(id);
     if (it !=textures.end()){
         return it->second;
@@ -137,6 +124,5 @@ void VulkanResourceManager::shutdown() {
     meshes.clear();
     textures.clear();
     shaders.clear();
-
 }
 

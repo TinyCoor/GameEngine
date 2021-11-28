@@ -3,7 +3,7 @@
 //
 #include "VulkanApplication.h"
 #include "VulkanRenderScene.h"
-#include "../backend/Vulkan/VulkanRender.h"
+#include "VulkanRender.h"
 #include "../backend/Vulkan/VulkanImGuiRender.h"
 #include <chrono>
 #include <GLFW/glfw3.h>
@@ -58,7 +58,7 @@ Application::~Application(){
 
 }
 void Application::initVulkan() {
-    driver = dynamic_cast<render::backend::vulkan::VulkanDriver*>(render::backend::Driver::create("","",render::backend::Api::VULKAN));
+    driver = dynamic_cast<render::backend::vulkan::VulkanDriver*>(render::backend::createDriver("","",render::backend::Api::VULKAN));
     context = driver->GetVulkanContext();
 }
 
@@ -229,7 +229,7 @@ void Application::shutdownRenders() {
 
 void Application::initRenders() {
     if(!render){
-        render = new VulkanRender(context,swapChain->getExtent(),swapChain->getDescriptorSetLayout(),swapChain->getRenderPass());
+        render = new VulkanRender(context,driver,swapChain->getExtent(),swapChain->getDescriptorSetLayout(),swapChain->getRenderPass());
         render->init(scene);
     }
 
@@ -247,7 +247,7 @@ void Application::initRenders() {
 void Application::initVulkanSwapChain() {
 
     if (!swapChain){
-        swapChain= std::shared_ptr<VulkanSwapChain>(new VulkanSwapChain(context, window,sizeof(RenderState)));
+        swapChain= new VulkanSwapChain(context, window,sizeof(RenderState));
     }
 
     int width,height;
@@ -261,7 +261,7 @@ void Application::shutdownSwapChain() {
 }
 
 void Application::initScene() {
-    scene = new VulkanRenderScene(context);
+    scene = new VulkanRenderScene(driver);
     scene->init();
 }
 

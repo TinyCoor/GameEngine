@@ -468,19 +468,12 @@ void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
   uint32_t mip_width = width;
   uint32_t mip_height = height;
   uint32_t mip_depth = depth;
-  for (int i = 0; i <dataMipLevel; ++i) {
+  for (int i = 0; i < dataMipLevel; ++i) {
     buffer_size += mip_width * mip_height * pixel_size;
     mip_width =  std::max(mip_width / 2,1u);
     mip_height = std::max(mip_height/2,1u) ;
     mip_depth = std::max(mip_depth/2,1u);
   }
-
-  //Prepare the image for transfer
-  VulkanUtils::transitionImageLayout(context, image , format,
-                                     VK_IMAGE_LAYOUT_UNDEFINED,
-                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                     0,mipLevel,
-                                     0, arrayLayers);
 
   /// copy pixel
   VkBuffer stagingBuffer{};
@@ -494,7 +487,7 @@ void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
   //
   void *staging_data = nullptr;
   vkMapMemory(context->Device(), stagingBufferMemory, 0, buffer_size * dataLayers, 0, &staging_data);
-  memcpy(staging_data, data, static_cast<size_t>(buffer_size));
+  memcpy(staging_data, data, static_cast<size_t>(buffer_size * dataLayers));
   vkUnmapMemory(context->Device(), stagingBufferMemory);
 
   // copy to gpu
@@ -528,11 +521,6 @@ void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
   }
 
   VulkanUtils::endSingleTimeCommands(context,commandBuffer);
-  //Prepare the image for shader access
-  VulkanUtils::transitionImageLayout(context,image,format,
-                                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                     0, mipLevel,0,arrayLayers);
   //clean up
   vkDestroyBuffer(context->Device(), stagingBuffer, nullptr);
   vkFreeMemory(context->Device(), stagingBufferMemory, nullptr);
@@ -570,26 +558,24 @@ bool VulkanUtils::hasStencilComponent(VkFormat format) {
 
 void
 VulkanUtils::generateImage2DMipMaps(const VulkanContext *context,
-                                    VkImage image, uint32_t width, uint32_t height,
+                                    VkImage image,VkFormat imageFormat, uint32_t width, uint32_t height,
                                     uint32_t mipLevel, VkFormat format,
                                     VkFilter filter) {
   if (mipLevel == 1) {
     return;
   }
   VkFormatProperties formatProperties;
-  bool supportsLinearFiltering =
-      (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) == 0;
-  bool supportCubicFiltering =
-      (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT) == 0;
-
-  //TODO Fix
   vkGetPhysicalDeviceFormatProperties(context->PhysicalDevice(), format, &formatProperties);
+  bool supportsLinearFiltering =(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0;
+  bool supportCubicFiltering =(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT) != 0;
+
   if ((filter == VK_FILTER_LINEAR) && !supportsLinearFiltering) {
     throw std::runtime_error("texture image format does not support linear blitting!");
   }
   if ((filter == VK_FILTER_CUBIC_EXT) && !supportCubicFiltering) {
     throw std::runtime_error("texture image format does not support cubic blitting!");
   }
+
 
   VkCommandBuffer commandBuffer = beginSingleTimeCommands(context);
   VkImageMemoryBarrier barrier{};
@@ -650,12 +636,11 @@ VulkanUtils::generateImage2DMipMaps(const VulkanContext *context,
                          0, nullptr,
                          1, &barrier);
 
-    mipWidth = std::max(1, mipWidth /= 2);
-    mipHeight = std::max(1, mipHeight /= 2);
+    mipWidth = std::max(1, mipWidth / 2);
+    mipHeight = std::max(1, mipHeight / 2);
   }
 
   endSingleTimeCommands(context, commandBuffer);
-
 }
 
 VkSampleCountFlagBits VulkanUtils::getMaxUsableSampleCount(VkPhysicalDevice physicalDevice) {
@@ -666,6 +651,7 @@ VkSampleCountFlagBits VulkanUtils::getMaxUsableSampleCount(VkPhysicalDevice phys
       physicalDeviceProperties.limits.framebufferColorSampleCounts,
       physicalDeviceProperties.limits.framebufferDepthSampleCounts
   );
+
   if (counts & VK_SAMPLE_COUNT_64_BIT) {
     return VK_SAMPLE_COUNT_64_BIT;
   }
@@ -689,7 +675,7 @@ VkSampleCountFlagBits VulkanUtils::getMaxUsableSampleCount(VkPhysicalDevice phys
 }
 
 VkShaderModule VulkanUtils::createShaderModule(VkDevice device,
-                                               uint32_t *code,
+                                                const uint32_t *code,
                                                uint32_t size) {
   VkShaderModuleCreateInfo shaderInfo = {};
   shaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

@@ -191,6 +191,7 @@ public:
   static void generateImage2DMipMaps(
       const VulkanContext *context,
       VkImage image,
+      VkFormat imageFormat,
       uint32_t width,
       uint32_t height,
       uint32_t mipLevel,
@@ -201,7 +202,7 @@ public:
   static VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physicalDevice);
 
   static VkShaderModule createShaderModule(VkDevice device,
-                                           uint32_t *code,
+                                           const uint32_t *code,
                                            uint32_t size);
 
   static void bindUniformBuffer(

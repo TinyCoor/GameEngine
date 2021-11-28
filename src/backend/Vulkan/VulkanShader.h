@@ -5,10 +5,11 @@
 #ifndef GAMEENGINE_VULKANSHADER_H
 #define GAMEENGINE_VULKANSHADER_H
 
-#include "VulkanContext.h"
+#include "driver.h"
 #include <volk.h>
 #include <shaderc/shaderc.h>
 #include <string_view>
+#include <string>
 namespace render::backend::vulkan {
 enum class ShaderKind {
   vertex = 0,
@@ -21,24 +22,25 @@ enum class ShaderKind {
 
 class VulkanShader {
 public:
-  explicit VulkanShader(const VulkanContext *ctx) : context(ctx) {}
+  explicit VulkanShader(render::backend::Driver *driver) : driver(driver) {}
   ~VulkanShader();
 
-  bool compileFromFile(const char *path, ShaderKind kind);
-  bool compileFromFile(const char *path);
+  bool compileFromFile(const char *path, render::backend::ShaderType type);
 
   bool reload();
 
   void clear();
-  inline const VkShaderModule &getShaderModule() const { return shaderModule; }
+  const VkShaderModule getShaderModule() const;
 
 private:
   bool compileFromSource(const char *path, const char *source, size_t size, shaderc_shader_kind kind);
 
 private:
-  const VulkanContext *context;
-  VkShaderModule shaderModule{VK_NULL_HANDLE};
-  std::string_view shader_path;
+  render::backend::Driver *driver {nullptr};
+  render::backend::Shader *shader {nullptr};
+  render::backend::ShaderType type {render::backend::ShaderType::FRAGMENT};
+
+  std::string path;
 };
 
 }

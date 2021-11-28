@@ -6,6 +6,9 @@
 #define GAMEENGINE_VULKANTEXTURE2DRENDER_H
 #include <memory>
 #include <volk.h>
+
+#include "driver.h"
+#include "VulkanMesh.h"
 namespace render::backend::vulkan {
 
 class VulkanContext;
@@ -15,11 +18,13 @@ class VulkanShader;
 
 class VulkanTexture2DRender {
 public:
-  VulkanTexture2DRender(const VulkanContext *ctx);
+  VulkanTexture2DRender(const VulkanContext *ctx,render::backend::Driver *driver)
+  : context(ctx), driver(driver), quad(driver)
+  { }
 
-  void init(std::shared_ptr<VulkanShader> vertShader,
-            std::shared_ptr<VulkanShader> fragShader,
-            std::shared_ptr<VulkanTexture> targetTexture);
+  void init(VulkanShader &vertex_shader,
+            VulkanShader &fragment_shader,
+            VulkanTexture &target_texture);
 
   void shutdown();
 
@@ -27,16 +32,19 @@ public:
 
 private:
   const VulkanContext *context;
-  std::shared_ptr<VulkanMesh> renderQuad;
-  VkExtent2D targetExtent;
+  render::backend::Driver *driver {nullptr};
+  VulkanMesh quad;
+  VkExtent2D target_extent;
 
   VkPipeline pipeline;
-  VkPipelineLayout pipelineLayout;
-  VkRenderPass renderPass;
+  VkPipelineLayout pipeline_layout;
+  VkRenderPass render_pass;
 
-  VkFramebuffer framebuffer;
   VkCommandBuffer commandBuffer;
   VkFence fence;
+  render::backend::FrameBuffer *framebuffer {nullptr};
+
+
 };
 }
 

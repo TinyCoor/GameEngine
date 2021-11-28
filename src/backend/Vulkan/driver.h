@@ -36,6 +36,8 @@ struct RenderPrimitive : public render::backend::RenderPrimitive {
 
 struct Texture : public render::backend::Texture {
   VkImage image{VK_NULL_HANDLE};
+  VkImageView view {VK_NULL_HANDLE};
+  VkSampler sampler {VK_NULL_HANDLE};
   VkDeviceMemory imageMemory{VK_NULL_HANDLE};
   VkImageType type{VK_IMAGE_TYPE_2D};
   VkFormat format{VK_FORMAT_R8G8B8A8_UNORM};
@@ -50,13 +52,23 @@ struct Texture : public render::backend::Texture {
 };
 
 
+struct FrameBufferColorAttachment : public render::backend::FrameBufferColorAttachment
+{
+  VkImageView view {VK_NULL_HANDLE};
+};
+
+struct FrameBufferDepthStencilAttachment : public render::backend::FrameBufferColorAttachment
+{
+  VkImageView view {VK_NULL_HANDLE};
+};
+
 struct FrameBuffer : public render::backend::FrameBuffer {
   static constexpr int MAX_COLOR_ATTACHMENTS = 16;
   VkRenderPass dummy_render_pass{VK_NULL_HANDLE};
-  VkFramebuffer frameBuffer{VK_NULL_HANDLE};
-  uint8_t num_color_attachment{0};
+  VkFramebuffer framebuffer{VK_NULL_HANDLE};
+  uint8_t num_color_attachments{0};
   FrameBufferColorAttachment color_attachments[MAX_COLOR_ATTACHMENTS];
-  FrameBufferDepthStencilAttachment depth_attachment;
+  FrameBufferDepthStencilAttachment depthstencil_attachment;
 };
 
 
@@ -69,7 +81,7 @@ struct UniformBuffer : public render::backend::UniformBuffer {
 
 
 struct Shader : public render::backend::Shader {
-  ShaderType type{ShaderType::Fragment};
+  ShaderType type{ShaderType::FRAGMENT};
   VkShaderModule shaderModule{VK_NULL_HANDLE};
 
 };
@@ -139,7 +151,7 @@ public:
 
   IndexBuffer *createIndexBuffer(
       BufferType type,
-      uint8_t index_size,
+      IndexSize index_size,
       uint32_t num_indices,
       const void *data
   ) override;
@@ -191,20 +203,21 @@ public:
 
   FrameBuffer *createFrameBuffer(
       uint8_t num_color_attachments,
-      const FrameBufferColorAttachment *color_attachments,
-      const FrameBufferDepthStencilAttachment *depthstencil_attachment = nullptr
+      const render::backend::FrameBufferColorAttachment *color_attachments,
+      const render::backend::FrameBufferDepthStencilAttachment *depthstencil_attachment = nullptr
   ) override;
 
   UniformBuffer *createUniformBuffer(
       BufferType type,
       uint32_t size,
-      const void *data
+      const void *data = nullptr
   ) override;
 
   Shader *createShaderFromSource(
       ShaderType type,
       uint32_t length,
-      const char *source
+      const char *data,
+      const char *path
   ) override;
 
   Shader *createShaderFromBytecode(
@@ -228,6 +241,8 @@ public:
   void destroyShader(render::backend::Shader *shader) override;
 
 public:
+  void generateTexture2DMipmaps(render::backend::Texture *texture) override;
+
   void* map(render::backend::UniformBuffer* uniform_buffer) override;
 
   void unmap(render::backend::UniformBuffer* uniform_buffer) override;

@@ -17,29 +17,29 @@ class VulkanContext;
 //TODO Make User defined Deconstructor
 class VulkanResourceManager {
 public:
-  VulkanResourceManager(const VulkanContext *ctx);
+  VulkanResourceManager(render::backend::Driver *driver)
+      : driver(driver) {}
   ~VulkanResourceManager();
 
-  std::shared_ptr<VulkanShader> loadShader(int id, ShaderKind kind, const char *path);
-  std::shared_ptr<VulkanShader> loadShader(int id, const char *path);
+  VulkanShader *loadShader(int id, render::backend::ShaderType type, const char *path);
   bool reloadShader(int id);
-  std::shared_ptr<VulkanMesh> loadMesh(int id, const char *path);
-  std::shared_ptr<VulkanMesh> createCubeMesh(int id, float size);
-  std::shared_ptr<VulkanTexture> loadTexture(int id, const char *path);
+  VulkanMesh* loadMesh(int id, const char *path);
+  VulkanMesh* createCubeMesh(int id, float size);
+  VulkanTexture* loadTexture(int id, const char *path);
 
-  std::shared_ptr<VulkanShader> getShader(int id) const;
-  std::shared_ptr<VulkanTexture> getTexture(int id) const;
-  std::shared_ptr<VulkanMesh> getMesh(int id) const;
-  std::shared_ptr<VulkanTexture> getHDRTexture(int id) const;
+  VulkanShader* getShader(int id) const;
+  VulkanTexture* getTexture(int id) const;
+  VulkanMesh* getMesh(int id) const;
+  VulkanTexture* getHDRTexture(int id) const;
 
   void shutdown();
 
 private:
   //May be This is singleton
-  const VulkanContext *context;
-  std::unordered_map<int, std::shared_ptr<VulkanShader>> shaders;
-  std::unordered_map<int, std::shared_ptr<VulkanMesh>> meshes;
-  std::unordered_map<int, std::shared_ptr<VulkanTexture>> textures;
+  render::backend::Driver *driver {nullptr};
+  std::unordered_map<int, VulkanShader*> shaders;
+  std::unordered_map<int, VulkanMesh*> meshes;
+  std::unordered_map<int, VulkanTexture*> textures;
 };
 }
 

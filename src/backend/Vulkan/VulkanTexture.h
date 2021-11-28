@@ -4,51 +4,43 @@
 
 #ifndef GAMEENGINE_VULKANTEXTURE_H
 #define GAMEENGINE_VULKANTEXTURE_H
-
-#include "VulkanContext.h"
 #include <string>
+#include "driver.h"
 namespace render::backend::vulkan {
 class VulkanTexture {
 public:
-  VulkanTexture(const VulkanContext *ctx)
-      : context(ctx) {}
+  VulkanTexture(render::backend::Driver *driver):driver(driver) { }
   ~VulkanTexture();
 
-  void createCube(VkFormat format, int w, int h, int numMipLevels);
-  void create2D(VkFormat format, int w, int h, int numMipLevels);
+  inline const render::backend::Texture *getBackend() const { return texture; }
+  void create2D(render::backend::Format format, int width, int height, int num_mips);
+  void createCube(render::backend::Format format, int width, int height, int num_mips);
 
-  bool loadFromFile(const std::string &file);
-  inline VkImage getImage() const { return image; }
-  inline VkImageView getImageView() const { return imageView; }
-  inline VkImageView getMipImageView(int mip) const { return mipViews[mip]; }
-  inline VkFormat getImageFormat() const { return imageFormat; }
-  inline VkSampler getSampler() const { return imageSampler; }
+  VkImage getImage() const ;
+  VkFormat getImageFormat() const ;
+  VkImageView getImageView() const ;
+  VkSampler getSampler() const;
+
   inline size_t getWidth() const { return width; }
   inline int getWidth(int mip) const { return std::max<int>(1, width / (1 << mip)); }
   inline size_t getHeight() const { return height; }
   inline int getHeight(int mip) const { return std::max<int>(1, height / (1 << mip)); }
   inline size_t getNumLayers() const { return layers; }
-  inline size_t getNumMiplevels() const { return mipLevels; }
+  inline size_t getNumMiplevels() const { return mip_levels; }
 
+  bool loadFromFile(const std::string &file);
   void clearGPUData();
   void clearCPUData();
+
 private:
-  void uploadToGPU(VkFormat format, VkImageTiling tiling, size_t size);
-private:
-  const VulkanContext *context;
+  render::backend::Driver *driver {nullptr};
   unsigned char *pixels = nullptr;
   int width = 0;
   int height = 0;
-  int channels = 0;
-  int mipLevels = 0;
+  int mip_levels = 0;
   int layers = 0;
 
-  VkFormat imageFormat{VK_FORMAT_UNDEFINED};
-  VkImage image{};
-  VkDeviceMemory imageMemory{};
-  VkImageView imageView{};
-  VkSampler imageSampler{};
-  std::vector<VkImageView> mipViews;
+  render::backend::Texture *texture {nullptr};
 };
 }
 

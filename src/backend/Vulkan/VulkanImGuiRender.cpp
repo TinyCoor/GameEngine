@@ -32,7 +32,7 @@ ImGuiRender::~ImGuiRender()
     shutdown();
 }
 
-void ImGuiRender::init(std::shared_ptr<VulkanSwapChain> swapChain)
+void ImGuiRender::init(VulkanSwapChain* swapChain)
 {
 
     // Init ImGui bindings for Vulkan
@@ -85,7 +85,7 @@ void ImGuiRender::shutdown() {
     imGuiContext = nullptr;
 }
 
-void ImGuiRender::resize(std::shared_ptr<VulkanSwapChain> swapChain) {
+void ImGuiRender::resize(VulkanSwapChain* swapChain) {
     extent = swapChain->getExtent();
     ImGui_ImplVulkan_SetMinImageCount(swapChain->getNumImages());
 }

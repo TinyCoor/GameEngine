@@ -18,78 +18,64 @@ struct CubemapFaceOrientationData {
   glm::mat4 faces[6];
 };
 
-VulkanCubeMapRender::VulkanCubeMapRender(const VulkanContext *ctx)
-    : context(ctx), renderQuad(new VulkanMesh(ctx)) {}
 
-void VulkanCubeMapRender::init(std::shared_ptr<VulkanShader> vertShader,
-                               std::shared_ptr<VulkanShader> fragShader,
-                               std::shared_ptr<VulkanTexture> targetTexture,
+void VulkanCubeMapRender::init(VulkanShader& vertShader,
+                               VulkanShader& fragShader,
+                               VulkanTexture& target_texture,
                                int mip,
                                uint32_t userDataSize) {
-  pushConstantsSize = userDataSize;
+  push_constants_size = userDataSize;
+  quad.createQuad(2.0f);
 
-  renderQuad->createQuad(2.0f);
+  target_extent.width = target_texture.getWidth(mip);
+  target_extent.height = target_texture.getHeight(mip);
 
-  for (int i = 0; i < 6; ++i) {
-    faceViews[i] = VulkanUtils::createImageView(
-        context->Device(),
-        targetTexture->getImage(),
-        targetTexture->getImageFormat(),
-        VK_IMAGE_ASPECT_COLOR_BIT,
-        VK_IMAGE_VIEW_TYPE_2D,
-        mip, 1,
-        i, 1
-    );
-  }
-
-  targetExtent.width = targetTexture->getWidth(mip);
-  targetExtent.height = targetTexture->getHeight(mip);
 
   VkViewport viewport{};
   viewport.x = 0.0f;
   viewport.y = 0.0f;
-  viewport.width = (float) targetExtent.width;
-  viewport.height = (float) targetExtent.height;
+  viewport.width = (float) target_extent.width;
+  viewport.height = (float) target_extent.height;
   viewport.minDepth = 0.0f;
   viewport.maxDepth = 1.0f;
 
   //create scissor
   VkRect2D scissor{};
   scissor.offset = {0, 0};
-  scissor.extent.width = targetTexture->getWidth();
-  scissor.extent.height = targetTexture->getHeight();
+  scissor.extent.width = target_texture.getWidth();
+  scissor.extent.height = target_texture.getHeight();
 
   VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
   VulkanDescriptorSetLayoutBuilder descriptorSetLayoutBuilder(context);
-  descriptorSetLayout = descriptorSetLayoutBuilder
+  descriptor_set_layout = descriptorSetLayoutBuilder
       .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage)
       .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
       .build();
 
   VulkanRenderPassBuilder renderPassBuilder(context);
-  renderPass = renderPassBuilder
-      .addColorAttachment(targetTexture->getImageFormat(),
+  render_pass = renderPassBuilder
+      .addColorAttachment(target_texture.getImageFormat(),
                           VK_SAMPLE_COUNT_1_BIT,
                           VK_ATTACHMENT_LOAD_OP_CLEAR,
                           VK_ATTACHMENT_STORE_OP_STORE)
-      .addColorAttachment(targetTexture->getImageFormat(),
+      .addColorAttachment(target_texture.getImageFormat(),
                           VK_SAMPLE_COUNT_1_BIT,
                           VK_ATTACHMENT_LOAD_OP_CLEAR,
                           VK_ATTACHMENT_STORE_OP_STORE)
-      .addColorAttachment(targetTexture->getImageFormat(),
+      .addColorAttachment(target_texture.getImageFormat(),
                           VK_SAMPLE_COUNT_1_BIT,
                           VK_ATTACHMENT_LOAD_OP_CLEAR,
                           VK_ATTACHMENT_STORE_OP_STORE)
-      .addColorAttachment(targetTexture->getImageFormat(),
+      .addColorAttachment(target_texture.getImageFormat(),
                           VK_SAMPLE_COUNT_1_BIT,
                           VK_ATTACHMENT_LOAD_OP_CLEAR,
                           VK_ATTACHMENT_STORE_OP_STORE)
-      .addColorAttachment(targetTexture->getImageFormat(),
+      .addColorAttachment(target_texture.getImageFormat(),
                           VK_SAMPLE_COUNT_1_BIT,
                           VK_ATTACHMENT_LOAD_OP_CLEAR,
                           VK_ATTACHMENT_STORE_OP_STORE)
-      .addColorAttachment(targetTexture->getImageFormat(),
+      .addColorAttachment(target_texture.getImageFormat(),
                           VK_SAMPLE_COUNT_1_BIT,
                           VK_ATTACHMENT_LOAD_OP_CLEAR,
                           VK_ATTACHMENT_STORE_OP_STORE)
@@ -103,17 +89,17 @@ void VulkanCubeMapRender::init(std::shared_ptr<VulkanShader> vertShader,
       .build();
 
   VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
-  pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
+  pipelineLayoutBuilder.addDescriptorSetLayout(descriptor_set_layout);
 
-  if (pushConstantsSize > 0) {
-    pipelineLayoutBuilder.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, pushConstantsSize);
+  if (push_constants_size > 0) {
+    pipelineLayoutBuilder.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, push_constants_size);
   }
-  pipelineLayout = pipelineLayoutBuilder.build();
+  pipeline_layout = pipelineLayoutBuilder.build();
 
-  VulkanGraphicsPipelineBuilder pipelineBuilder(context, pipelineLayout, renderPass);
+  VulkanGraphicsPipelineBuilder pipelineBuilder(context, pipeline_layout, render_pass);
   pipeline = pipelineBuilder
-      .addShaderStage(vertShader->getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
-      .addShaderStage(fragShader->getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
+      .addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
+      .addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
       .addVertexInput(VulkanMesh::getVertexInputBindingDescription(), VulkanMesh::getAttributeDescriptions())
       .setInputAssemblyState(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST)
       .addViewport(viewport)
@@ -134,37 +120,30 @@ void VulkanCubeMapRender::init(std::shared_ptr<VulkanShader> vertShader,
       .addBlendColorAttachment()
       .build();
 
-  VkDeviceSize uboSize = sizeof(CubemapFaceOrientationData);
-  VulkanUtils::createBuffer(
-      context,
-      uboSize,
-      VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-      uniformBuffer,
-      uniformBuffersMemory
-  );
-
+    uint32_t ubo_size = sizeof(CubemapFaceOrientationData);
+    uniform_buffer = driver->createUniformBuffer(render::backend::BufferType::DYNAMIC, ubo_size);
 
   // Create descriptor sets
   VkDescriptorSetAllocateInfo descriptorSetAllocInfo = {};
   descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
   descriptorSetAllocInfo.descriptorPool = context->DescriptorPool();
   descriptorSetAllocInfo.descriptorSetCount = 1;
-  descriptorSetAllocInfo.pSetLayouts = &descriptorSetLayout;
+  descriptorSetAllocInfo.pSetLayouts = &descriptor_set_layout;
   VK_CHECK(vkAllocateDescriptorSets(context->Device(), &descriptorSetAllocInfo, &descriptorSet),
            "Can't allocate descriptor sets");
 
 
   //create frameBuffer
-  VkFramebufferCreateInfo framebufferInfo = {};
-  framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-  framebufferInfo.renderPass = renderPass;
-  framebufferInfo.attachmentCount = 6;
-  framebufferInfo.pAttachments = faceViews;
-  framebufferInfo.width = targetExtent.width;
-  framebufferInfo.height = targetExtent.height;
-  framebufferInfo.layers = 1;
-  VK_CHECK(vkCreateFramebuffer(context->Device(), &framebufferInfo, nullptr, &frameBuffer), "Can't create framebuffer");
+  render::backend::FrameBufferColorAttachment attachments[6] =
+      {
+          { target_texture.getBackend(), mip, 1, 0, 1 },
+          { target_texture.getBackend(), mip, 1, 1, 1 },
+          { target_texture.getBackend(), mip, 1, 2, 1 },
+          { target_texture.getBackend(), mip, 1, 3, 1 },
+          { target_texture.getBackend(), mip, 1, 4, 1 },
+          { target_texture.getBackend(), mip, 1, 5, 1 },
+      };
+  framebuffer = driver->createFrameBuffer(6, attachments);
 
   // Create command buffers
   VkCommandBufferAllocateInfo allocateInfo = {};
@@ -172,16 +151,11 @@ void VulkanCubeMapRender::init(std::shared_ptr<VulkanShader> vertShader,
   allocateInfo.commandPool = context->CommandPool();
   allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   allocateInfo.commandBufferCount = 1;
-  VK_CHECK(vkAllocateCommandBuffers(context->Device(), &allocateInfo, &commandBuffer), "Can't create command buffers");
+  VK_CHECK(vkAllocateCommandBuffers(context->Device(), &allocateInfo, &command_buffer), "Can't create command buffers");
+
 
   //fill uniform buffer
-  CubemapFaceOrientationData *ubo{nullptr};
-  vkMapMemory(context->Device(),
-              uniformBuffersMemory,
-              0,
-              sizeof(CubemapFaceOrientationData),
-              0,
-              reinterpret_cast<void **>(&ubo));
+  CubemapFaceOrientationData *ubo = reinterpret_cast<CubemapFaceOrientationData *>(driver->map(uniform_buffer));
 
   const glm::mat4 &translateZ = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -214,17 +188,16 @@ void VulkanCubeMapRender::init(std::shared_ptr<VulkanShader> vertShader,
   for (int i = 0; i < 6; i++)
     ubo->faces[i] = faceRotations[i] * glm::lookAtRH(glm::vec3(0.0f), faceDirs[i], faceUps[i]) * translateZ;
 
-  vkUnmapMemory(context->Device(), uniformBuffersMemory);
+  driver->unmap(uniform_buffer);
 
   VulkanUtils::bindUniformBuffer(
       context->Device(),
       descriptorSet,
       0,
-      uniformBuffer,
+      static_cast<render::backend::vulkan::UniformBuffer *>(uniform_buffer)->buffer,
       0,
-      uboSize
+      ubo_size
   );
-
   VkFenceCreateInfo fenceInfo{};
   fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
   fenceInfo.flags = 0;
@@ -234,37 +207,32 @@ void VulkanCubeMapRender::init(std::shared_ptr<VulkanShader> vertShader,
 
 void VulkanCubeMapRender::shutdown() {
 
-  renderQuad->clearGPUData();
-  renderQuad->clearCPUData();
+  driver->destroyUniformBuffer(uniform_buffer);
+  uniform_buffer = nullptr;
 
-  vkDestroyFramebuffer(context->Device(), frameBuffer, nullptr);
-  frameBuffer = VK_NULL_HANDLE;
+  driver->destroyFrameBuffer(framebuffer);
+  framebuffer = nullptr;
 
-  vkDestroyBuffer(context->Device(), uniformBuffer, nullptr);
-  uniformBuffer = VK_NULL_HANDLE;
+  quad.clearGPUData();
+  quad.clearCPUData();
 
-  vkFreeMemory(context->Device(), uniformBuffersMemory, nullptr);
-  uniformBuffersMemory = VK_NULL_HANDLE;
 
-  vkFreeCommandBuffers(context->Device(), context->CommandPool(), 1, &commandBuffer);
-  commandBuffer = VK_NULL_HANDLE;
 
-  for (int i = 0; i < 6; i++) {
-    vkDestroyImageView(context->Device(), faceViews[i], nullptr);
-    faceViews[i] = VK_NULL_HANDLE;
-  }
+  vkFreeCommandBuffers(context->Device(), context->CommandPool(), 1, &command_buffer);
+  command_buffer = VK_NULL_HANDLE;
 
-  vkDestroyDescriptorSetLayout(context->Device(), descriptorSetLayout, nullptr);
-  descriptorSetLayout = VK_NULL_HANDLE;
+
+  vkDestroyDescriptorSetLayout(context->Device(), descriptor_set_layout, nullptr);
+  descriptor_set_layout = VK_NULL_HANDLE;
 
   vkFreeDescriptorSets(context->Device(), context->DescriptorPool(), 1, &descriptorSet);
   descriptorSet = VK_NULL_HANDLE;
 
-  vkDestroyRenderPass(context->Device(), renderPass, nullptr);
-  renderPass = VK_NULL_HANDLE;
+  vkDestroyRenderPass(context->Device(), render_pass, nullptr);
+  render_pass = VK_NULL_HANDLE;
 
-  vkDestroyPipelineLayout(context->Device(), pipelineLayout, nullptr);
-  pipelineLayout = VK_NULL_HANDLE;
+  vkDestroyPipelineLayout(context->Device(), pipeline_layout, nullptr);
+  pipeline_layout = VK_NULL_HANDLE;
 
   vkDestroyPipeline(context->Device(), pipeline, nullptr);
   pipeline = VK_NULL_HANDLE;
@@ -274,16 +242,25 @@ void VulkanCubeMapRender::shutdown() {
 
 }
 
-void VulkanCubeMapRender::render(std::shared_ptr<VulkanTexture> inputTexture,
+void VulkanCubeMapRender::render(const VulkanTexture& input_texture,
                                  float *userData,
-                                 int mip) {
+                                 int input_mip) {
+
+  VkImageView mip_view = (input_mip == -1) ? VK_NULL_HANDLE : VulkanUtils::createImageView(
+      context->Device(),
+      input_texture.getImage(),
+      input_texture.getImageFormat(),
+      VK_IMAGE_ASPECT_COLOR_BIT,
+      (input_texture.getNumLayers() == 6) ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D,
+      input_mip, 1, 0, input_texture.getNumLayers()
+  );
 
   VulkanUtils::bindCombinedImageSampler(
       context->Device(),
       descriptorSet,
       1,
-      (mip == -1) ? inputTexture->getImageView() : inputTexture->getMipImageView(mip),
-      inputTexture->getSampler()
+      (input_mip == -1) ? input_texture.getImageView() : mip_view,
+      input_texture.getSampler()
   );
 
   // Record command buffers
@@ -291,15 +268,15 @@ void VulkanCubeMapRender::render(std::shared_ptr<VulkanTexture> inputTexture,
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
   beginInfo.pInheritanceInfo = nullptr; // Optional
-  VK_CHECK(vkBeginCommandBuffer(commandBuffer, &beginInfo), "Can't begin recording command buffer");
+  VK_CHECK(vkBeginCommandBuffer(command_buffer, &beginInfo), "Can't begin recording command buffer");
 
   VkRenderPassBeginInfo renderPassInfo = {};
   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  renderPassInfo.renderPass = renderPass;
-  renderPassInfo.framebuffer = frameBuffer;
+  renderPassInfo.renderPass = render_pass;
+  renderPassInfo.framebuffer = static_cast<render::backend::vulkan::FrameBuffer *>(framebuffer)->framebuffer;;
   renderPassInfo.renderArea.offset = {0, 0};
-  renderPassInfo.renderArea.extent.width = targetExtent.width;
-  renderPassInfo.renderArea.extent.height = targetExtent.height;
+  renderPassInfo.renderArea.extent.width = target_extent.width;
+  renderPassInfo.renderArea.extent.height = target_extent.height;
 
   VkClearValue clearValues[6];
   for (int i = 0; i < 6; i++) {
@@ -309,34 +286,34 @@ void VulkanCubeMapRender::render(std::shared_ptr<VulkanTexture> inputTexture,
   renderPassInfo.clearValueCount = 6;
   renderPassInfo.pClearValues = clearValues;
 
-  vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+  vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-  vkCmdBindDescriptorSets(commandBuffer,
+  vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+  vkCmdBindDescriptorSets(command_buffer,
                           VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          pipelineLayout,
+                          pipeline_layout,
                           0,
                           1,
                           &descriptorSet,
                           0,
                           nullptr);
-  if (pushConstantsSize > 0 && userData) {
-    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, pushConstantsSize, userData);
+  if (push_constants_size > 0 && userData) {
+    vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, push_constants_size, userData);
   }
 
-  VkBuffer vertexBuffers[] = {renderQuad->getVertexBuffer()};
-  VkBuffer indexBuffer = renderQuad->getIndexBuffer();
+  VkBuffer vertexBuffers[] = {quad.getVertexBuffer()};
+  VkBuffer indexBuffer = quad.getIndexBuffer();
   VkDeviceSize offsets[] = {0};
-  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-  vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-  vkCmdDrawIndexed(commandBuffer, renderQuad->getNumIndices(), 1, 0, 0, 0);
+  vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
+  vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+  vkCmdDrawIndexed(command_buffer, quad.getNumIndices(), 1, 0, 0, 0);
 
-  vkCmdEndRenderPass(commandBuffer);
-  VK_CHECK(vkEndCommandBuffer(commandBuffer), "Can't record command buffer");
+  vkCmdEndRenderPass(command_buffer);
+  VK_CHECK(vkEndCommandBuffer(command_buffer), "Can't record command buffer");
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = &commandBuffer;
+  submitInfo.pCommandBuffers = &command_buffer;
 
   VK_CHECK(vkResetFences(context->Device(), 1, &fence), "Reset Fence Failed");
   VK_CHECK(vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo, fence), "Submit Queue Failed");

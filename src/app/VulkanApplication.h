@@ -11,7 +11,7 @@
 #include "../backend/API.h"
 #include "../backend/Vulkan/VulkanSwapChain.h"
 #include "../backend/Vulkan/VulkanImGuiRender.h"
-#include "../backend/Vulkan/VulkanRender.h"
+#include "VulkanRender.h"
 #include "../backend/Vulkan/driver.h"
 
 class GLFWwindow;
@@ -85,7 +85,7 @@ private:
   VulkanRender *render{nullptr};
   ImGuiRender *imGuiRender{nullptr};
 
-  std::shared_ptr<VulkanSwapChain> swapChain;
+  VulkanSwapChain* swapChain;
 
   //TODO move to anther
   CameraState camera;

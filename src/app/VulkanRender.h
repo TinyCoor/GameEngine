@@ -5,15 +5,15 @@
 #ifndef GAMEENGINE_VULKANRENDER_H
 #define GAMEENGINE_VULKANRENDER_H
 
-#include "VulkanCubemapRender.h"
-#include "VulkanTexture2DRender.h"
+#include "../backend/Vulkan/VulkanCubemapRender.h"
+#include "../backend/Vulkan/VulkanTexture2DRender.h"
 #include <volk.h>
 #include <vector>
+
 namespace render::backend::vulkan {
 
 struct RenderState;
 class VulkanContext;
-class VulkanTexture;
 class VulkanSwapChain;
 class VulkanRenderScene;
 class VulkanRenderScene;
@@ -21,7 +21,8 @@ struct VulkanRenderFrame;
 
 class VulkanRender {
 private:
-  const VulkanContext *context;
+  const VulkanContext *context{nullptr};
+  render::backend::Driver *driver{nullptr};
   VkExtent2D extent;
 
   //TODO swapchain descriptorSetLayout
@@ -34,9 +35,9 @@ private:
   std::vector<VulkanCubeMapRender *> cubeToPrefilteredRenderers;
   VulkanTexture2DRender brdfRender;
 
-  std::shared_ptr<VulkanTexture> brdfBaked;
-  std::shared_ptr<VulkanTexture> environmentCubemap;
-  std::shared_ptr<VulkanTexture> diffuseIrradianceCubemap;
+  VulkanTexture brdfBaked;
+  VulkanTexture environmentCubemap;
+  VulkanTexture diffuseIrradianceCubemap;
 
   VkPipeline pbrPipeline{VK_NULL_HANDLE};
   VkPipeline skyboxPipeline{VK_NULL_HANDLE};
@@ -46,6 +47,7 @@ private:
 
 public:
   explicit VulkanRender(const VulkanContext *ctx,
+                        render::backend::Driver *driver,
                         VkExtent2D extent,
                         VkDescriptorSetLayout layout,
                         VkRenderPass renderPass);
@@ -64,13 +66,13 @@ public:
 
   void shutdown();
 
-  void resize(const std::shared_ptr<VulkanSwapChain> swapChain);
+  void resize(const VulkanSwapChain* swapChain);
 
   void reload(VulkanRenderScene *scene);
 
-  void setEnvironment(std::shared_ptr<VulkanTexture> texture);
+  void setEnvironment(VulkanTexture* texture);
 
-  std::shared_ptr<VulkanTexture> getBakedBRDF() const { return brdfBaked; }
+  VulkanTexture getBakedBRDF() const { return brdfBaked; }
 
 private:
 

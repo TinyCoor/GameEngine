@@ -4,8 +4,6 @@
 
 #include "VulkanRenderScene.h"
 namespace render::backend::vulkan {
-VulkanRenderScene::VulkanRenderScene(const VulkanContext *ctx)
-    : resource(ctx) {}
 
 VulkanRenderScene::~VulkanRenderScene() {
   shutdown();
@@ -13,31 +11,31 @@ VulkanRenderScene::~VulkanRenderScene() {
 
 void VulkanRenderScene::init() {
   for (int i = 0; i < config::shaders.size(); ++i) {
-    resource.loadShader(i, config::shaders[i]);
+    resources.loadShader(i, config::shaderTypes[i],config::shaders[i]);
   }
   for (int i = 0; i < config::textures.size(); ++i) {
-    resource.loadTexture(i, config::textures[i]);
+    resources.loadTexture(i, config::textures[i]);
   }
 
   for (int i = 0; i < config::meshes.size(); ++i) {
-    resource.loadMesh(i, config::meshes[i]);
+    resources.loadMesh(i, config::meshes[i]);
   }
 
   for (int i = 0; i < config::hdrTextures.size(); ++i) {
-    resource.loadTexture(config::Textures::EnvironmentBase + i, config::hdrTextures[i]);
+    resources.loadTexture(config::Textures::EnvironmentBase + i, config::hdrTextures[i]);
   }
 
-  resource.createCubeMesh(config::Meshes::Skybox, 1000.0);
+  resources.createCubeMesh(config::Meshes::Skybox, 1000.0);
 
 }
 
 void VulkanRenderScene::shutdown() {
-  resource.shutdown();
+  resources.shutdown();
 }
 
 bool VulkanRenderScene::reloadShader() {
   for (int i = 0; i < config::shaders.size(); ++i) {
-    if (resource.reloadShader(i)) {
+    if (resources.reloadShader(i)) {
       return true;
     }
   }

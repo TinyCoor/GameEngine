@@ -26,7 +26,21 @@ namespace config{
         BakedBRDFFrag,
     };
 
-    enum Textures{
+  static std::vector<render::backend::ShaderType> shaderTypes = {
+      render::backend::ShaderType::VERTEX,
+      render::backend::ShaderType::FRAGMENT,
+      render::backend::ShaderType::VERTEX,
+      render::backend::ShaderType::FRAGMENT,
+      render::backend::ShaderType::VERTEX,
+      render::backend::ShaderType::FRAGMENT,
+      render::backend::ShaderType::FRAGMENT,
+      render::backend::ShaderType::FRAGMENT,
+      render::backend::ShaderType::VERTEX,
+      render::backend::ShaderType::FRAGMENT,
+  };
+
+
+enum Textures{
         albedoTexture,
         normalTexture,
         aoTexture,
