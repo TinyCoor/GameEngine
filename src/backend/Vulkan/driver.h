@@ -136,7 +136,7 @@ class VulkanDriver : public render::backend::Driver {
   VulkanContext* context {nullptr};
 public:
   VulkanDriver(const char* app_name,const char* engine_name);
-  virtual ~VulkanDriver() =default;
+  ~VulkanDriver();
 
   VulkanContext* GetVulkanContext() const {return context;}
 

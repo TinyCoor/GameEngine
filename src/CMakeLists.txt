@@ -14,7 +14,7 @@ add_executable(niagara
         backend/Vulkan/VulkanUtils.cpp
         backend/Vulkan/VulkanMesh.cpp
         backend/Vulkan/VulkanGraphicsPipelineBuilder.cpp
-        backend/Vulkan/VulkanRender.cpp
+        app/VulkanRender.cpp
         app/VulkanRenderScene.cpp
         backend/Vulkan/VulkanContext.cpp
         backend/Vulkan/VulkanShader.cpp

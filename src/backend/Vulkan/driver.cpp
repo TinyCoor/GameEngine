@@ -436,6 +436,12 @@ static void destroyTransientSwapchainObjects(VulkanContext* context, SwapChain* 
   //todo
 }
 
+VulkanDriver::~VulkanDriver() noexcept {
+  if (context != nullptr){
+    context->shutdown();
+    delete context;
+  }
+}
 VertexBuffer *VulkanDriver::createVertexBuffer(BufferType type,
                                          uint16_t vertex_size,
                                          uint32_t num_vertices,
