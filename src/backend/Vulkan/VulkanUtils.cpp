@@ -185,35 +185,10 @@ void VulkanUtils::createImage2D(const VulkanContext *context,
                                 VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                 VkImage &image, VkDeviceMemory &memory) {
   //Create  Buffer
-  VkImageCreateInfo imageInfo{};
-  imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-  imageInfo.imageType = VK_IMAGE_TYPE_2D;
-  imageInfo.extent.width = static_cast<uint32_t>(width);
-  imageInfo.extent.height = static_cast<uint32_t>(height);
-  imageInfo.extent.depth = 1;
-  imageInfo.mipLevels = mipLevel;
-  imageInfo.arrayLayers = 1;
-  imageInfo.format = format;
-  imageInfo.tiling = tiling;
-  imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  imageInfo.usage = usage;
-  imageInfo.samples = numberSample;
-  imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  imageInfo.flags = 0;
-
-  VK_CHECK(vkCreateImage(context->Device(), &imageInfo, nullptr, &image),
-           "failed to create textures!");
-
-  VkMemoryRequirements memRequirements;
-  vkGetImageMemoryRequirements(context->Device(), image, &memRequirements);
-
-  VkMemoryAllocateInfo allocInfo{};
-  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-  allocInfo.allocationSize = memRequirements.size;
-  allocInfo.memoryTypeIndex = findMemoryType(context->PhysicalDevice(), memRequirements.memoryTypeBits, properties);
-  VK_CHECK(vkAllocateMemory(context->Device(), &allocInfo, nullptr, &memory),
-           "failed to allocate vertex buffer memory!");
-  VK_CHECK(vkBindImageMemory(context->Device(), image, memory, 0), "Bind Buffer VertexBuffer Failed");
+  createImage(context,VK_IMAGE_TYPE_2D,
+              width,height,1,1,mipLevel,numberSample,
+              format,tiling,usage,properties,0,
+              image,memory);
 }
 
 void VulkanUtils::createCubeImage(const VulkanContext *context, uint32_t width, uint32_t height,
@@ -221,36 +196,13 @@ void VulkanUtils::createCubeImage(const VulkanContext *context, uint32_t width, 
                                   VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                   VkImage &image, VkDeviceMemory &memory) {
   //Create  Buffer
-  VkImageCreateInfo imageInfo{};
-  imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-  imageInfo.imageType = VK_IMAGE_TYPE_2D;
-  imageInfo.extent.width = static_cast<uint32_t>(width);
-  imageInfo.extent.height = static_cast<uint32_t>(height);
-  imageInfo.extent.depth = 1;
-  imageInfo.mipLevels = mipLevel;
-  imageInfo.arrayLayers = 6;
-  imageInfo.format = format;
-  imageInfo.tiling = tiling;
-  imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  imageInfo.usage = usage;
-  imageInfo.samples = numberSample;
-  imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-
-  VK_CHECK(vkCreateImage(context->Device(), &imageInfo, nullptr, &image),
-           "failed to create textures!");
-
-  VkMemoryRequirements memRequirements;
-  vkGetImageMemoryRequirements(context->Device(), image, &memRequirements);
-
-  VkMemoryAllocateInfo allocInfo{};
-  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-  allocInfo.allocationSize = memRequirements.size;
-  allocInfo.memoryTypeIndex = findMemoryType(context->PhysicalDevice(), memRequirements.memoryTypeBits, properties);
-  VK_CHECK(vkAllocateMemory(context->Device(), &allocInfo, nullptr, &memory),
-           "failed to allocate image buffer memory!");
-  VK_CHECK(vkBindImageMemory(context->Device(), image, memory, 0), "Bind Buffer  Failed");
-
+  createImage(context,VK_IMAGE_TYPE_2D,
+              width,height,1,6,
+              mipLevel,numberSample,format,
+              tiling,usage,properties,
+              VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
+              image,memory
+              );
 }
 
 VkImageView VulkanUtils::createImageCubeView(VkDevice device,
@@ -454,117 +406,133 @@ void VulkanUtils::copyBufferToImage(const VulkanContext *context, VkBuffer srcBu
   endSingleTimeCommands(context, commandBuffer);
 }
 
-void VulkanUtils::createImage2D(
+void VulkanUtils::createImage(
     const VulkanContext *context,
+    VkImageType imageType,
     uint32_t width,
     uint32_t height,
+    uint32_t depth,
+    uint32_t arrayLayers,
     uint32_t mipLevel,
-    uint32_t pixel_size,
-    const void* data,
     VkSampleCountFlagBits numberSample,
     VkFormat format,
     VkImageTiling tiling,
+    VkImageUsageFlags usage,
+    VkMemoryPropertyFlags properties,
+    VkImageCreateFlags flags,
     VkImage &image,
     VkDeviceMemory &memory
 )
 {
+  //Create  Buffer
+  VkImageCreateInfo imageInfo{};
+  imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+  imageInfo.imageType = imageType;
+  imageInfo.extent.width = static_cast<uint32_t>(width);
+  imageInfo.extent.height = static_cast<uint32_t>(height);
+  imageInfo.extent.depth = depth;
+  imageInfo.mipLevels = mipLevel;
+  imageInfo.arrayLayers =arrayLayers;
+  imageInfo.format = format;
+  imageInfo.tiling = tiling;
+  imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  imageInfo.usage = usage;
+  imageInfo.samples = numberSample;
+  imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  imageInfo.flags = flags;
+
+  VK_CHECK(vkCreateImage(context->Device(), &imageInfo, nullptr, &image),
+           "failed to create textures!");
+
+  VkMemoryRequirements memRequirements;
+  vkGetImageMemoryRequirements(context->Device(), image, &memRequirements);
+
+  VkMemoryAllocateInfo allocInfo{};
+  allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+  allocInfo.allocationSize = memRequirements.size;
+  allocInfo.memoryTypeIndex = findMemoryType(context->PhysicalDevice(), memRequirements.memoryTypeBits, properties);
+  VK_CHECK(vkAllocateMemory(context->Device(), &allocInfo, nullptr, &memory),
+           "failed to allocate vertex buffer memory!");
+  VK_CHECK(vkBindImageMemory(context->Device(), image, memory, 0), "Bind Buffer VertexBuffer Failed");
+}
+
+
+void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
+    uint32_t width,uint32_t height,uint32_t depth,
+    uint32_t mipLevel,uint32_t arrayLayers,uint32_t pixel_size,
+    const void* data,VkFormat format,uint32_t dataMipLevel,uint32_t dataLayers
+)
+{
 
   VkDeviceSize buffer_size = 0;
-  size_t mip_width = width;
-  size_t mip_height = height;
-  for (int i = 0; i <mipLevel; ++i) {
+  uint32_t mip_width = width;
+  uint32_t mip_height = height;
+  uint32_t mip_depth = depth;
+  for (int i = 0; i <dataMipLevel; ++i) {
     buffer_size += mip_width * mip_height * pixel_size;
-    mip_width /= 2;
-    mip_height /= 2;
+    mip_width =  std::max(mip_width / 2,1u);
+    mip_height = std::max(mip_height/2,1u) ;
+    mip_depth = std::max(mip_depth/2,1u);
   }
-
-
-  VulkanUtils::createImage2D(context,
-                             width,
-                             height,
-                             mipLevel,
-                             numberSample,
-                             format,
-                             tiling,
-                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             image,
-                             memory
-  );
-
-  /// copy pixel
-  VkBuffer stagingBuffer{};
-  VkDeviceMemory stagingBufferMemory{};
-  VulkanUtils::createBuffer(context, buffer_size,
-                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                            stagingBuffer,
-                            stagingBufferMemory);
-
-  void *staging_data = nullptr;
-  vkMapMemory(context->Device(), stagingBufferMemory, 0, buffer_size, 0, &staging_data);
-  memcpy(staging_data, data, static_cast<size_t>(buffer_size));
-  vkUnmapMemory(context->Device(), stagingBufferMemory);
-
-  VulkanUtils::createImage2D(context,width,
-                             height,
-                             mipLevel,
-                             numberSample,
-                             format,
-                             tiling,
-                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
-                                 | VK_IMAGE_USAGE_SAMPLED_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             image, memory);
 
   //Prepare the image for transfer
   VulkanUtils::transitionImageLayout(context, image , format,
                                      VK_IMAGE_LAYOUT_UNDEFINED,
                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                     0, mipLevel);
+                                     0,mipLevel,
+                                     0, arrayLayers);
 
-  // copt to gpu
-  mip_width = width;
-  mip_height = height;
+  /// copy pixel
+  VkBuffer stagingBuffer{};
+  VkDeviceMemory stagingBufferMemory{};
+  VulkanUtils::createBuffer(context, buffer_size * dataLayers,
+                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                            stagingBuffer,
+                            stagingBufferMemory);
+
+  //
+  void *staging_data = nullptr;
+  vkMapMemory(context->Device(), stagingBufferMemory, 0, buffer_size * dataLayers, 0, &staging_data);
+  memcpy(staging_data, data, static_cast<size_t>(buffer_size));
+  vkUnmapMemory(context->Device(), stagingBufferMemory);
+
+  // copy to gpu
+
   VkDeviceSize  offset = 0;
   auto commandBuffer = VulkanUtils::beginSingleTimeCommands(context);
-  for (int i = 0; i <mipLevel; ++i) {
-    VkBufferImageCopy region{};
-    region.bufferOffset = offset;
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
+  for (int i = 0; i < dataLayers; ++i) {
+    mip_width = width;
+    mip_height = height;
+    mip_depth = depth;
+    for (int j = 0; j <dataMipLevel; ++j) {
+      VkBufferImageCopy region{};
+      region.bufferOffset = offset;
+      region.bufferRowLength = 0;
+      region.bufferImageHeight = 0;
 
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 1;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
+      region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      region.imageSubresource.mipLevel = j;
+      region.imageSubresource.baseArrayLayer = i;
+      region.imageSubresource.layerCount = 1;
 
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent =  {width,height,1};
-    vkCmdCopyBufferToImage(
-        commandBuffer,
-        stagingBuffer,
-        image,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1,
-        &region
-    );
-    mip_width /= 2;
-    mip_height /= 2;
+      region.imageOffset = {0, 0, 0};
+      region.imageExtent =  {width,height,1};
+      vkCmdCopyBufferToImage(commandBuffer,stagingBuffer,image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+          1,&region
+      );
+      offset += mip_width * mip_height * mip_depth *pixel_size;
+      mip_width /= 2;
+      mip_height /= 2;
+    }
   }
 
   VulkanUtils::endSingleTimeCommands(context,commandBuffer);
-  //Generate mipmaps on GPU
-  VulkanUtils::generateImage2DMipMaps(context,image, width,height,mipLevel,
-                                      format, VK_FILTER_LINEAR);
-
   //Prepare the image for shader access
-  VulkanUtils::transitionImageLayout(context,
-                                     image,
-                                     format,
+  VulkanUtils::transitionImageLayout(context,image,format,
                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                     0, mipLevel);
+                                     0, mipLevel,0,arrayLayers);
   //clean up
   vkDestroyBuffer(context->Device(), stagingBuffer, nullptr);
   vkFreeMemory(context->Device(), stagingBufferMemory, nullptr);

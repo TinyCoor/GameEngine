@@ -38,20 +38,24 @@ struct Texture : public render::backend::Texture {
   VkDeviceMemory imageMemory{VK_NULL_HANDLE};
   VkImageType type{VK_IMAGE_TYPE_2D};
   VkFormat format{VK_FORMAT_R8G8B8A8_UNORM};
-  size_t width;
-  size_t height;
-  size_t depth;
-  uint8_t num_layers;
-  uint8_t num_mipmaps;
-  VkImageTiling tiling{};
-  VkSampleCountFlagBits samples;
+  size_t width{0};
+  size_t height{0};
+  size_t depth{0};
+  uint8_t num_layers{0};
+  uint8_t num_mipmaps{0};
+  VkImageTiling tiling{VK_IMAGE_TILING_OPTIMAL};
+  VkSampleCountFlagBits samples{VK_SAMPLE_COUNT_1_BIT};
+  VkImageCreateFlags flags{0};
 };
 
+
+
 struct RenderTarget : public render::backend::RenderTarget {
-  static constexpr int MAX_COLOR_ATTATCHMENTS = 16;
+  static constexpr int MAX_COLOR_ATTACHMENTS = 16;
+  VkRenderPass renderPass{VK_NULL_HANDLE};
   VkFramebuffer frameBuffer{VK_NULL_HANDLE};
   uint8_t num_color_attachment{0};
-  VkImageView color_attachment[MAX_COLOR_ATTATCHMENTS];
+  VkImageView color_attachment[MAX_COLOR_ATTACHMENTS];
   VkImageView depth_attachment{VK_NULL_HANDLE};
 };
 

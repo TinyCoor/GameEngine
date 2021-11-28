@@ -137,7 +137,6 @@ namespace render::backend {
 
     };
 
-
     struct IndexBuffer {
 
     };

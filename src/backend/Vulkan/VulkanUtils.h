@@ -112,20 +112,30 @@ public:
       VkDeviceMemory &memory
   );
 
-  static void createImage2D(
+  static void createImage(
       const VulkanContext *context,
+      VkImageType imageType,
       uint32_t width,
       uint32_t height,
+      uint32_t depth,
+      uint32_t arrayLayers,
       uint32_t mipLevel,
-      uint32_t pixel_size,
-      const void* data,
       VkSampleCountFlagBits numberSample,
       VkFormat format,
       VkImageTiling tiling,
+      VkImageUsageFlags usage,
+      VkMemoryPropertyFlags properties,
+      VkImageCreateFlags flags,
       VkImage &image,
       VkDeviceMemory &memory
   );
 
+  static void fillImage(
+      const VulkanContext *context, VkImage &image,
+      uint32_t width,uint32_t height,uint32_t depth,
+      uint32_t mipLevel,uint32_t arrayLayers,uint32_t pixel_size,
+      const void* data,VkFormat format,uint32_t dataMipLevel,uint32_t dataLayers
+  );
 
   static void createCubeImage(const VulkanContext *context,
                               uint32_t width,
