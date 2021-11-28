@@ -4,17 +4,20 @@
 
 #ifndef GAMEENGINE_VULKANAPPLICATION_H
 #define GAMEENGINE_VULKANAPPLICATION_H
-#include "../backend/Vulkan/VulkanContext.h"
 #include "RenderState.h"
-#include "../backend/Vulkan/VulkanSwapChain.h"
-#include "../backend/Vulkan/VulkanImGuiRender.h"
-#include "../backend/Vulkan/VulkanRender.h"
 #include <volk.h>
 #include <memory>
 #include <imgui.h>
+#include "../backend/API.h"
+#include "../backend/Vulkan/VulkanSwapChain.h"
+#include "../backend/Vulkan/VulkanImGuiRender.h"
+#include "../backend/Vulkan/VulkanRender.h"
+#include "../backend/Vulkan/driver.h"
 
 class GLFWwindow;
 using namespace render::backend::vulkan;
+
+
 
 struct CameraState {
   double phi{0.0f};
@@ -71,8 +74,9 @@ private:
 private:
   GLFWwindow *window{nullptr};
   bool windowResized = false;
+  VulkanContext* context{nullptr};
+  render::backend::vulkan::VulkanDriver* driver;
 
-  VulkanContext *context{nullptr};
   VulkanRenderScene *scene{nullptr};
   RenderState state;
   //TODO remove

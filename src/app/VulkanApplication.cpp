@@ -2,7 +2,6 @@
 // Created by y123456 on 2021/10/11.
 //
 #include "VulkanApplication.h"
-#include "../backend/Vulkan/VulkanSwapChain.h"
 #include "VulkanRenderScene.h"
 #include "../backend/Vulkan/VulkanRender.h"
 #include "../backend/Vulkan/VulkanImGuiRender.h"
@@ -58,22 +57,14 @@ Application::Application(){
 Application::~Application(){
 
 }
-
-
-
 void Application::initVulkan() {
-    if(context == nullptr){
-        context =new VulkanContext;
-        context->init();
-    }
+    driver = dynamic_cast<render::backend::vulkan::VulkanDriver*>(render::backend::Driver::create("","",render::backend::Api::VULKAN));
+    context = driver->GetVulkanContext();
 }
 
 void Application::shutdownVulkan() {
-    if(context){
-        context->shutdown();
-        delete context;
-        context = nullptr;
-    }
+    delete driver;
+    driver = nullptr;
 }
 
 void Application::initImGui() {
@@ -222,7 +213,7 @@ void Application::mainLoop() {
         glfwPollEvents();
     }
 
-    vkDeviceWaitIdle(context->Device());
+    driver->wait();
 }
 
 
@@ -234,8 +225,6 @@ void Application::shutdownRenders() {
     }
 
     imGuiRender->shutdown();
-
-
 }
 
 void Application::initRenders() {

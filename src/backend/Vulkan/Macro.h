@@ -6,6 +6,7 @@
 #define GAMEENGINE_MACRO_H
 #include <volk.h>
 #include <stdexcept>
+#include <iostream>
 
 #define OFFSET_OF(type,member) ((size_t) (& ((type*) 0)->member))
 
@@ -13,7 +14,7 @@
     do {                                                \
         VkResult res  =(call);                            \
         if(res != VK_SUCCESS ){                          \
-             throw std::runtime_error(msg);               \
+             std::cerr << msg <<std::endl;               \
         }                                                 \
     }while(0)
 

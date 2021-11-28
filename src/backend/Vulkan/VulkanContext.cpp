@@ -34,13 +34,13 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 
 namespace {
 
-VkApplicationInfo createApplicationInfo() {
+VkApplicationInfo createApplicationInfo(const char* app_name,const char* engine_name) {
   //填充应用信息
   VkApplicationInfo appInfo = {};
   appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-  appInfo.pApplicationName = "PBR VulkanRender";
+  appInfo.pApplicationName = app_name;
   appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-  appInfo.pEngineName = "No Engine";
+  appInfo.pEngineName = engine_name;
   appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
   appInfo.apiVersion = VK_API_VERSION_1_0;
   return appInfo;
@@ -134,7 +134,7 @@ void VulkanContext::wait() {
   vkDeviceWaitIdle(device);
 }
 
-void VulkanContext::init() {
+void VulkanContext::init(const char* app_name,const char* engine_name) {
   VK_CHECK(volkInitialize(), "can not init volk help lib");
   //Get Instance extension
   uint32_t glfwExtensionCount = 0;
@@ -148,7 +148,7 @@ void VulkanContext::init() {
   TH_WITH_MSG(!VulkanUtils::checkInstanceValidationLayers(requiredValidationLayers, true),
               "This device does not have vulkan Validation layer supported");
 
-  auto appInfo = createApplicationInfo();
+  auto appInfo = createApplicationInfo(app_name,engine_name);
 
   auto debugMessengerInfo = createDebugMessengerCreateInfo(appInfo);
 

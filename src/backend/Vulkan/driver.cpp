@@ -5,9 +5,12 @@
 #include "driver.h"
 #include "VulkanUtils.h"
 #include "VulkanContext.h"
+#include "Macro.h"
 
 #include <volk.h>
 #include <cassert>
+#include <stdexcept>
+#include <iostream>
 namespace render::backend::vulkan {
 
 ///todo array support
@@ -202,7 +205,66 @@ static void fillTexture(const VulkanContext *context, Texture *texture,
   }
 }
 
-VertexBuffer *Driver::createVertexBuffer(BufferType type,
+static void selectOptimalSwapChainSettings(VulkanContext* context, SwapChain* swapchain)
+{
+  //get surface capablity
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context->PhysicalDevice(),swapchain->surface,&swapchain->surface_capabilities);
+
+  // select best surface format
+  uint32_t num_surface_format = 0;
+  vkGetPhysicalDeviceSurfaceFormatsKHR(context->PhysicalDevice(),swapchain->surface,&num_surface_format, nullptr);
+  assert(num_surface_format > 0);
+  std::vector<VkSurfaceFormatKHR> surface_formats(num_surface_format);
+  vkGetPhysicalDeviceSurfaceFormatsKHR(context->PhysicalDevice(),swapchain->surface,&num_surface_format, surface_formats.data());
+  // no preferred format
+  if(surface_formats.size() ==1 && surface_formats[0].format == VK_FORMAT_UNDEFINED){
+    swapchain->surface_format = {VK_FORMAT_B8G8R8A8_UNORM,VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+
+  }else{  // Otherwise, select one of the available formatselse
+    swapchain->surface_format = surface_formats[0];
+    for (const auto &format : surface_formats)
+    {
+      if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+      {
+        swapchain->surface_format = format;
+        break;
+      }
+    }
+  }
+
+  //select best present mode
+  uint32_t num_present_mode = 0;
+  vkGetPhysicalDeviceSurfacePresentModesKHR(context->PhysicalDevice(),swapchain->surface,&num_present_mode, nullptr);
+  assert(num_present_mode >0);
+  std::vector<VkPresentModeKHR> present_modes(num_present_mode);
+  vkGetPhysicalDeviceSurfacePresentModesKHR(context->PhysicalDevice(),swapchain->surface,&num_present_mode, present_modes.data());
+  swapchain->present_mode = VK_PRESENT_MODE_FIFO_KHR;
+  for (const auto &presentMode : present_modes)
+  {
+    // Some drivers currently don't properly support FIFO present mode,
+    // so we should prefer IMMEDIATE mode if MAILBOX mode is not available
+    if (presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+      swapchain->present_mode = presentMode;
+
+    if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+    {
+      swapchain->present_mode = presentMode;
+      break;
+    }
+  }
+}
+
+static void createTransientSwapchainObjects(VulkanContext* context, SwapChain* swapchain)
+{
+  //todo
+}
+
+static void destroyTransientSwapchainObjects(VulkanContext* context, SwapChain* swapchain)
+{
+  //todo
+}
+
+VertexBuffer *VulkanDriver::createVertexBuffer(BufferType type,
                                          uint16_t vertex_size,
                                          uint32_t num_vertices,
                                          uint8_t num_attributes,
@@ -229,7 +291,7 @@ VertexBuffer *Driver::createVertexBuffer(BufferType type,
   return result;
 }
 
-IndexBuffer *Driver::createIndexBuffer(BufferType type,
+IndexBuffer *VulkanDriver::createIndexBuffer(BufferType type,
                                        uint8_t index_size,
                                        uint32_t num_indices,
                                        const void *data) {
@@ -249,7 +311,7 @@ IndexBuffer *Driver::createIndexBuffer(BufferType type,
   return nullptr;
 }
 
-RenderPrimitive *Driver::createRenderPrimitive(RenderPrimitiveType type,
+RenderPrimitive *VulkanDriver::createRenderPrimitive(RenderPrimitiveType type,
                                                const render::backend::VertexBuffer *vertex_buffer,
                                                const render::backend::IndexBuffer *index_buffer) {
   const vulkan::VertexBuffer *v_buffer = static_cast<const vulkan::VertexBuffer *>(vertex_buffer);
@@ -262,7 +324,7 @@ RenderPrimitive *Driver::createRenderPrimitive(RenderPrimitiveType type,
   return primitive;
 }
 
-Texture *Driver::createTexture2D(uint32_t width,
+Texture *VulkanDriver::createTexture2D(uint32_t width,
                                  uint32_t height,
                                  uint32_t num_mipmaps,
                                  Format format,
@@ -283,7 +345,7 @@ Texture *Driver::createTexture2D(uint32_t width,
   return texture;
 }
 
-Texture *Driver::createTexture2DArray(uint32_t width,
+Texture *VulkanDriver::createTexture2DArray(uint32_t width,
                                       uint32_t height,
                                       uint32_t num_mipmaps,
                                       uint32_t num_layers,
@@ -309,7 +371,7 @@ Texture *Driver::createTexture2DArray(uint32_t width,
   return texture;
 }
 
-Texture *Driver::createTexture3D(uint32_t width,
+Texture *VulkanDriver::createTexture3D(uint32_t width,
                                  uint32_t height,
                                  uint32_t depth,
                                  uint32_t num_mipmaps,
@@ -332,7 +394,7 @@ Texture *Driver::createTexture3D(uint32_t width,
   return texture;
 }
 
-Texture *Driver::createTextureCube(uint32_t width,
+Texture *VulkanDriver::createTextureCube(uint32_t width,
                                    uint32_t height,
                                    uint32_t num_mipmaps,
                                    Format format,
@@ -354,63 +416,151 @@ Texture *Driver::createTextureCube(uint32_t width,
   return texture;
 }
 
-FrameBuffer *Driver::createFrameBuffer(uint8_t num_color_attachments,
+FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_color_attachments,
                                        const FrameBufferColorAttachment *color_attachments,
                                        const FrameBufferDepthStencilAttachment *depthstencil_attachment) {
   return nullptr;
 }
-UniformBuffer *Driver::createUniformBuffer(BufferType type, uint32_t size, const void *data) {
+UniformBuffer *VulkanDriver::createUniformBuffer(BufferType type, uint32_t size, const void *data) {
   return nullptr;
 }
-Shader *Driver::createShaderFromSource(ShaderType type, uint32_t length, const char *source) {
+Shader *VulkanDriver::createShaderFromSource(ShaderType type, uint32_t length, const char *source) {
   return nullptr;
 }
-Shader *Driver::createShaderFromBytecode(ShaderType type, uint32_t size, const void *data) {
+Shader *VulkanDriver::createShaderFromBytecode(ShaderType type, uint32_t size, const void *data) {
   return nullptr;
 }
-void Driver::destroyVertexBuffer(render::backend::VertexBuffer *vertex_buffer) {
+void VulkanDriver::destroyVertexBuffer(render::backend::VertexBuffer *vertex_buffer) {
 
 }
-void Driver::destroyIndexBuffer(render::backend::IndexBuffer *index_buffer) {
+void VulkanDriver::destroyIndexBuffer(render::backend::IndexBuffer *index_buffer) {
 
 }
-void Driver::destroyRenderPrimitive(render::backend::RenderPrimitive *render_primitive) {
+void VulkanDriver::destroyRenderPrimitive(render::backend::RenderPrimitive *render_primitive) {
 
 }
-void Driver::destroyTexture(render::backend::Texture *texture) {
+void VulkanDriver::destroyTexture(render::backend::Texture *texture) {
 
 }
-void Driver::destroyFrameBuffer(render::backend::FrameBuffer *frame_buffer) {
+void VulkanDriver::destroyFrameBuffer(render::backend::FrameBuffer *frame_buffer) {
 
 }
-void Driver::destroyUniformBuffer(render::backend::UniformBuffer *uniform_buffer) {
+void VulkanDriver::destroyUniformBuffer(render::backend::UniformBuffer *uniform_buffer) {
 
 }
-void Driver::destroyShader(render::backend::Shader *shader) {
+void VulkanDriver::destroyShader(render::backend::Shader *shader) {
 
 }
-void Driver::beginRenderPass(const render::backend::FrameBuffer *frame_buffer) {
+void VulkanDriver::beginRenderPass(const render::backend::FrameBuffer *frame_buffer) {
 
 }
-void Driver::endRenderPass() {
+void VulkanDriver::endRenderPass() {
 
 }
-void Driver::bindUniformBuffer(uint32_t unit, const render::backend::UniformBuffer *uniform_buffer) {
+void VulkanDriver::bindUniformBuffer(uint32_t unit, const render::backend::UniformBuffer *uniform_buffer) {
 
 }
-void Driver::bindTexture(uint32_t unit, const render::backend::Texture *texture) {
+void VulkanDriver::bindTexture(uint32_t unit, const render::backend::Texture *texture) {
 
 }
-void Driver::bindShader(const render::backend::Shader *shader) {
+void VulkanDriver::bindShader(const render::backend::Shader *shader) {
 
 }
-void Driver::drawIndexedPrimitive(const render::backend::RenderPrimitive *render_primitive) {
+void VulkanDriver::drawIndexedPrimitive(const render::backend::RenderPrimitive *render_primitive) {
 
 }
-void Driver::drawIndexedPrimitiveInstanced(const render::backend::RenderPrimitive *primitive,
+void VulkanDriver::drawIndexedPrimitiveInstanced(const render::backend::RenderPrimitive *primitive,
                                            const render::backend::VertexBuffer *instance_buffer,
                                            uint32_t num_instances,
                                            uint32_t offset) {
 
 }
+VulkanDriver::VulkanDriver(const char *app_name, const char *engine_name):context(new VulkanContext) {
+  context->init(app_name,engine_name);
+}
+
+SwapChain *VulkanDriver::createSwapChain(void *native_window) {
+  assert(native_window != nullptr && "native_window nullptr");
+  vulkan::SwapChain* swapchain = new vulkan::SwapChain;
+
+  //swapchain->surface = vulkan::platform::createSuface(native_window);
+
+  // get present queue family
+  swapchain->present_queue_family = VulkanUtils::fetchPresentQueueFamily(
+      context->PhysicalDevice(),
+      swapchain->surface,
+      context->GraphicsQueueFamily()
+  );
+
+  // Get present queue
+  vkGetDeviceQueue(context->Device(), swapchain->present_queue_family, 0, &swapchain->present_queue);
+  if (swapchain->present_queue == VK_NULL_HANDLE){
+    std::cerr <<"Can't get present queue from logical device" << std::endl;
+    return nullptr;
+  }
+
+  // select swapchain settings
+  vulkan::selectOptimalSwapChainSettings(context,swapchain);
+
+  createTransientSwapchainObjects(context,swapchain);
+
+  //Create Sync Object
+  for (size_t i = 0; i <swapchain->num_images ; ++i) {
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkFenceCreateInfo fenceInfo = {};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    if (vkCreateSemaphore(context->Device(), &semaphoreInfo, nullptr, &swapchain->image_available_gpu[i]) != VK_SUCCESS ||
+        vkCreateSemaphore(context->Device(), &semaphoreInfo, nullptr, &swapchain->render_finished_gpu[i]) != VK_SUCCESS ||
+        vkCreateFence(context->Device(), &fenceInfo, nullptr, &swapchain->rendering_finished_cpu[i]) != VK_SUCCESS) {
+      std::cerr << "failed to create semaphores!"<<std::endl;
+      destroySwapChain(swapchain);
+      return nullptr;
+    }
+  }
+
+  return swapchain;
+}
+
+void VulkanDriver::destroySwapChain(render::backend::SwapChain *swapchain) {
+  if (swapchain == nullptr)
+    return;
+
+  auto* vk_swap_chain = static_cast<vulkan::SwapChain*>(swapchain);
+
+  //todo free vk resource
+
+  delete swapchain;
+  swapchain= nullptr;
+}
+
+
+
+bool VulkanDriver::acquire(render::backend::SwapChain *swapchain) {
+  return false;
+}
+
+bool VulkanDriver::present(render::backend::SwapChain  *swapchain) {
+  return false;
+}
+
+bool VulkanDriver::resize(render::backend::SwapChain *swapchain, uint32_t width, uint32_t height) {
+  return false;
+}
+
+
+void VulkanDriver::wait() {
+  assert(context != nullptr);
+  context->wait();
+}
+
+void *VulkanDriver::map(render::backend::UniformBuffer *uniform_buffer) {
+  return nullptr;
+}
+
+void VulkanDriver::unmap(render::backend::UniformBuffer *uniform_buffer) {
+
+}
+
 }

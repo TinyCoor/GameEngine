@@ -8,6 +8,13 @@
 #include <cstdint>
 
 namespace render::backend {
+    enum class Api{
+      DEFAULT,
+      VULKAN,
+      OPENGL,
+      DIRECTX,
+      CPU,
+    };
     enum BufferType :unsigned  char {
         STATIC = 0,
         DYNAMIC,
@@ -170,6 +177,10 @@ namespace render::backend {
 
     };
 
+    struct SwapChain{
+
+    };
+
     // C structs
     struct VertexAttribute {
         Format format{Format::UNDEFINED};
@@ -192,6 +203,8 @@ namespace render::backend {
     // main backend class
     class Driver {
     public:
+        virtual ~Driver()= default;
+        static Driver* create(const char* app_name,const char* engine_name, Api api);
         virtual VertexBuffer *createVertexBuffer(
                 BufferType type,
                 uint16_t vertex_size,
@@ -277,6 +290,7 @@ namespace render::backend {
                 const void *data
         ) = 0;
 
+        virtual SwapChain* createSwapChain(void* native_window) = 0;
         virtual void destroyVertexBuffer(VertexBuffer *vertex_buffer) = 0;
 
         virtual void destroyIndexBuffer(IndexBuffer *index_buffer) = 0;
@@ -290,15 +304,26 @@ namespace render::backend {
         virtual void destroyUniformBuffer(UniformBuffer *uniform_buffer) = 0;
 
         virtual void destroyShader(Shader *shader) = 0;
+        virtual void destroySwapChain(SwapChain* swapchain) = 0;
 
     public:
 
+      virtual void* map(render::backend::UniformBuffer* uniform_buffer) =0;
+
+      virtual void unmap(render::backend::UniformBuffer* uniform_buffer) =0;
+
+      virtual void wait() =0;
         // sequence
         virtual void beginRenderPass(
                 const FrameBuffer *frame_buffer
         ) = 0;
 
         virtual void endRenderPass() = 0;
+
+        virtual bool acquire(SwapChain* swapchain) = 0;
+
+        virtual bool present(SwapChain* swapchain) = 0;
+        virtual bool resize(SwapChain* swapchain,uint32_t width,uint32_t height) =0;
 
         // bind
         virtual void bindUniformBuffer(

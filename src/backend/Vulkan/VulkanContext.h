@@ -18,7 +18,7 @@ public:
   VulkanContext();
   ~VulkanContext();
 
-  void init();
+  void init(const char* app_name,const char* engine_name);
   void shutdown();
   void wait();
 

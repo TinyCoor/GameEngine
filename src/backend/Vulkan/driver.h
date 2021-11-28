@@ -24,7 +24,6 @@ struct IndexBuffer : public render::backend::IndexBuffer {
   VkDeviceMemory memory{VK_NULL_HANDLE};
   VkIndexType type{VK_INDEX_TYPE_UINT16};
   uint32_t num_indices;
-
 };
 
 struct RenderPrimitive : public render::backend::RenderPrimitive {
@@ -32,6 +31,8 @@ struct RenderPrimitive : public render::backend::RenderPrimitive {
   const VertexBuffer *vertexBuffer{nullptr};
   const IndexBuffer *indexBuffer{nullptr};
 };
+
+
 
 struct Texture : public render::backend::Texture {
   VkImage image{VK_NULL_HANDLE};
@@ -49,23 +50,23 @@ struct Texture : public render::backend::Texture {
 };
 
 
-
-struct RenderTarget : public render::backend::RenderTarget {
+struct FrameBuffer : public render::backend::FrameBuffer {
   static constexpr int MAX_COLOR_ATTACHMENTS = 16;
-  VkRenderPass renderPass{VK_NULL_HANDLE};
+  VkRenderPass dummy_render_pass{VK_NULL_HANDLE};
   VkFramebuffer frameBuffer{VK_NULL_HANDLE};
   uint8_t num_color_attachment{0};
-  VkImageView color_attachment[MAX_COLOR_ATTACHMENTS];
-  VkImageView depth_attachment{VK_NULL_HANDLE};
+  FrameBufferColorAttachment color_attachments[MAX_COLOR_ATTACHMENTS];
+  FrameBufferDepthStencilAttachment depth_attachment;
 };
+
 
 struct UniformBuffer : public render::backend::UniformBuffer {
   VkBuffer buffer{VK_NULL_HANDLE};
   VkDeviceMemory memory{VK_NULL_HANDLE};
-  VkIndexType type{VK_INDEX_TYPE_UINT16};
-  uint32_t num_indices{0};
-
+  uint32_t size{0};
+  void* pointer {nullptr};
 };
+
 
 struct Shader : public render::backend::Shader {
   ShaderType type{ShaderType::Fragment};
@@ -81,10 +82,51 @@ struct GraphicsProgram : public render::backend::GraphicsProgram {
   const Shader *fragment;
 };
 
+struct SwapChain : public render::backend::SwapChain
+{
+  enum {
+    MAX_IMAGES =8,
+    MAX_FENCES_IN_FLIGHT = 4,
+  };
+
+  VkSurfaceKHR surface{VK_NULL_HANDLE};
+  VkSurfaceCapabilitiesKHR surface_capabilities;
+  VkSurfaceFormatKHR surface_format;
+
+  uint32_t present_queue_family{0XFFFF};
+  VkQueue present_queue{VK_NULL_HANDLE};
+  VkPresentModeKHR present_mode{VK_PRESENT_MODE_FIFO_KHR};
+
+  VkFormat format{VK_FORMAT_UNDEFINED};
+  VkExtent2D sizes;
+
+
+
+  VkSemaphore image_available_gpu[vulkan::SwapChain::MAX_IMAGES];
+  VkSemaphore render_finished_gpu[vulkan::SwapChain::MAX_IMAGES];
+  VkFence rendering_finished_cpu[vulkan::SwapChain::MAX_IMAGES];
+
+  VkSwapchainKHR swapchain{VK_NULL_HANDLE};
+  uint32_t num_images{0};
+  uint32_t current_image{0};
+
+
+  VkImage images[vulkan::SwapChain::MAX_IMAGES];
+  VkImageView views[vulkan::SwapChain::MAX_IMAGES];
+  VkCommandBuffer commandBuffer[vulkan::SwapChain::MAX_IMAGES];
+
+
+};
+
+
 class VulkanContext;
-class Driver : public render::backend::Driver {
-  const VulkanContext* context {nullptr};
+class VulkanDriver : public render::backend::Driver {
+  VulkanContext* context {nullptr};
 public:
+  VulkanDriver(const char* app_name,const char* engine_name);
+  virtual ~VulkanDriver() =default;
+
+  VulkanContext* GetVulkanContext() const {return context;}
 
   VertexBuffer *createVertexBuffer(
       BufferType type,
@@ -186,6 +228,11 @@ public:
   void destroyShader(render::backend::Shader *shader) override;
 
 public:
+  void* map(render::backend::UniformBuffer* uniform_buffer) override;
+
+  void unmap(render::backend::UniformBuffer* uniform_buffer) override;
+
+  void wait();
 
   // sequence
   virtual void beginRenderPass(
@@ -220,6 +267,12 @@ public:
       uint32_t num_instances,
       uint32_t offset
   ) override;
+
+  SwapChain *createSwapChain(void *native_window) override;
+  void destroySwapChain(render::backend::SwapChain *swapchain) override;
+  bool acquire(render::backend::SwapChain *swapchain) override;
+  bool present(render::backend::SwapChain *swapchain) override;
+  bool resize(render::backend::SwapChain *swapchain, uint32_t width, uint32_t height) override;
 };
 }
 

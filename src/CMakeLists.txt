@@ -46,7 +46,15 @@ add_executable(niagara
         backend/Vulkan/VulkanTexture2DRender.h
         Entity/light.cpp
         Entity/light.h
-        Entity/material.h app/driver.cpp backend/API.h backend/core/file.cpp backend/core/file.h backend/core/Vertex.h backend/core/Vertex.cpp backend/Vulkan/driver.cpp backend/Vulkan/driver.h)
+        Entity/material.h
+        backend/API.h
+        backend/API.cpp
+        backend/core/file.cpp
+        backend/core/file.h
+        backend/core/Vertex.h
+        backend/core/Vertex.cpp
+        backend/Vulkan/driver.cpp
+        backend/Vulkan/driver.h)
 
 
 message(STATUS ${ShaderC_LIBRARIES})
