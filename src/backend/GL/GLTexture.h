@@ -31,10 +31,16 @@ struct GLTextureCreatePolicy{
     }
 
     static void Bind(int pos, GLHANDLE handle){
+        glBindTexture(texture_type,handle);
         glBindTextureUnit(pos,handle);
     }
 
-    static void Destroy(GLHANDLE& handle){
+    static void UnBind(){
+        glBindTexture(texture_type,0);
+    }
+
+
+  static void Destroy(GLHANDLE& handle){
         glDeleteTextures(1,&handle);
         handle = 0;
     }
@@ -69,12 +75,12 @@ public:
         SamplerManagePolicy<texture_type>::bindSampler(unit,this->handle);
     }
 
-    void SetSamplerParamInt(GLHANDLE sampler,GLenum pname,const GLint param ){
-        glSamplerParameteri(sampler,pname,param);
+    void SetSamplerParamInt(GLenum pname,const GLint param ){
+        glSamplerParameteri(this->handle,pname,param);
     }
 
-    void SetSamplerParamfloat(GLHANDLE sampler,GLenum pname,const float param ){
-        glSamplerParameterf(sampler,pname,param);
+    void SetSamplerParamfloat(GLenum pname,const float param ){
+        glSamplerParameterf(this->handle,pname,param);
     }
 };
 
@@ -126,7 +132,7 @@ public:
 
 inline size_t internal_format_to_size(GLenum format){
     switch (format) {
-        case GL_R8:         return sizeof(GLubyte) * 1;
+        case GL_R8:         return sizeof(GLubyte)  * 1;
         case GL_R16:        return sizeof(GLushort) * 1;
         case GL_R16F:       return sizeof(GLhalf)   * 1;
         case GL_R32F:       return sizeof(GLfloat)  * 1;
@@ -150,15 +156,15 @@ inline size_t internal_format_to_size(GLenum format){
         case GL_RGB32I:     return sizeof(GLushort) * 3;
         case GL_RGB32UI:    return sizeof(GLhalf)   * 3;
         case GL_RGBA8:      return sizeof(GLfloat)  * 4;
-        case GL_RGBA16:     return sizeof(GLbyte)   * 4;
-        case GL_RGBA16F:    return sizeof(GLshort)  * 4;
-        case GL_RGBA32F:    return sizeof(GLint)    * 4;
+        case GL_RGBA16:     return sizeof(GLhalf)   * 4;
+        case GL_RGBA16F:    return sizeof(GLhalf)   * 4;
+        case GL_RGBA32F:    return sizeof(GLfloat)  * 4;
         case GL_RGBA8I:     return sizeof(GLubyte)  * 4;
         case GL_RGBA16I:    return sizeof(GLushort) * 4;
-        case GL_RGBA32I:    return sizeof(GLhalf)   * 4;
-        case GL_RGBA8UI:    return sizeof(GLfloat)  * 4;
-        case GL_RGBA16UI:   return sizeof(GLbyte)   * 4;
-        case GL_RGBA32UI:   return sizeof(GLshort)  * 4;
+        case GL_RGBA32I:    return sizeof(GLint)    * 4;
+        case GL_RGBA8UI:    return sizeof(GLbyte)   * 4;
+        case GL_RGBA16UI:   return sizeof(GLshort)  * 4;
+        case GL_RGBA32UI:   return sizeof(GLuint)   * 4;
     }
     assert(false && "not open gl format");
 
@@ -181,6 +187,12 @@ inline size_t internal_format_to_size(GLenum format){
 /// 填充数据
 /// glTextureSubImage*D 1/2/3
 
+enum usage_type {
+  COLOR_ATTACHMENT,
+  DEPTH_ATTACHMENT,
+  DEPTH_STENCIL_ATTACHMENT,
+};
+
 template<GLenum textureType,
 template<GLenum> class TextureCreatePolicy=GLTextureCreatePolicy>
 class GLTexture: public GLObject{
@@ -189,45 +201,45 @@ private:
     int height;
     int depth_;
     int mipLevel_;
+    usage_type usage;
     GLenum internal_format;
     GLSampler<textureType> sampler;
-private:
-
 
 public:
     static constexpr GLenum type = textureType;
 
     GLTexture(): GLObject(TextureCreatePolicy<textureType>::Create(),"Texture"){}
 
-    GLTexture(int w,int h,int depth,int mipLevel,GLenum format)
+    GLTexture(int w,int h,int depth,int mipLevel = 1,GLenum format = GL_RGBA,usage_type usg = COLOR_ATTACHMENT)
         : GLObject(TextureCreatePolicy<textureType>::Create(),"Texture"),
           width(w),
           height(h),
           depth_(depth),
+          usage(usg),
           mipLevel_(mipLevel),
           internal_format(format){}
-
-    void init(int w,int h,int mip,GLenum f){
-        width = w;
-        height= h;
-        mipLevel_= mip;
-        internal_format = f;
-    }
 
     int getWidth()const {return width;}
     int getHeight() const{ return height;}
     int getDepth() const {return depth_;}
     int getMipLevel() const { return mipLevel_;}
     int getInternalFormat() const { return internal_format;}
+    usage_type getUsage() const {return usage;}
     ~GLTexture() {
         TextureCreatePolicy<textureType>::Destroy(this->handle);
     }
 
-    void BindTexture(int pos){
+    void Bind(int pos){
         TextureCreatePolicy<textureType>::Bind(pos,this->handle);
-        sampler.BindSampler(pos);
+    }
+    void UnBind() {
+      TextureCreatePolicy<textureType>::UnBind();
     }
 
+    //tbo
+    void BindTextureBuffer(GLBuffer<GL_TEXTURE_BUFFER>& texture_buffer) {
+        glTextureBuffer(this->handle,GL_R32F,texture_buffer.GetHandle());
+    }
 
     void SetTextureParam(GLenum pname,GLint param){
         glTexParameteri(textureType, pname, param);
@@ -279,6 +291,8 @@ public:
 
 //利用重载
 // x显式设置文件
+
+//todo texture_CUBE_MAP six time
 class TextureAllocator{
 private:
     DEFINE_TEXTURE_FUNCTION_ALLOCATE_1D(AllocateTextureMemImpl,GL_TEXTURE_1D)
@@ -311,9 +325,12 @@ public:
         AllocateTextureMemImpl(texture,texture.getMipLevel(),texture.getInternalFormat(),texture.getWidth(),texture.getHeight(),texture.getDepth());
     }
 
-    template<GLenum type>
-    void FillTextureMemory(GLTexture<type> texture,GLenum format,GLenum m_type,const void* data){
-        FillTextureMemImpl(texture,0,0,0,texture.getWidth(),texture.getHeight(),texture.getDepth(),format,m_type,data);
+   template<GLenum type>
+   static void FillTextureMemory(GLTexture<type> texture,GLenum format,GLenum data_type,const void* data){
+        FillTextureMemImpl(texture,texture.getMipLevel(),
+                           0,0,0,
+                           texture.getWidth(),texture.getHeight(),texture.getDepth(),
+                           format,data_type,data);
     }
 };
 

@@ -4,6 +4,7 @@
 
 #include "file.h"
 #include <cstdio>
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <cstring>
 
@@ -22,5 +23,14 @@ namespace core{
         return true;
     }
 
+      bool  loadHDR(const char *file, ImageInfo &imageInfo)
+      {
+      stbi_set_flip_vertically_on_load(true);
+      imageInfo.data = stbi_loadf(file, &imageInfo.width, &imageInfo.height, &imageInfo.channels, 0);
+      if(!imageInfo.data){
+        return false;
+      }
+      return true;
+    }
 
 }

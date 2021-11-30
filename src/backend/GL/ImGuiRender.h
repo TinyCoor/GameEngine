@@ -9,7 +9,7 @@
 class GLFWwindow;
 class ImGuiRender {
 public:
-    ImGuiRender()=default;
+    ImGuiRender(){};
     ~ImGuiRender();
     void init(GLFWwindow* window);
 
@@ -21,8 +21,8 @@ public:
 
 private:
     bool ToolOpen = true;
-    glm::vec3 position;
-    glm::vec3 rotation;
+    glm::vec3 position{0.f,0.f,0.f};
+    glm::vec3 rotation{0.f,0.f,0.f};
 
 };
 

@@ -9,12 +9,14 @@ typedef unsigned char uint8_t;
 
 namespace core {
     struct ImageInfo{
-        int width;
-        int height;
-        int channels;
-        uint8_t *data;
+        int width = 0;
+        int height =0;
+        int channels = 0;
+        void *data = nullptr;
     };
     bool loadTexture(const char* file,ImageInfo& imageInfo);
+
+    bool loadHDR(const char* file,ImageInfo& imageInfo);
 }
 
 

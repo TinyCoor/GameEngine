@@ -15,7 +15,9 @@ public:
     void render();
 
 private:
-    GLCubeMapRender cubeMapRender;
+
+
+
 
 };
 

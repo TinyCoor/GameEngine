@@ -15,19 +15,13 @@
  */
 class GLCubeMapRender {
 public:
-    GLCubeMapRender(){}
+     GLCubeMapRender(){}
     ~GLCubeMapRender(){}
-    GLCubeMapRender(GLShader& vertShader,GLShader fragShader);
 
-    void init(GLShader& vert,GLShader& frag);
-
-    void render();
+    void render(GLTexture<GL_TEXTURE_CUBE_MAP>& envCubeMap);
 
 private:
     GLProgram program;
-    GLUniformBuffer uniform;
-    GLMesh renderMesh;
-    std::vector<GLTexture<GL_TEXTURE_2D>> textures{};
 };
 
 

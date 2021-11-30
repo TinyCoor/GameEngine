@@ -20,6 +20,7 @@ public:
 struct GLVertexAttribute{
     int binding;
     int size;
+    int stride;
     size_t offset;
 };
 
@@ -34,7 +35,10 @@ public:
 
     void createQuad(float size);
 
+    void createSkyBox(float size);
+
     void draw(GLProgram& program) override;
+    void draw() ;
 
 private:
     void uploadToGPU();

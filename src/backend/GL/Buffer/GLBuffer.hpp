@@ -23,10 +23,15 @@ public:
         glBindBuffer(type,glhandle);
     }
 
+    static void UnBind() {
+      glBindBuffer(type,0);
+    }
+
     static void DestroyBuffer(GLHANDLE handle){
         glDeleteBuffers(1,&handle);
     }
 };
+
 template<>
 class BufferPolicy<GL_FRAMEBUFFER>{
 public:
@@ -42,7 +47,7 @@ public:
         glBindFramebuffer(buffer_type,glhandle);
     }
 
-    static void UnBind(GLHANDLE glhandle) {
+    static void UnBind() {
         glBindFramebuffer(buffer_type,0);
     }
 
@@ -54,7 +59,7 @@ public:
 template<>
 class BufferPolicy<GL_RENDERBUFFER>{
 public:
-    static constexpr GLenum buffer_type = GL_FRAMEBUFFER;
+    static constexpr GLenum buffer_type = GL_RENDERBUFFER;
 
     static GLHANDLE  createBufferObject(){
         GLHANDLE buffer_handle;
@@ -66,12 +71,14 @@ public:
         glBindRenderbuffer(buffer_type,glhandle);
     }
 
+    static void UnBind() {
+      glBindRenderbuffer(buffer_type,0);
+    }
+
     static void DestroyBuffer(GLHANDLE handle){
         glDeleteRenderbuffers(1,&handle);
     }
 };
-
-
 
 //TODO add comment
 /**
@@ -95,7 +102,6 @@ public:
  * @tparam BufferTypePolicy
  */
 
-
 template<GLenum buf_type,template<GLenum > class BufferTypePolicy = BufferPolicy>
 class GLBuffer : public GLObject {
 protected:
@@ -104,6 +110,13 @@ protected:
     size_t element_size_ = 0;
     size_t bufferSize = 0;
 public:
+      /**
+     * 对于从ShaderProgram找出的Handle 不需要调用Create
+     * glGetUniformLoaction() 返回的 handle
+     * @param handle
+     */
+    GLBuffer(GLHANDLE handle): GLObject(handle,"GLBuffer"){}
+
     GLBuffer(): GLObject(BufferTypePolicy<buf_type>::createBufferObject(),"GLBuffer"){}
 
     void init(size_t size){
@@ -121,20 +134,12 @@ public:
     GLObject(BufferTypePolicy<buf_type>::createBufferObject(),"GLBuffer"),
     width_(width),height_(height),element_size_(element_size)
     {
-        bufferSize=width_*height_*element_size;
+        glNamedBufferStorage(this->handle,width_*height_*element_size_, nullptr,GL_DYNAMIC_STORAGE_BIT);
     }
 
     size_t getBufferSize(){
         return  bufferSize ;
     }
-
-    //TODO check
-    /**
-     * 对于从ShaderProgram找出的Handle 不需要调用Create
-     * glGetUniformLoaction() 返回的 handle
-     * @param handle
-     */
-    GLBuffer(GLHANDLE handle): GLObject(handle,"GLBuffer"){}
 
     ~GLBuffer(){
        glDeleteBuffers(1, (reinterpret_cast<const GLuint *>(&(this->handle))));
@@ -144,7 +149,11 @@ public:
         BufferTypePolicy<buf_type>::Bind(this->handle);
     }
 
-    /**
+    void UnBind(){
+      BufferTypePolicy<buf_type>::UnBind();
+    }
+
+  /**
      * @param data
      *    本地数据地址，用于更新缓存数据的数据源头,如果data 为NULL 那么指挥分配缓存，不会初始化
      * @param size

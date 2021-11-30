@@ -18,7 +18,7 @@ struct CameraState
     double phi {0.0f};
     double theta {0.0f};
     double radius {2.0f};
-    glm::vec3 target;
+    glm::vec3 target{0,0,0};
 };
 
 struct InputState
@@ -34,11 +34,11 @@ struct InputState
 
 class GLApplication{
 public:
-    GLApplication();
+    GLApplication(GLFWwindow* native_window):window(native_window){}
     void run();
+
+
     GLFWwindow* GetWindowHandle(){return window;}
-
-
     //GLFW Event
     static void OnFrameBufferResized(GLFWwindow* window,int width,int height);
     static void onMousePosition(GLFWwindow* window, double mouseX, double mouseY);
@@ -47,22 +47,18 @@ public:
     static void OnKeyBoard(GLFWwindow* window,float deltaTime);
 
 private:
-
     bool init();
-    void initGLFW();
     bool render();
     void shutdownGLFW() ;
     void shutdown();
 
 private:
-    GLFWwindow* window;
-    std::shared_ptr<ImGuiRender> imGuiRender_{new ImGuiRender};
-
+    GLFWwindow* window{nullptr};
+    ImGuiRender* imGuiRender_{new ImGuiRender};
 
     // camera
-    CameraState camera;
-    InputState input;
-
+    CameraState camera{};
+    InputState input{};
 };
 
 #endif //GAMEENGINE_GLAPPLICATION_H

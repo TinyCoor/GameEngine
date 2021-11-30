@@ -7,7 +7,9 @@
 
 #include "GLBuffer.hpp"
 /**
- * 用于从图像中读取数据
+ * 用于从图像缓存中读取数据,
+ * 主要是用于读取frameBuffer 中的像素
+ *
  */
 class GLReadPixelBuffer : public GLBuffer<GL_PIXEL_PACK_BUFFER>{
 private:
@@ -27,11 +29,12 @@ public:
  * 作为图像的数据来源 可以作为GLTexture的图像来源
  */
 class GLWritePixelBuffer : public GLBuffer<GL_PIXEL_UNPACK_BUFFER>{
-
 public:
     GLWritePixelBuffer(size_t width,size_t height,size_t data_size)
     :GLBuffer<GL_PIXEL_UNPACK_BUFFER>(width,height,data_size)
-    {}
+    {
+
+    }
 
 
 };
