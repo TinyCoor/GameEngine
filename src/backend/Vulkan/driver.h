@@ -63,7 +63,11 @@ struct FrameBufferDepthStencilAttachment : public render::backend::FrameBufferCo
 };
 
 struct FrameBuffer : public render::backend::FrameBuffer {
-  static constexpr int MAX_COLOR_ATTACHMENTS = 16;
+  enum
+  {
+    MAX_COLOR_ATTACHMENTS = 16,
+  };
+
   VkRenderPass dummy_render_pass{VK_NULL_HANDLE};
   VkFramebuffer framebuffer{VK_NULL_HANDLE};
   uint8_t num_color_attachments{0};
@@ -102,32 +106,25 @@ struct SwapChain : public render::backend::SwapChain
   };
 
   VkSurfaceKHR surface{VK_NULL_HANDLE};
-  VkSurfaceCapabilitiesKHR surface_capabilities;
+  VkSurfaceCapabilitiesKHR surface_capabilities{};
   VkSurfaceFormatKHR surface_format;
 
   uint32_t present_queue_family{0XFFFF};
   VkQueue present_queue{VK_NULL_HANDLE};
   VkPresentModeKHR present_mode{VK_PRESENT_MODE_FIFO_KHR};
 
-  VkFormat format{VK_FORMAT_UNDEFINED};
-  VkExtent2D sizes;
-
-
-
   VkSemaphore image_available_gpu[vulkan::SwapChain::MAX_IMAGES];
   VkSemaphore render_finished_gpu[vulkan::SwapChain::MAX_IMAGES];
   VkFence rendering_finished_cpu[vulkan::SwapChain::MAX_IMAGES];
 
   VkSwapchainKHR swapchain{VK_NULL_HANDLE};
+  VkExtent2D sizes;
+
   uint32_t num_images{0};
   uint32_t current_image{0};
 
-
   VkImage images[vulkan::SwapChain::MAX_IMAGES];
   VkImageView views[vulkan::SwapChain::MAX_IMAGES];
-  VkCommandBuffer commandBuffer[vulkan::SwapChain::MAX_IMAGES];
-
-
 };
 
 
@@ -283,7 +280,7 @@ public:
       uint32_t offset
   ) override;
 
-  SwapChain *createSwapChain(void *native_window) override;
+  SwapChain *createSwapChain(void *native_window,uint32_t width,uint32_t height) override;
   void destroySwapChain(render::backend::SwapChain *swapchain) override;
   bool acquire(render::backend::SwapChain *swapchain) override;
   bool present(render::backend::SwapChain *swapchain) override;

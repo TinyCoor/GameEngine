@@ -33,6 +33,7 @@ public:
 private:
   const VulkanContext *context;
   render::backend::Driver *driver {nullptr};
+  render::backend::FrameBuffer *framebuffer {nullptr};
   VulkanMesh quad;
   VkExtent2D target_extent;
 
@@ -42,7 +43,7 @@ private:
 
   VkCommandBuffer commandBuffer;
   VkFence fence;
-  render::backend::FrameBuffer *framebuffer {nullptr};
+
 
 
 };

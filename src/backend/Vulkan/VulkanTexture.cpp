@@ -6,9 +6,11 @@
 #include "VulkanUtils.h"
 #include "Macro.h"
 #include <stdexcept>
-#define STB_IMAGE_IMPLEMENTATION
+#include <cassert>
 #include <stb_image.h>
 #include <iostream>
+#include <cmath>
+#include <cstring>
 
 namespace render::backend::vulkan {
 

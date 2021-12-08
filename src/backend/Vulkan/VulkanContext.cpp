@@ -139,6 +139,7 @@ void VulkanContext::init(const char* app_name,const char* engine_name) {
   //Get Instance extension
   uint32_t glfwExtensionCount = 0;
   auto glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+  //TODO use platform::createSurface()
   std::vector<const char *> requiredExtensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
   requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
   TH_WITH_MSG(!VulkanUtils::checkInstanceExtensions(requiredExtensions, true),
@@ -156,7 +157,7 @@ void VulkanContext::init(const char* app_name,const char* engine_name) {
 
   volkLoadInstance(instance);
 
-//    Create Debug Message
+  // Create Debug Message
   VK_CHECK(vkCreateDebugUtilsMessengerEXT(instance, &debugMessengerInfo, nullptr, &debugMessenger),
            " CreateDebugUtilsMessengerEXT  Failed\n");
 
@@ -206,7 +207,7 @@ void VulkanContext::init(const char* app_name,const char* engine_name) {
 
 }
 
-//TODO Pick Suitable GPU
+
 int VulkanContext::checkPhysicalDevice(VkPhysicalDevice physical_device) {
   if (!VulkanUtils::checkPhysicalDeviceExtensions(physical_device, requiredPhysicalDeviceExtensions)) {
     return -1;

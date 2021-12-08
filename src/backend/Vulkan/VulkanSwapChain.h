@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_VULKANSWAPCHAIN_H
 #define GAMEENGINE_VULKANSWAPCHAIN_H
-#include "VulkanContext.h"
+#include "driver.h"
 #include <volk.h>
 #include <vector>
 
@@ -27,7 +27,7 @@ struct RenderState;
 
 class VulkanSwapChain {
 public:
-  VulkanSwapChain(const VulkanContext *ctx, void *nativeWindow, VkDeviceSize uboSize);
+  VulkanSwapChain(render::backend::Driver* driver, void *nativeWindow, VkDeviceSize uboSize);
   virtual ~VulkanSwapChain();
 
   void init(int width, int height);
@@ -40,11 +40,12 @@ public:
 
   void shutdown();
 
-  inline VkExtent2D getExtent() const { return swapChainExtent; }
+  VkExtent2D getExtent() const ;
+  uint32_t getNumImages() const ;
   inline VkRenderPass getRenderPass() const { return renderPass; }
   inline VkRenderPass getNoClearRenderPass() const { return noClearRenderPass; }
   inline VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
-  inline uint32_t getNumImages() const { return swapChainImageViews.size(); }
+
 
 private:
 
@@ -59,68 +60,42 @@ private:
     VkPresentModeKHR presentMode;
   };
 
-  VulkanSwapChain::SupportDetails fetchSwapChainSupportDetails(VkPhysicalDevice physicalDevice,
-                                                               VkSurfaceKHR surface) const;
-  VulkanSwapChain::Settings selectOptimalSwapChainSettings(const VulkanSwapChain::SupportDetails &details) const;
-
 private:
 
-  void initTransient(int width, int height);
+  void initTransient(int width, int height,VkFormat image_format);
   void shutdownTransient();
 
-  void initPersistent();
+  void initPersistent(VkFormat image_format);
   void shutdownPersistent();
 
-  void initFrames(VkDeviceSize uboSize);
+  void initFrames(VkDeviceSize uboSize,uint32_t width,uint32_t height,uint32_t num_images,VkImageView* views);
   void shutdownFrames();
 private:
 
-  const VulkanContext *context;
+  const VulkanContext *context{nullptr};
+  render::backend::Driver* driver{nullptr};
+  render::backend::SwapChain* swapChain{nullptr};
+
+  void* native_window{nullptr};
+
   VkRenderPass renderPass{VK_NULL_HANDLE};
   VkRenderPass noClearRenderPass{VK_NULL_HANDLE};
   VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
 
-  void *nativeWindow{nullptr};
-  VkSurfaceKHR surface{VK_NULL_HANDLE};
-  VkSwapchainKHR swapchain{VK_NULL_HANDLE};
-
-  uint32_t presentQueueFamily{0xFFFF};
-  VkQueue presentQueue{VK_NULL_HANDLE};
-
-  VulkanSwapChain::SupportDetails details;
-  VulkanSwapChain::Settings settings;
-
-  //
-  std::vector<VkImage> swapChainImages;
-  std::vector<VkImageView> swapChainImageViews;
-
-  VkFormat swapChainImageFormat; //color format
-  VkFormat depthFormat;
-
-  VkExtent2D swapChainExtent;
   VkDeviceSize uboSize;
+
 
   VkImage colorImage;
   VkImageView colorImageView;
   VkDeviceMemory colorImageMemory;
 
   VkImage depthImage;
+  VkFormat depthFormat;
   VkImageView depthImageView;
   VkDeviceMemory depthImageMemory;
 
   //
   std::vector<VulkanRenderFrame> frames;
-
-  //SwapChain
-  std::vector<VkSemaphore> imageAvailableSemaphores;
-  std::vector<VkSemaphore> renderFinishedSemaphores;
-  std::vector<VkFence> inFlightFences;
-  enum {
-    MAX_FRAME_IN_FLIGHT = 2,
-  };
-
-  uint32_t imageIndex = 0;
-  size_t currentFrame = 0;
 
 };
 
