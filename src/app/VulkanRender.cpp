@@ -76,7 +76,7 @@ void VulkanRender::init(VulkanRenderScene *scene) {
       .addDynamicState(VK_DYNAMIC_STATE_VIEWPORT)
       .setRasterizerState(false, false, VK_POLYGON_MODE_FILL,
                           1.0f, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE)
-      .setMultisampleState(context->MaxMSAASamples(), true)
+      .setMultisampleState(context->getMaxSampleCount(), true)
       .setDepthStencilState(true, true, VK_COMPARE_OP_LESS)
       .addBlendColorAttachment()
       .build();
@@ -97,7 +97,7 @@ void VulkanRender::init(VulkanRenderScene *scene) {
                           1.0f,
                           VK_CULL_MODE_BACK_BIT,
                           VK_FRONT_FACE_COUNTER_CLOCKWISE)
-      .setMultisampleState(context->MaxMSAASamples(), true)
+      .setMultisampleState(context->getMaxSampleCount(), true)
       .setDepthStencilState(true, true, VK_COMPARE_OP_LESS)
       .addBlendColorAttachment()
       .build();
@@ -260,23 +260,10 @@ void VulkanRender::update(RenderState &state, VulkanRenderScene *scene) {
 }
 
 void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &frame) {
-  VkCommandBuffer commandBuffer = frame.commandBuffer;
-  VkFramebuffer frameBuffer = frame.frameBuffer;
-  VkDescriptorSet descriptorSet = frame.swapchainDescriptorSet;
+  VkCommandBuffer commandBuffer = frame.command_buffer;
+  VkDescriptorSet descriptor_set = frame.descriptor_set;
 
-  VkRenderPassBeginInfo renderPassInfo = {};
-  renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-  renderPassInfo.renderPass = renderPass;
-  renderPassInfo.framebuffer = frameBuffer;
-  renderPassInfo.renderArea.offset = {0, 0};
-  renderPassInfo.renderArea.extent = extent;
-
-  std::array<VkClearValue, 3> clearValues = {};
-  clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
-  clearValues[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
-  clearValues[2].depthStencil = {1.0f, 0};
-  renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-  renderPassInfo.pClearValues = clearValues.data();
+  std::array<VkDescriptorSet, 2> sets = {descriptor_set, sceneDescriptorSet};
 
   VkViewport viewport{};
   viewport.x = 0.0f;
@@ -291,22 +278,13 @@ void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &fra
   scissor.offset = {0, 0};
   scissor.extent = extent;
 
-  vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
-
   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
   vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
-  std::array<VkDescriptorSet, 2> bindDescriptors = {descriptorSet, sceneDescriptorSet};
-  vkCmdBindDescriptorSets(commandBuffer,
-                          VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          pipelineLayout,
-                          0,
-                          bindDescriptors.size(),
-                          bindDescriptors.data(),
-                          0,
-                          nullptr);
+
+  vkCmdBindDescriptorSets(commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,
+                          0,sets.size(),sets.data(),0,nullptr);
+  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
 
   {
     auto skybox = scene->getSkyboxMesh();
@@ -321,15 +299,8 @@ void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &fra
   }
 
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipeline);
-
-  vkCmdBindDescriptorSets(commandBuffer,
-                          VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          pipelineLayout,
-                          0,
-                          bindDescriptors.size(),
-                          bindDescriptors.data(),
-                          0,
-                          nullptr);
+  vkCmdBindDescriptorSets(commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,
+                          0,sets.size(),sets.data(),0,nullptr);
   {
     auto mesh = scene->getMesh();
 
@@ -341,9 +312,6 @@ void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &fra
 
     vkCmdDrawIndexed(commandBuffer, mesh->getNumIndices(), 1, 0, 0, 0);
   }
-
-  vkCmdEndRenderPass(commandBuffer);
-
 }
 
 void VulkanRender::setEnvironment(VulkanTexture* texture) {

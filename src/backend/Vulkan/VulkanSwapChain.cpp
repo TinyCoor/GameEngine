@@ -24,12 +24,12 @@ VulkanSwapChain::~VulkanSwapChain() {
 }
 
 void VulkanSwapChain::init(int width, int height) {
-  swapChain = driver->createSwapChain(native_window, width, height);
-  auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swapChain);
+  swap_chain = driver->createSwapChain(native_window, width, height);
+  auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swap_chain);
   initPersistent(vk_swap_chain->surface_format.format);
   initTransient(width, height, vk_swap_chain->surface_format.format);
   initFrames(uboSize, vk_swap_chain->sizes.width, vk_swap_chain->sizes.height,
-             vk_swap_chain->num_images, vk_swap_chain->views);
+             vk_swap_chain->num_images);
 
 }
 
@@ -38,13 +38,13 @@ void VulkanSwapChain::reinit(int width, int height) {
   shutdownTransient();
   shutdownFrames();
 
-  driver->destroySwapChain(swapChain);
-  swapChain = driver->createSwapChain(native_window, width, height);
-  auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swapChain);
+  driver->destroySwapChain(swap_chain);
+  swap_chain = driver->createSwapChain(native_window, width, height);
+  auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swap_chain);
 
   initTransient(width, height, vk_swap_chain->surface_format.format);
   initFrames(uboSize, width, height,
-             vk_swap_chain->num_images, vk_swap_chain->views);
+             vk_swap_chain->num_images);
 
 }
 
@@ -54,111 +54,30 @@ void VulkanSwapChain::shutdown() {
   shutdownPersistent();
 }
 
-bool VulkanSwapChain::Acquire(const RenderState &state, VulkanRenderFrame &frame) {
-  auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swapChain);
-  uint32_t current_frame = vk_swap_chain->current_image;
+bool VulkanSwapChain::Acquire(void* state, VulkanRenderFrame &frame) {
 
-  vkWaitForFences(context->Device(), 1, &vk_swap_chain->rendering_finished_cpu[current_frame],
-                  VK_TRUE, std::numeric_limits<uint64_t>::max());
-
-  VkResult result = vkAcquireNextImageKHR(
-      context->Device(),
-      vk_swap_chain->swapchain,
-      std::numeric_limits<uint64_t>::max(),
-      vk_swap_chain->image_available_gpu[current_frame],
-      VK_NULL_HANDLE,
-      &vk_swap_chain->current_image
-  );
-
-  if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+  uint32_t image_index = 0;
+  if (!driver->acquire(swap_chain, &image_index))
     return false;
-  } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-    throw std::runtime_error("Can't aquire swap chain image");
 
-  frame = frames[vk_swap_chain->current_image];
-
-  memcpy(frame.uniformBufferData, &state, uboSize);
-
-  //reset command buffer
-  VK_CHECK(vkResetCommandBuffer(frame.commandBuffer, 0), "Can't Reset Command Buffer");
-  VkCommandBufferBeginInfo beginInfo = {};
-  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-
-  VK_CHECK(vkBeginCommandBuffer(frame.commandBuffer, &beginInfo), "Can't begin recording command buffer");
-
+  frame = frames[image_index];
+  beginFrame(state, frame);
   return true;
 }
 
 bool VulkanSwapChain::Present(VulkanRenderFrame &frame) {
-  auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swapChain);
-  uint32_t current_frame = vk_swap_chain->current_image;
-
-  VK_CHECK(vkEndCommandBuffer(frame.commandBuffer), "Can't record command buffer");
-
-  VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-
-  VkSubmitInfo submitInfo = {};
-  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  submitInfo.waitSemaphoreCount = 1;
-  submitInfo.pWaitSemaphores = &vk_swap_chain->image_available_gpu[current_frame];
-  submitInfo.pWaitDstStageMask = waitStages;
-  submitInfo.commandBufferCount = 1;
-  submitInfo.pCommandBuffers = &frame.commandBuffer;
-  submitInfo.signalSemaphoreCount = 1;
-  submitInfo.pSignalSemaphores = &vk_swap_chain->render_finished_gpu[current_frame];
-
-  vkResetFences(context->Device(), 1, &vk_swap_chain->rendering_finished_cpu[current_frame]);
-  VK_CHECK(vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo,
-                         vk_swap_chain->rendering_finished_cpu[current_frame]),
-           "Can't submit command buffer");
-
-  VkPresentInfoKHR presentInfo = {};
-  presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-  presentInfo.waitSemaphoreCount = 1;
-  presentInfo.pWaitSemaphores = &vk_swap_chain->render_finished_gpu[current_frame];
-  presentInfo.swapchainCount = 1;
-  presentInfo.pSwapchains = &vk_swap_chain->swapchain;
-  presentInfo.pImageIndices = &vk_swap_chain->current_image;
-  presentInfo.pResults = nullptr; // Optional
-
-  VulkanUtils::transitionImageLayout(
-      context,
-      vk_swap_chain->images[current_frame],
-      vk_swap_chain->surface_format.format,
-      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-  );
-
-  auto result = vkQueuePresentKHR(vk_swap_chain->present_queue, &presentInfo);
-  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-    return false;
-  else if (result != VK_SUCCESS)
-    throw std::runtime_error("Can't aquire swap chain image");
-
-  vk_swap_chain->current_image++;
-  vk_swap_chain->current_image %= vk_swap_chain->num_images;
-
-  return true;
+  endFrame(frame);
+  return driver->present(swap_chain);
 }
 
 void VulkanSwapChain::initFrames(VkDeviceSize uboSize, uint32_t width, uint32_t height,
-                                 uint32_t num_images, VkImageView *views) {
-
+                                 uint32_t num_images) {
   frames.resize(num_images);
   int i = 0;
   for (auto &frame: frames) {
     //create Uniform Buffer Object
-    VulkanUtils::createBuffer(
-        context,
-        uboSize,
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        frame.uniformBuffers,
-        frame.uniformBuffersMemory
-    );
-
-    vkMapMemory(context->Device(), frame.uniformBuffersMemory, 0, uboSize, 0, &frame.uniformBufferData);
+    frame.uniform_buffer = driver->createUniformBuffer(BufferType::DYNAMIC, static_cast<uint32_t>(uboSize));
+    frame.uniform_buffer_data = driver->map(frame.uniform_buffer);
 
     //Create descriptor Set
     VkDescriptorSetAllocateInfo swapchainDescriptorSetAllocInfo = {};
@@ -169,34 +88,39 @@ void VulkanSwapChain::initFrames(VkDeviceSize uboSize, uint32_t width, uint32_t 
 
     VK_CHECK(vkAllocateDescriptorSets(context->Device(),
                                       &swapchainDescriptorSetAllocInfo,
-                                      &frame.swapchainDescriptorSet),
+                                      &frame.descriptor_set),
              "Can't allocate swap chain descriptor sets");
+    VkBuffer ubo = static_cast<vulkan::UniformBuffer *>(frame.uniform_buffer)->buffer;
 
     VulkanUtils::bindUniformBuffer(
         context->Device(),
-        frame.swapchainDescriptorSet,
+        frame.descriptor_set,
         0,
-        frame.uniformBuffers,
+        ubo,
         0,
         sizeof(RenderState)
     );
-    std::array<VkImageView, 3> attachments = {
-        colorImageView,
-        views[i],
-        depthImageView,
-    };
-    //create Frame buffer
-    VkFramebufferCreateInfo framebufferInfo = {};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPass;
-    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    framebufferInfo.pAttachments = attachments.data();
-    framebufferInfo.width = width;
-    framebufferInfo.height = height;
-    framebufferInfo.layers = 1;
 
-    VK_CHECK(vkCreateFramebuffer(context->Device(), &framebufferInfo, nullptr, &frame.frameBuffer),
-             "Can't create framebuffer");
+
+    //create Frame buffer
+    FrameBufferAttachment attachments[3] = { {}, {}, {} };
+    attachments[0].type = FrameBufferAttachmentType::COLOR;
+    attachments[0].color.texture = color;
+    //todo fix this issue
+    auto vk_texture = static_cast<vulkan::Texture*>(color);
+    attachments[0].color.num_layers = vk_texture->num_layers;
+    attachments[0].color.base_mip = 0;
+    attachments[0].color.num_mips = vk_texture->num_mipmaps;
+    attachments[0].color.base_layer = 0;
+
+    attachments[1].type = FrameBufferAttachmentType::SWAP_CHAIN_COLOR;
+    attachments[1].swap_chain_color.swap_chain = swap_chain;
+    attachments[1].swap_chain_color.base_image = i;
+    attachments[1].swap_chain_color.resolve_attachment = true;
+    attachments[2].type = FrameBufferAttachmentType::DEPTH;
+    attachments[2].depth.texture = depth;
+
+    frame.frame_buffer = driver->createFrameBuffer(3, attachments);
 
     // Create command buffers
     VkCommandBufferAllocateInfo allocateInfo = {};
@@ -205,7 +129,7 @@ void VulkanSwapChain::initFrames(VkDeviceSize uboSize, uint32_t width, uint32_t 
     allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocateInfo.commandBufferCount = 1;
 
-    VK_CHECK(vkAllocateCommandBuffers(context->Device(), &allocateInfo, &frame.commandBuffer),
+    VK_CHECK(vkAllocateCommandBuffers(context->Device(), &allocateInfo, &frame.command_buffer),
              "Can't create command buffers");
 
     i++;
@@ -215,18 +139,14 @@ void VulkanSwapChain::initFrames(VkDeviceSize uboSize, uint32_t width, uint32_t 
 
 void VulkanSwapChain::shutdownFrames() {
 
-  for (int i = 0; i < frames.size(); ++i) {
-    vkDestroyFramebuffer(context->Device(), frames[i].frameBuffer, nullptr);
-    vkDestroyBuffer(context->Device(), frames[i].uniformBuffers, nullptr);
-    vkFreeMemory(context->Device(), frames[i].uniformBuffersMemory, nullptr);
-    vkFreeCommandBuffers(context->Device(), context->CommandPool(), 1, &frames[i].commandBuffer);
-    vkFreeDescriptorSets(context->Device(), context->DescriptorPool(), 1, &frames[i].swapchainDescriptorSet);
-    frames[i].commandBuffer = VK_NULL_HANDLE;
-    frames[i].uniformBuffers = VK_NULL_HANDLE;
-    frames[i].frameBuffer = VK_NULL_HANDLE;
-    frames[i].uniformBuffersMemory = VK_NULL_HANDLE;
-    frames[i].commandBuffer = VK_NULL_HANDLE;
-    frames[i].swapchainDescriptorSet = VK_NULL_HANDLE;
+  for (VulkanRenderFrame &frame : frames)
+  {
+    vkFreeCommandBuffers(context->Device(), context->CommandPool(), 1, &frame.command_buffer);
+    vkFreeDescriptorSets(context->Device(), context->DescriptorPool(), 1, &frame.descriptor_set);
+
+    driver->unmap(frame.uniform_buffer);
+    driver->destroyUniformBuffer(frame.uniform_buffer);
+    driver->destroyFrameBuffer(frame.frame_buffer);
   }
   frames.clear();
 
@@ -234,47 +154,38 @@ void VulkanSwapChain::shutdownFrames() {
 
 void VulkanSwapChain::initPersistent(VkFormat image_format) {
   assert(native_window);
+
+  depth_format = driver->getOptimalDepthFormat();
+  render::backend::Multisample samples = driver->getMaxSampleCount();
+
+  auto *vk_driver = reinterpret_cast<render::backend::vulkan::VulkanDriver *>(driver);
+  VkFormat vk_depth_format = vk_driver->toFormat(depth_format);
+  VkSampleCountFlagBits vk_samples = vk_driver->toMultisample(samples);
+
   //create descriptor set layout and render pass
-  depthFormat = VulkanUtils::selectOptimalImageFormat(context->PhysicalDevice());
   VulkanDescriptorSetLayoutBuilder swapchainDescriptorSetLayoutBuilder(context);
   descriptorSetLayout = swapchainDescriptorSetLayoutBuilder
       .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL)
       .build();
 
   VulkanRenderPassBuilder renderPassBuilder(context);
-  renderPass = renderPassBuilder.addColorAttachment(image_format, context->MaxMSAASamples(),
+  render_pass = renderPassBuilder.addColorAttachment(image_format, vk_samples,
                                                     VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
       .addColorResolveAttachment(image_format,
                                  VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE)
-      .addDepthStencilAttachment(depthFormat, context->MaxMSAASamples(), VK_ATTACHMENT_LOAD_OP_CLEAR)
+      .addDepthStencilAttachment(vk_depth_format, vk_samples, VK_ATTACHMENT_LOAD_OP_CLEAR)
       .addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
       .addColorAttachmentReference(0, 0)
       .addColorResolveAttachmentReference(0, 1)
-      .setDepthStencilAttachment(0, 2)
-      .build();
-
-  VulkanRenderPassBuilder noClearRenderPassBuilder(context);
-  noClearRenderPass = noClearRenderPassBuilder
-      .addColorAttachment(image_format, context->MaxMSAASamples(),
-                          VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE)
-      .addColorResolveAttachment(image_format,
-                                 VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE)
-      .addDepthStencilAttachment(depthFormat, context->MaxMSAASamples())
-      .addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
-      .addColorAttachmentReference(0, 0)
-      .addColorResolveAttachmentReference(0, 1)
-      .setDepthStencilAttachment(0, 2)
+      .setDepthStencilAttachmentReference(0, 2)
       .build();
 
 }
 
 void VulkanSwapChain::shutdownPersistent() {
 
-  vkDestroyRenderPass(context->Device(), renderPass, nullptr);
-  renderPass = VK_NULL_HANDLE;
-
-  vkDestroyRenderPass(context->Device(), noClearRenderPass, nullptr);
-  noClearRenderPass = VK_NULL_HANDLE;
+  vkDestroyRenderPass(context->Device(), render_pass, nullptr);
+  render_pass = VK_NULL_HANDLE;
 
   vkDestroyDescriptorSetLayout(context->Device(), descriptorSetLayout, nullptr);
   descriptorSetLayout = VK_NULL_HANDLE;
@@ -282,79 +193,93 @@ void VulkanSwapChain::shutdownPersistent() {
 }
 
 void VulkanSwapChain::initTransient(int width, int height, VkFormat image_format) {
+  auto *vk_driver = reinterpret_cast<render::backend::vulkan::VulkanDriver *>(driver);
 
-  //Create Color Image ImageView
-  VulkanUtils::createImage2D(context,
-                             width,
-                             height,
-                             1,
-                             context->MaxMSAASamples(),
-                             image_format,
-                             VK_IMAGE_TILING_OPTIMAL,
-                             VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             colorImage, colorImageMemory
-  );
+  render::backend::Multisample max_samples = driver->getMaxSampleCount();
+  render::backend::Format format = vk_driver->fromFormat(image_format);
 
-  colorImageView = VulkanUtils::createImageView(context->Device(),
-                                                colorImage,
-                                                image_format,
-                                                VK_IMAGE_ASPECT_COLOR_BIT,
-                                                VK_IMAGE_VIEW_TYPE_2D);
-  VulkanUtils::transitionImageLayout(context,
-                                     colorImage,
-                                     image_format,
-                                     VK_IMAGE_LAYOUT_UNDEFINED,
-                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+  color = driver->createTexture2D(width, height, 1, format, max_samples);
+  depth = driver->createTexture2D(width, height, 1, depth_format, max_samples);
 
-  //Create Depth Buffer
-  depthFormat = VulkanUtils::selectOptimalImageFormat(context->PhysicalDevice());
-  VulkanUtils::createImage2D(context,
-                             width,
-                             height,
-                             1,
-                             context->MaxMSAASamples(),
-                             depthFormat,
-                             VK_IMAGE_TILING_OPTIMAL,
-                             VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             depthImage, depthImageMemory
-  );
-
-  depthImageView = VulkanUtils::createImageView(context->Device(),
-                                                depthImage,
-                                                depthFormat,
-                                                VK_IMAGE_ASPECT_DEPTH_BIT,
-                                                VK_IMAGE_VIEW_TYPE_2D);
-
-  VulkanUtils::transitionImageLayout(context,
-                                     depthImage,
-                                     depthFormat,
-                                     VK_IMAGE_LAYOUT_UNDEFINED,
-                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 void VulkanSwapChain::shutdownTransient() {
-  vkDestroyImage(context->Device(), depthImage, nullptr);
-  depthImage = VK_NULL_HANDLE;
-  vkDestroyImageView(context->Device(), depthImageView, nullptr);
-  depthImageView = VK_NULL_HANDLE;
-  vkFreeMemory(context->Device(), depthImageMemory, nullptr);
-  depthImageMemory = VK_NULL_HANDLE;
+  driver->destroyTexture(color);
+  color = nullptr;
 
-  vkDestroyImage(context->Device(), colorImage, nullptr);
-  colorImage = VK_NULL_HANDLE;
-  vkDestroyImageView(context->Device(), colorImageView, nullptr);
-  colorImageView = VK_NULL_HANDLE;
-  vkFreeMemory(context->Device(), colorImageMemory, nullptr);
-  colorImageMemory = VK_NULL_HANDLE;
+  driver->destroyTexture(depth);
+  depth = nullptr;
 
 }
 VkExtent2D VulkanSwapChain::getExtent() const {
-  auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swapChain);
+  auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swap_chain);
   return vk_swap_chain->sizes;
 }
+
 uint32_t VulkanSwapChain::getNumImages() const {
-  auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swapChain);
+  auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swap_chain);
   return vk_swap_chain->num_images;
 }
 
+void VulkanSwapChain::beginFrame(void *state, const VulkanRenderFrame &frame)
+{
+  memcpy(frame.uniform_buffer_data, state, static_cast<size_t>(uboSize));
+
+  vulkan::SwapChain *vk_swap_chain = static_cast<vulkan::SwapChain *>(swap_chain);
+  VkFramebuffer framebuffer = static_cast<vulkan::FrameBuffer *>(frame.frame_buffer)->framebuffer;
+
+  // reset command buffer
+  if (vkResetCommandBuffer(frame.command_buffer, 0) != VK_SUCCESS)
+    throw std::runtime_error("Can't reset command buffer");
+
+  VkCommandBufferBeginInfo beginInfo = {};
+  beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+  if (vkBeginCommandBuffer(frame.command_buffer, &beginInfo) != VK_SUCCESS)
+    throw std::runtime_error("Can't begin recording command buffer");
+
+  VkRenderPassBeginInfo render_pass_info = {};
+  render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+  render_pass_info.renderPass = render_pass;
+  render_pass_info.framebuffer = framebuffer;
+  render_pass_info.renderArea.offset = {0, 0};
+  render_pass_info.renderArea.extent = vk_swap_chain->sizes;
+
+  std::array<VkClearValue, 3> clear_values = {};
+  clear_values[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+  clear_values[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
+  clear_values[2].depthStencil = {1.0f, 0};
+  render_pass_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
+  render_pass_info.pClearValues = clear_values.data();
+
+  vkCmdBeginRenderPass(frame.command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void VulkanSwapChain::endFrame(const VulkanRenderFrame &frame)
+{
+  vulkan::SwapChain *vk_swap_chain = static_cast<vulkan::SwapChain *>(swap_chain);
+  uint32_t current_frame = vk_swap_chain->current_image;
+
+  // driver->endRenderPass();
+  vkCmdEndRenderPass(frame.command_buffer);
+
+  if (vkEndCommandBuffer(frame.command_buffer) != VK_SUCCESS)
+    throw std::runtime_error("Can't record command buffer");
+
+  // driver->submit(command_buffer);
+  VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+  VkSubmitInfo submitInfo = {};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.waitSemaphoreCount = 1;
+  submitInfo.pWaitSemaphores = &vk_swap_chain->image_available_gpu[current_frame];
+  submitInfo.pWaitDstStageMask = waitStages;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &frame.command_buffer;
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores = &vk_swap_chain->rendering_finished_gpu[current_frame];
+
+  vkResetFences(context->Device(), 1, &vk_swap_chain->rendering_finished_cpu[current_frame]);
+  if (vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo, vk_swap_chain->rendering_finished_cpu[current_frame]) != VK_SUCCESS)
+    throw std::runtime_error("Can't submit command buffer");
+}

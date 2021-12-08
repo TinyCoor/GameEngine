@@ -54,7 +54,7 @@ public:
       int attachmentIndex
   );
 
-  VulkanRenderPassBuilder &setDepthStencilAttachment(
+  VulkanRenderPassBuilder &setDepthStencilAttachmentReference(
       int subpassIndex,
       int attachmentIndex
   );

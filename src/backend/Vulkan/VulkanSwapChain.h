@@ -12,14 +12,12 @@ namespace render::backend::vulkan {
 
 struct VulkanRenderFrame {
 
-  VkDescriptorSet swapchainDescriptorSet{VK_NULL_HANDLE};
+  VkDescriptorSet descriptor_set{VK_NULL_HANDLE};
+  VkCommandBuffer command_buffer{VK_NULL_HANDLE};
 
-  VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
-  VkFramebuffer frameBuffer{VK_NULL_HANDLE};
-
-  void* uniformBufferData{nullptr};
-  VkBuffer uniformBuffers{VK_NULL_HANDLE};
-  VkDeviceMemory uniformBuffersMemory{VK_NULL_HANDLE};
+  render::backend::FrameBuffer *frame_buffer {nullptr};
+  render::backend::UniformBuffer *uniform_buffer {nullptr};
+  void* uniform_buffer_data{nullptr};
 
 };
 
@@ -27,12 +25,12 @@ struct RenderState;
 
 class VulkanSwapChain {
 public:
-  VulkanSwapChain(render::backend::Driver* driver, void *nativeWindow, VkDeviceSize uboSize);
+  VulkanSwapChain(render::backend::Driver* driver, void *nativeWindow, VkDeviceSize ubo_size);
   virtual ~VulkanSwapChain();
 
   void init(int width, int height);
 
-  bool Acquire(const RenderState &state, VulkanRenderFrame &frame);
+  bool Acquire(void* state, VulkanRenderFrame &frame);
 
   bool Present(VulkanRenderFrame &frame);
 
@@ -42,8 +40,7 @@ public:
 
   VkExtent2D getExtent() const ;
   uint32_t getNumImages() const ;
-  inline VkRenderPass getRenderPass() const { return renderPass; }
-  inline VkRenderPass getNoClearRenderPass() const { return noClearRenderPass; }
+  inline VkRenderPass getRenderPass() const { return render_pass; }
   inline VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
 
 
@@ -61,6 +58,8 @@ private:
   };
 
 private:
+  void beginFrame(void *state, const VulkanRenderFrame &frame);
+  void endFrame(const VulkanRenderFrame &frame);
 
   void initTransient(int width, int height,VkFormat image_format);
   void shutdownTransient();
@@ -68,33 +67,25 @@ private:
   void initPersistent(VkFormat image_format);
   void shutdownPersistent();
 
-  void initFrames(VkDeviceSize uboSize,uint32_t width,uint32_t height,uint32_t num_images,VkImageView* views);
+  void initFrames(VkDeviceSize uboSize,uint32_t width,uint32_t height,uint32_t num_images);
   void shutdownFrames();
 private:
 
   const VulkanContext *context{nullptr};
   render::backend::Driver* driver{nullptr};
-  render::backend::SwapChain* swapChain{nullptr};
+  render::backend::SwapChain* swap_chain{nullptr};
 
   void* native_window{nullptr};
 
-  VkRenderPass renderPass{VK_NULL_HANDLE};
-  VkRenderPass noClearRenderPass{VK_NULL_HANDLE};
+  VkRenderPass render_pass{VK_NULL_HANDLE};
   VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
 
   VkDeviceSize uboSize;
 
+  render::backend::Texture *color {nullptr};
+  render::backend::Texture *depth {nullptr};
+  render::backend::Format depth_format {render::backend::Format::UNDEFINED};
 
-  VkImage colorImage;
-  VkImageView colorImageView;
-  VkDeviceMemory colorImageMemory;
-
-  VkImage depthImage;
-  VkFormat depthFormat;
-  VkImageView depthImageView;
-  VkDeviceMemory depthImageMemory;
-
-  //
   std::vector<VulkanRenderFrame> frames;
 
 };

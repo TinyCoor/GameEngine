@@ -118,7 +118,7 @@ VulkanRenderPassBuilder::addColorResolveAttachmentReference(int subpassIndex,
   return *this;
 }
 
-VulkanRenderPassBuilder &VulkanRenderPassBuilder::setDepthStencilAttachment(int subpassIndex,
+VulkanRenderPassBuilder &VulkanRenderPassBuilder::setDepthStencilAttachmentReference(int subpassIndex,
                                                                             int attachmentIndex) {
 
   if (subpassIndex < 0 || subpassIndex > subpassDatas.size()) {

@@ -58,8 +58,9 @@ Application::~Application(){
 
 }
 void Application::initVulkan() {
-    driver = dynamic_cast<render::backend::vulkan::VulkanDriver*>(render::backend::createDriver("","",render::backend::Api::VULKAN));
-    context = driver->GetVulkanContext();
+    auto vk_driver = dynamic_cast<render::backend::vulkan::VulkanDriver*>(render::backend::createDriver("","",render::backend::Api::VULKAN));
+    context = vk_driver->GetVulkanContext();
+    driver = vk_driver;
 }
 
 void Application::shutdownVulkan() {
@@ -91,7 +92,7 @@ void Application::shutdownWindow() {
 void Application::RenderFrame(){
     VulkanRenderFrame frame;
 
-    if(!swapChain->Acquire(state,frame)){
+    if(!swapChain->Acquire(&state,frame)){
         recreateSwapChain();
         return;
     }
@@ -219,11 +220,9 @@ void Application::mainLoop() {
 
 void Application::shutdownRenders() {
     if(render){
-        render->shutdown();
         delete render;
         render = nullptr;
     }
-
     imGuiRender->shutdown();
 }
 
@@ -238,18 +237,16 @@ void Application::initRenders() {
     if (!imGuiRender){
         imGuiRender = new ImGuiRender(context,
                                             ImGui::GetCurrentContext(),
-                                            swapChain->getExtent(),swapChain->getNoClearRenderPass());
+                                            swapChain->getExtent(),swapChain->getRenderPass());
          imGuiRender->init(swapChain);
     }
 }
 
 
 void Application::initVulkanSwapChain() {
-
     if (!swapChain){
-        swapChain= new VulkanSwapChain(context, window,sizeof(RenderState));
+        swapChain= new VulkanSwapChain(driver, window,sizeof(RenderState));
     }
-
     int width,height;
     glfwGetWindowSize(window,&width,&height);
     swapChain->init(width,height);
@@ -266,7 +263,7 @@ void Application::initScene() {
 }
 
 void Application::shutdownScene() {
-//    scene->shutdown();
+    scene->shutdown();
     if(scene){
         delete scene;
         scene = nullptr;

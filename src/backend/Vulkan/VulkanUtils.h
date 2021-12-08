@@ -186,7 +186,6 @@ public:
                                  int minMipLevel,
                                  int maxMipLevel);
 
-  static bool hasStencilComponent(VkFormat format);
 
   static void generateImage2DMipMaps(
       const VulkanContext *context,
@@ -223,6 +222,9 @@ public:
   );
 
   static QueueFamilyIndices fetchFamilyIndices(VkPhysicalDevice &physcalDevice, VkSurfaceKHR &surface);
+ private:
+    static bool hasStencilComponent(VkFormat format);
+    static bool isDepthFormat(VkFormat format);
 
 };
 }

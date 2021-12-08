@@ -52,29 +52,29 @@ struct Texture : public render::backend::Texture {
 };
 
 
-struct FrameBufferColorAttachment : public render::backend::FrameBufferColorAttachment
+struct FrameBufferColorAttachment
 {
   VkImageView view {VK_NULL_HANDLE};
 };
 
-struct FrameBufferDepthStencilAttachment : public render::backend::FrameBufferColorAttachment
+struct FrameBufferDepthStencilAttachment
 {
   VkImageView view {VK_NULL_HANDLE};
 };
 
-struct FrameBuffer : public render::backend::FrameBuffer {
+struct FrameBuffer : public render::backend::FrameBuffer
+{
   enum
   {
-    MAX_COLOR_ATTACHMENTS = 16,
+    MAX_ATTACHMENTS = 16,
   };
 
-  VkRenderPass dummy_render_pass{VK_NULL_HANDLE};
-  VkFramebuffer framebuffer{VK_NULL_HANDLE};
-  uint8_t num_color_attachments{0};
-  FrameBufferColorAttachment color_attachments[MAX_COLOR_ATTACHMENTS];
-  FrameBufferDepthStencilAttachment depthstencil_attachment;
+  VkFramebuffer framebuffer {VK_NULL_HANDLE};
+  VkRenderPass dummy_render_pass {VK_NULL_HANDLE}; // TODO: move to render pass cache
+  uint8_t num_attachments {0};
+  VkImageView attachments[FrameBuffer::MAX_ATTACHMENTS];
+  // TODO: add info about attachment type (color, color resolve, depth)
 };
-
 
 struct UniformBuffer : public render::backend::UniformBuffer {
   VkBuffer buffer{VK_NULL_HANDLE};
@@ -100,31 +100,42 @@ struct GraphicsProgram : public render::backend::GraphicsProgram {
 
 struct SwapChain : public render::backend::SwapChain
 {
-  enum {
-    MAX_IMAGES =8,
-    MAX_FENCES_IN_FLIGHT = 4,
+  enum
+  {
+    MAX_IMAGES = 8,
   };
 
-  VkSurfaceKHR surface{VK_NULL_HANDLE};
-  VkSurfaceCapabilitiesKHR surface_capabilities{};
+  VkSwapchainKHR swap_chain {nullptr};
+  VkExtent2D sizes {0, 0};
+
+  VkSurfaceKHR surface {nullptr};
+  VkSurfaceCapabilitiesKHR surface_capabilities;
   VkSurfaceFormatKHR surface_format;
 
-  uint32_t present_queue_family{0XFFFF};
-  VkQueue present_queue{VK_NULL_HANDLE};
-  VkPresentModeKHR present_mode{VK_PRESENT_MODE_FIFO_KHR};
+  uint32_t present_queue_family {0xFFFF};
+  VkQueue present_queue {VK_NULL_HANDLE};
+  VkPresentModeKHR present_mode {VK_PRESENT_MODE_FIFO_KHR};
 
-  VkSemaphore image_available_gpu[vulkan::SwapChain::MAX_IMAGES];
-  VkSemaphore render_finished_gpu[vulkan::SwapChain::MAX_IMAGES];
-  VkFence rendering_finished_cpu[vulkan::SwapChain::MAX_IMAGES];
+  VkImage msaa_color_image {VK_NULL_HANDLE};
+  VkImageView msaa_color_view {VK_NULL_HANDLE};
+  VkDeviceMemory msaa_color_memory {VK_NULL_HANDLE};
 
-  VkSwapchainKHR swapchain{VK_NULL_HANDLE};
-  VkExtent2D sizes;
+  VkImage depth_image {VK_NULL_HANDLE};
+  VkImageView depth_view {VK_NULL_HANDLE};
+  VkDeviceMemory depth_memory {VK_NULL_HANDLE};
 
-  uint32_t num_images{0};
-  uint32_t current_image{0};
+  VkRenderPass dummy_render_pass {VK_NULL_HANDLE}; // TODO: move to render pass cache
 
-  VkImage images[vulkan::SwapChain::MAX_IMAGES];
-  VkImageView views[vulkan::SwapChain::MAX_IMAGES];
+  uint32_t num_images {0};
+  uint32_t current_image {0};
+
+  VkSemaphore image_available_gpu[SwapChain::MAX_IMAGES];
+  VkSemaphore rendering_finished_gpu[SwapChain::MAX_IMAGES];
+  VkFence rendering_finished_cpu[SwapChain::MAX_IMAGES];
+
+  VkFramebuffer framebuffer[SwapChain::MAX_IMAGES];
+  VkImage images[SwapChain::MAX_IMAGES];
+  VkImageView views[SwapChain::MAX_IMAGES];
 };
 
 
@@ -164,6 +175,7 @@ public:
       uint32_t height,
       uint32_t num_mipmaps,
       Format format,
+      Multisample samples = Multisample::COUNT_1,
       const void *data = nullptr,
       uint32_t num_data_mipmaps = 1
   ) override;
@@ -199,9 +211,8 @@ public:
   ) override;
 
   FrameBuffer *createFrameBuffer(
-      uint8_t num_color_attachments,
-      const render::backend::FrameBufferColorAttachment *color_attachments,
-      const render::backend::FrameBufferDepthStencilAttachment *depthstencil_attachment = nullptr
+      uint8_t num_attachments,
+      const FrameBufferAttachment *attachments
   ) override;
 
   UniformBuffer *createUniformBuffer(
@@ -236,6 +247,17 @@ public:
   void destroyUniformBuffer(render::backend::UniformBuffer *uniform_buffer) override;
 
   void destroyShader(render::backend::Shader *shader) override;
+
+ public:
+  Multisample getMaxSampleCount() override;
+  Format getOptimalDepthFormat() override;
+
+  // TODO: remove later
+  VkSampleCountFlagBits toMultisample(Multisample samples);
+  Multisample fromMultisample(VkSampleCountFlagBits samples);
+
+  VkFormat toFormat(Format format);
+  Format fromFormat(VkFormat format);
 
 public:
   void generateTexture2DMipmaps(render::backend::Texture *texture) override;
@@ -282,7 +304,7 @@ public:
 
   SwapChain *createSwapChain(void *native_window,uint32_t width,uint32_t height) override;
   void destroySwapChain(render::backend::SwapChain *swapchain) override;
-  bool acquire(render::backend::SwapChain *swapchain) override;
+  bool acquire(render::backend::SwapChain *swapchain,uint32_t* image_index) override;
   bool present(render::backend::SwapChain *swapchain) override;
   bool resize(render::backend::SwapChain *swapchain, uint32_t width, uint32_t height) override;
 };

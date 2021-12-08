@@ -185,10 +185,10 @@ void VulkanUtils::createImage2D(const VulkanContext *context,
                                 VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                 VkImage &image, VkDeviceMemory &memory) {
   //Create  Buffer
-  createImage(context,VK_IMAGE_TYPE_2D,
-              width,height,1,1,mipLevel,numberSample,
-              format,tiling,usage,properties,0,
-              image,memory);
+  createImage(context, VK_IMAGE_TYPE_2D,
+              width, height, 1, 1, mipLevel, numberSample,
+              format, tiling, usage, properties, 0,
+              image, memory);
 }
 
 void VulkanUtils::createCubeImage(const VulkanContext *context, uint32_t width, uint32_t height,
@@ -196,13 +196,13 @@ void VulkanUtils::createCubeImage(const VulkanContext *context, uint32_t width, 
                                   VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                   VkImage &image, VkDeviceMemory &memory) {
   //Create  Buffer
-  createImage(context,VK_IMAGE_TYPE_2D,
-              width,height,1,6,
-              mipLevel,numberSample,format,
-              tiling,usage,properties,
+  createImage(context, VK_IMAGE_TYPE_2D,
+              width, height, 1, 6,
+              mipLevel, numberSample, format,
+              tiling, usage, properties,
               VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT,
-              image,memory
-              );
+              image, memory
+  );
 }
 
 VkImageView VulkanUtils::createImageCubeView(VkDevice device,
@@ -231,11 +231,11 @@ VkImageView VulkanUtils::createImageView(VkDevice device,
                                          VkFormat format,
                                          VkImageAspectFlags aspectFlags,
                                          VkImageViewType viewType,
-                                         uint32_t baseMipLayer,
+                                         uint32_t baseMipLevel,
                                          uint32_t numMipLevel,
                                          uint32_t baseLayer,
                                          uint32_t numLayers) {
-  VkImageView textureImageView;
+  VkImageView textureImageView{VK_NULL_HANDLE};
   VkImageViewCreateInfo viewInfo{};
   viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
   viewInfo.image = image;
@@ -244,7 +244,7 @@ VkImageView VulkanUtils::createImageView(VkDevice device,
   viewInfo.components =
       {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A};
   viewInfo.subresourceRange.aspectMask = aspectFlags;
-  viewInfo.subresourceRange.baseMipLevel = baseMipLayer;
+  viewInfo.subresourceRange.baseMipLevel = baseMipLevel;
   viewInfo.subresourceRange.levelCount = numMipLevel;
   viewInfo.subresourceRange.baseArrayLayer = baseLayer;
   viewInfo.subresourceRange.layerCount = numLayers;
@@ -258,87 +258,102 @@ void VulkanUtils::transitionImageLayout(const VulkanContext *context,
                                         VkFormat format,
                                         VkImageLayout oldLayout,
                                         VkImageLayout newLayout,
-                                        uint32_t baseMipLayer,
-                                        uint32_t numMipLevel,
+                                        uint32_t baseMipLevel,
+                                        uint32_t numMipLevels,
                                         uint32_t baseLayer,
                                         uint32_t numLayers) {
   VkCommandBuffer commandBuffer = beginSingleTimeCommands(context);
-  VkImageMemoryBarrier barrier{};
+
+  VkImageMemoryBarrier barrier = {};
   barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
   barrier.oldLayout = oldLayout;
   barrier.newLayout = newLayout;
+
   barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
   barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
   barrier.image = image;
-  barrier.subresourceRange.baseMipLevel = baseMipLayer;
-  barrier.subresourceRange.levelCount = numMipLevel;
+  barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  barrier.subresourceRange.baseMipLevel = baseMipLevel;
+  barrier.subresourceRange.levelCount = numMipLevels;
   barrier.subresourceRange.baseArrayLayer = baseLayer;
   barrier.subresourceRange.layerCount = numLayers;
 
-  if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+  if (isDepthFormat(format))
+  {
     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    if (hasStencilComponent(format)) {
+    if (hasStencilComponent(format))
       barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
-    }
-  } else {
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
   }
 
   VkPipelineStageFlags srcStage;
   VkPipelineStageFlags dstStage;
 
-  if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+  if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+  {
     barrier.srcAccessMask = 0;
     barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
     srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-  } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+  }
+  else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+  {
     barrier.srcAccessMask = 0;
     barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
     srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-  } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+  }
+  else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+  {
     barrier.srcAccessMask = 0;
     barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-  } else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+  }
+  else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+  {
     barrier.srcAccessMask = 0;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
     dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-  } else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-      && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+  }
+  else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+  {
     barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
     barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-  } else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-      && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+  }
+  else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+  {
     barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-  } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-      && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+  }
+  else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+  {
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
     srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
     dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-  } else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+  }
+  else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+  {
     barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     barrier.dstAccessMask = 0;
 
     srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dstStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-  } else
+  }
+  else
     throw std::runtime_error("Unsupported layout transition");
 
   vkCmdPipelineBarrier(
@@ -349,6 +364,7 @@ void VulkanUtils::transitionImageLayout(const VulkanContext *context,
       0, nullptr,
       1, &barrier
   );
+
   endSingleTimeCommands(context, commandBuffer);
 }
 
@@ -367,7 +383,7 @@ void VulkanUtils::copyBufferToImage(const VulkanContext *context, VkBuffer srcBu
   region.imageSubresource.layerCount = 1;
 
   region.imageOffset = {0, 0, 0};
-  region.imageExtent =  {width,height,1};
+  region.imageExtent = {width, height, 1};
   vkCmdCopyBufferToImage(
       commandBuffer,
       srcBuffer,
@@ -379,8 +395,15 @@ void VulkanUtils::copyBufferToImage(const VulkanContext *context, VkBuffer srcBu
   endSingleTimeCommands(context, commandBuffer);
 }
 
-void VulkanUtils::copyBufferToImage(const VulkanContext *context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
-                                    uint32_t height,uint32_t depth,uint32_t mipLevel,uint32_t layer,VkDeviceSize bufferOffset) {
+void VulkanUtils::copyBufferToImage(const VulkanContext *context,
+                                    VkBuffer srcBuffer,
+                                    VkImage dstBuffer,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t depth,
+                                    uint32_t mipLevel,
+                                    uint32_t layer,
+                                    VkDeviceSize bufferOffset) {
   auto commandBuffer = beginSingleTimeCommands(context);
 
   VkBufferImageCopy region{};
@@ -394,7 +417,7 @@ void VulkanUtils::copyBufferToImage(const VulkanContext *context, VkBuffer srcBu
   region.imageSubresource.layerCount = 1;
 
   region.imageOffset = {0, 0, 0};
-  region.imageExtent =  {width,height,depth};
+  region.imageExtent = {width, height, depth};
   vkCmdCopyBufferToImage(
       commandBuffer,
       srcBuffer,
@@ -422,8 +445,7 @@ void VulkanUtils::createImage(
     VkImageCreateFlags flags,
     VkImage &image,
     VkDeviceMemory &memory
-)
-{
+) {
   //Create  Buffer
   VkImageCreateInfo imageInfo{};
   imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -432,7 +454,7 @@ void VulkanUtils::createImage(
   imageInfo.extent.height = static_cast<uint32_t>(height);
   imageInfo.extent.depth = depth;
   imageInfo.mipLevels = mipLevel;
-  imageInfo.arrayLayers =arrayLayers;
+  imageInfo.arrayLayers = arrayLayers;
   imageInfo.format = format;
   imageInfo.tiling = tiling;
   imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -456,13 +478,11 @@ void VulkanUtils::createImage(
   VK_CHECK(vkBindImageMemory(context->Device(), image, memory, 0), "Bind Buffer VertexBuffer Failed");
 }
 
-
 void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
-    uint32_t width,uint32_t height,uint32_t depth,
-    uint32_t mipLevel,uint32_t arrayLayers,uint32_t pixel_size,
-    const void* data,VkFormat format,uint32_t dataMipLevel,uint32_t dataLayers
-)
-{
+                            uint32_t width, uint32_t height, uint32_t depth,
+                            uint32_t mipLevel, uint32_t arrayLayers, uint32_t pixel_size,
+                            const void *data, VkFormat format, uint32_t dataMipLevel, uint32_t dataLayers
+) {
 
   VkDeviceSize buffer_size = 0;
   uint32_t mip_width = width;
@@ -470,9 +490,9 @@ void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
   uint32_t mip_depth = depth;
   for (int i = 0; i < dataMipLevel; ++i) {
     buffer_size += mip_width * mip_height * pixel_size;
-    mip_width =  std::max(mip_width / 2,1u);
-    mip_height = std::max(mip_height/2,1u) ;
-    mip_depth = std::max(mip_depth/2,1u);
+    mip_width = std::max(mip_width / 2, 1u);
+    mip_height = std::max(mip_height / 2, 1u);
+    mip_depth = std::max(mip_depth / 2, 1u);
   }
 
   /// copy pixel
@@ -492,13 +512,13 @@ void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
 
   // copy to gpu
 
-  VkDeviceSize  offset = 0;
+  VkDeviceSize offset = 0;
   auto commandBuffer = VulkanUtils::beginSingleTimeCommands(context);
   for (int i = 0; i < dataLayers; ++i) {
     mip_width = width;
     mip_height = height;
     mip_depth = depth;
-    for (int j = 0; j <dataMipLevel; ++j) {
+    for (int j = 0; j < dataMipLevel; ++j) {
       VkBufferImageCopy region{};
       region.bufferOffset = offset;
       region.bufferRowLength = 0;
@@ -510,17 +530,17 @@ void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
       region.imageSubresource.layerCount = 1;
 
       region.imageOffset = {0, 0, 0};
-      region.imageExtent =  {width,height,1};
-      vkCmdCopyBufferToImage(commandBuffer,stagingBuffer,image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-          1,&region
+      region.imageExtent = {width, height, 1};
+      vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                             1, &region
       );
-      offset += mip_width * mip_height * mip_depth *pixel_size;
+      offset += mip_width * mip_height * mip_depth * pixel_size;
       mip_width /= 2;
       mip_height /= 2;
     }
   }
 
-  VulkanUtils::endSingleTimeCommands(context,commandBuffer);
+  VulkanUtils::endSingleTimeCommands(context, commandBuffer);
   //clean up
   vkDestroyBuffer(context->Device(), stagingBuffer, nullptr);
   vkFreeMemory(context->Device(), stagingBufferMemory, nullptr);
@@ -558,7 +578,7 @@ bool VulkanUtils::hasStencilComponent(VkFormat format) {
 
 void
 VulkanUtils::generateImage2DMipMaps(const VulkanContext *context,
-                                    VkImage image,VkFormat imageFormat, uint32_t width, uint32_t height,
+                                    VkImage image, VkFormat imageFormat, uint32_t width, uint32_t height,
                                     uint32_t mipLevel, VkFormat format,
                                     VkFilter filter) {
   if (mipLevel == 1) {
@@ -566,8 +586,10 @@ VulkanUtils::generateImage2DMipMaps(const VulkanContext *context,
   }
   VkFormatProperties formatProperties;
   vkGetPhysicalDeviceFormatProperties(context->PhysicalDevice(), format, &formatProperties);
-  bool supportsLinearFiltering =(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0;
-  bool supportCubicFiltering =(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT) != 0;
+  bool supportsLinearFiltering =
+      (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT) != 0;
+  bool supportCubicFiltering =
+      (formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_CUBIC_BIT_EXT) != 0;
 
   if ((filter == VK_FILTER_LINEAR) && !supportsLinearFiltering) {
     throw std::runtime_error("texture image format does not support linear blitting!");
@@ -575,7 +597,6 @@ VulkanUtils::generateImage2DMipMaps(const VulkanContext *context,
   if ((filter == VK_FILTER_CUBIC_EXT) && !supportCubicFiltering) {
     throw std::runtime_error("texture image format does not support cubic blitting!");
   }
-
 
   VkCommandBuffer commandBuffer = beginSingleTimeCommands(context);
   VkImageMemoryBarrier barrier{};
@@ -675,7 +696,7 @@ VkSampleCountFlagBits VulkanUtils::getMaxUsableSampleCount(VkPhysicalDevice phys
 }
 
 VkShaderModule VulkanUtils::createShaderModule(VkDevice device,
-                                                const uint32_t *code,
+                                               const uint32_t *code,
                                                uint32_t size) {
   VkShaderModuleCreateInfo shaderInfo = {};
   shaderInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -894,12 +915,11 @@ bool VulkanUtils::checkPhysicalDeviceExtensions(
 }
 
 void VulkanUtils::createDeviceLocalBuffer(const VulkanContext *context,
-                                    VkDeviceSize size,
-                                    const void* data,
-                                    VkBufferUsageFlags usageFlags,
-                                    VkBuffer &buffer,
-                                    VkDeviceMemory &memory)
-{
+                                          VkDeviceSize size,
+                                          const void *data,
+                                          VkBufferUsageFlags usageFlags,
+                                          VkBuffer &buffer,
+                                          VkDeviceMemory &memory) {
   VulkanUtils::createBuffer(
       context,
       size,
@@ -914,7 +934,7 @@ void VulkanUtils::createDeviceLocalBuffer(const VulkanContext *context,
   VulkanUtils::createBuffer(context, size,
                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                             stagingBuffer,
                             stagingBufferMemory);
 
@@ -923,9 +943,21 @@ void VulkanUtils::createDeviceLocalBuffer(const VulkanContext *context,
   memcpy(staging_buffer_data, data, size);
   vkUnmapMemory(context->Device(), stagingBufferMemory);
 
-  VulkanUtils::copyBuffer(context, stagingBuffer,buffer, size);
+  VulkanUtils::copyBuffer(context, stagingBuffer, buffer, size);
 
   vkDestroyBuffer(context->Device(), stagingBuffer, nullptr);
   vkFreeMemory(context->Device(), stagingBufferMemory, nullptr);
 }
+
+bool VulkanUtils::isDepthFormat(VkFormat format) {
+  switch (format) {
+    case VK_FORMAT_D16_UNORM: return true;
+    case VK_FORMAT_D16_UNORM_S8_UINT: return true;
+    case VK_FORMAT_D24_UNORM_S8_UINT: return true;
+    case VK_FORMAT_D32_SFLOAT: return true;
+    case VK_FORMAT_D32_SFLOAT_S8_UINT: return true;
+    default: return false;
+  }
+}
+
 }

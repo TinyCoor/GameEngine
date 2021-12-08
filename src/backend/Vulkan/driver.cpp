@@ -115,75 +115,41 @@ static void includeResultReleaser(void *userData, shaderc_include_result *result
 }
 }
 namespace render::backend::vulkan {
+static VkFormat toVkFormat(Format format)
+{
+  static VkFormat supported_formats[static_cast<int>(Format::MAX)] =
+      {
+          VK_FORMAT_UNDEFINED,
 
-///todo array support
-static VkFormat toVKFormat(render::backend::Format format) {
-#define CASE_CONCAT(prefix, name) case name: return prefix##_##name;
-  switch (format) {
-  CASE_CONCAT(VK_FORMAT, UNDEFINED)
-  CASE_CONCAT(VK_FORMAT, R8_UNORM)
-  CASE_CONCAT(VK_FORMAT, R8_SNORM)
-  CASE_CONCAT(VK_FORMAT, R8_UINT)
-  CASE_CONCAT(VK_FORMAT, R8_SINT)
-  CASE_CONCAT(VK_FORMAT, R8G8_UNORM)
-  CASE_CONCAT(VK_FORMAT, R8G8_SNORM)
-  CASE_CONCAT(VK_FORMAT, R8G8_UINT)
-  CASE_CONCAT(VK_FORMAT, R8G8_SINT)
-  CASE_CONCAT(VK_FORMAT, R8G8B8_UNORM)
-  CASE_CONCAT(VK_FORMAT, R8G8B8_SNORM)
-  CASE_CONCAT(VK_FORMAT, R8G8B8_UINT)
-  CASE_CONCAT(VK_FORMAT, R8G8B8_SINT)
-  CASE_CONCAT(VK_FORMAT, R8G8B8A8_UNORM)
-  CASE_CONCAT(VK_FORMAT, R8G8B8A8_SNORM)
-  CASE_CONCAT(VK_FORMAT, R8G8B8A8_UINT)
-  CASE_CONCAT(VK_FORMAT, R8G8B8A8_SINT)
+          // 8-bit formats
+          VK_FORMAT_R8_UNORM, VK_FORMAT_R8_SNORM, VK_FORMAT_R8_UINT, VK_FORMAT_R8_SINT,
+          VK_FORMAT_R8G8_UNORM, VK_FORMAT_R8G8_SNORM, VK_FORMAT_R8G8_UINT, VK_FORMAT_R8G8_SINT,
+          VK_FORMAT_R8G8B8_UNORM, VK_FORMAT_R8G8B8_SNORM, VK_FORMAT_R8G8B8_UINT, VK_FORMAT_R8G8B8_SINT,
+          VK_FORMAT_B8G8R8_UNORM, VK_FORMAT_B8G8R8_SNORM, VK_FORMAT_B8G8R8_UINT, VK_FORMAT_B8G8R8_SINT,
+          VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_SNORM, VK_FORMAT_R8G8B8A8_UINT, VK_FORMAT_R8G8B8A8_SINT,
+          VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM, VK_FORMAT_B8G8R8A8_UINT, VK_FORMAT_B8G8R8A8_SINT,
 
-    // 16 bit
-  CASE_CONCAT(VK_FORMAT, R16_UNORM)
-  CASE_CONCAT(VK_FORMAT, R16_SNORM)
-  CASE_CONCAT(VK_FORMAT, R16_UINT)
-  CASE_CONCAT(VK_FORMAT, R16_SINT)
-  CASE_CONCAT(VK_FORMAT, R16_SFLOAT)
-  CASE_CONCAT(VK_FORMAT, R16G16_UNORM)
-  CASE_CONCAT(VK_FORMAT, R16G16_SNORM)
-  CASE_CONCAT(VK_FORMAT, R16G16_UINT)
-  CASE_CONCAT(VK_FORMAT, R16G16_SINT)
-  CASE_CONCAT(VK_FORMAT, R16G16_SFLOAT)
-  CASE_CONCAT(VK_FORMAT, R16G16B16_UNORM)
-  CASE_CONCAT(VK_FORMAT, R16G16B16_SNORM)
-  CASE_CONCAT(VK_FORMAT, R16G16B16_UINT)
-  CASE_CONCAT(VK_FORMAT, R16G16B16_SINT)
-  CASE_CONCAT(VK_FORMAT, R16G16B16_SFLOAT)
-  CASE_CONCAT(VK_FORMAT, R16G16B16A16_UNORM)
-  CASE_CONCAT(VK_FORMAT, R16G16B16A16_SNORM)
-  CASE_CONCAT(VK_FORMAT, R16G16B16A16_UINT)
-  CASE_CONCAT(VK_FORMAT, R16G16B16A16_SINT)
-  CASE_CONCAT(VK_FORMAT, R16G16B16A16_SFLOAT)
+          // 16-bit formats
+          VK_FORMAT_R16_UNORM, VK_FORMAT_R16_SNORM, VK_FORMAT_R16_UINT, VK_FORMAT_R16_SINT, VK_FORMAT_R16_SFLOAT,
+          VK_FORMAT_R16G16_UNORM, VK_FORMAT_R16G16_SNORM, VK_FORMAT_R16G16_UINT, VK_FORMAT_R16G16_SINT, VK_FORMAT_R16G16_SFLOAT,
+          VK_FORMAT_R16G16B16_UNORM, VK_FORMAT_R16G16B16_SNORM, VK_FORMAT_R16G16B16_UINT, VK_FORMAT_R16G16B16_SINT, VK_FORMAT_R16G16B16_SFLOAT,
+          VK_FORMAT_R16G16B16A16_UNORM, VK_FORMAT_R16G16B16A16_SNORM, VK_FORMAT_R16G16B16A16_UINT, VK_FORMAT_R16G16B16A16_SINT, VK_FORMAT_R16G16B16A16_SFLOAT,
 
-    //32 bits
-  CASE_CONCAT(VK_FORMAT, R32_UINT)
-  CASE_CONCAT(VK_FORMAT, R32_SINT)
-  CASE_CONCAT(VK_FORMAT, R32_SFLOAT)
-  CASE_CONCAT(VK_FORMAT, R32G32_UINT)
-  CASE_CONCAT(VK_FORMAT, R32G32_SINT)
-  CASE_CONCAT(VK_FORMAT, R32G32_SFLOAT)
-  CASE_CONCAT(VK_FORMAT, R32G32B32_UINT)
-  CASE_CONCAT(VK_FORMAT, R32G32B32_SINT)
-  CASE_CONCAT(VK_FORMAT, R32G32B32_SFLOAT)
-  CASE_CONCAT(VK_FORMAT, R32G32B32A32_UINT)
-  CASE_CONCAT(VK_FORMAT, R32G32B32A32_SINT)
-  CASE_CONCAT(VK_FORMAT, R32G32B32A32_SFLOAT)
-    //depth
-  CASE_CONCAT(VK_FORMAT, D16_UNORM)
-  CASE_CONCAT(VK_FORMAT, D16_UNORM_S8_UINT)
-  CASE_CONCAT(VK_FORMAT, D24_UNORM_S8_UINT)
-  CASE_CONCAT(VK_FORMAT, D32_SFLOAT)
-  CASE_CONCAT(VK_FORMAT, D32_SFLOAT_S8_UINT)
+          // 32-bit formats
+          VK_FORMAT_R32_UINT, VK_FORMAT_R32_SINT, VK_FORMAT_R32_SFLOAT,
+          VK_FORMAT_R32G32_UINT, VK_FORMAT_R32G32_SINT, VK_FORMAT_R32G32_SFLOAT,
+          VK_FORMAT_R32G32B32_UINT, VK_FORMAT_R32G32B32_SINT, VK_FORMAT_R32G32B32_SFLOAT,
+          VK_FORMAT_R32G32B32A32_UINT, VK_FORMAT_R32G32B32A32_SINT, VK_FORMAT_R32G32B32A32_SFLOAT,
 
-  }
-#undef CASE_CONCAT
+          // depth formats
+          VK_FORMAT_D16_UNORM,
+          VK_FORMAT_D16_UNORM_S8_UINT,
+          VK_FORMAT_D24_UNORM_S8_UINT,
+          VK_FORMAT_D32_SFLOAT,
+          VK_FORMAT_D32_SFLOAT_S8_UINT,
+      };
 
-  return VK_FORMAT_UNDEFINED;
+  return supported_formats[static_cast<int>(format)];
 }
 
 static VkIndexType ToVkIndexType(IndexSize index_size) {
@@ -215,71 +181,35 @@ static VkPrimitiveTopology toPrimitiveTopology(RenderPrimitiveType type) {
 }
 
 static size_t toPixelSize(Format format) {
-#define CASE_FORMAT_SIZE(format, count, type) case format : return sizeof(type) * count;
-  switch (format) {
-  CASE_FORMAT_SIZE(R8_UNORM, 1, uint8_t)
-  CASE_FORMAT_SIZE(R8_SNORM, 1, uint8_t)
-  CASE_FORMAT_SIZE(R8_UINT, 1, uint8_t)
-  CASE_FORMAT_SIZE(R8_SINT, 1, uint8_t)
+    static uint8_t supported_formats[static_cast<int>(Format::MAX)] =
+        {
+            0,
 
-  CASE_FORMAT_SIZE(R8G8_UNORM, 2, uint8_t)
-  CASE_FORMAT_SIZE(R8G8_SNORM, 2, uint8_t)
-  CASE_FORMAT_SIZE(R8G8_UINT, 2, uint8_t)
-  CASE_FORMAT_SIZE(R8G8_SINT, 2, uint8_t)
+            // 8-bit formats
+            1, 1, 1, 1,
+            2, 2, 2, 2,
+            3, 3, 3, 3,
+            3, 3, 3, 3,
+            4, 4, 4, 4,
+            4, 4, 4, 4,
 
-  CASE_FORMAT_SIZE(R8G8B8_UNORM, 3, uint8_t)
-  CASE_FORMAT_SIZE(R8G8B8_SNORM, 3, uint8_t)
-  CASE_FORMAT_SIZE(R8G8B8_UINT, 3, uint8_t)
-  CASE_FORMAT_SIZE(R8G8B8_SINT, 3, uint8_t)
-  CASE_FORMAT_SIZE(R8G8B8A8_UNORM, 4, uint8_t)
-  CASE_FORMAT_SIZE(R8G8B8A8_SNORM, 4, uint8_t)
-  CASE_FORMAT_SIZE(R8G8B8A8_UINT, 4, uint8_t)
-  CASE_FORMAT_SIZE(R8G8B8A8_SINT, 4, uint8_t)
+            // 16-bit formats
+            2, 2, 2, 2, 2,
+            4, 4, 4, 4, 4,
+            6, 6, 6, 6, 6,
+            8, 8, 8, 8, 8,
 
-  CASE_FORMAT_SIZE(R16_UNORM, 1, uint16_t)
-  CASE_FORMAT_SIZE(R16_SNORM, 1, uint16_t)
-  CASE_FORMAT_SIZE(R16_UINT, 1, uint16_t)
-  CASE_FORMAT_SIZE(R16_SINT, 1, uint16_t)
-  CASE_FORMAT_SIZE(R16_SFLOAT, 1, uint16_t)
+            // 32-bit formats
+            4, 4, 4,
+            8, 8, 8,
+            12, 12, 12,
+            16, 16, 16,
 
-  CASE_FORMAT_SIZE(R16G16_UNORM, 2, uint16_t)
-  CASE_FORMAT_SIZE(R16G16_SNORM, 2, uint16_t)
-  CASE_FORMAT_SIZE(R16G16_UINT, 2, uint16_t)
-  CASE_FORMAT_SIZE(R16G16_SINT, 2, uint16_t)
-  CASE_FORMAT_SIZE(R16G16_SFLOAT, 2, uint16_t)
-  CASE_FORMAT_SIZE(R16G16B16_UNORM, 3, uint16_t)
-  CASE_FORMAT_SIZE(R16G16B16_SNORM, 3, uint16_t)
-  CASE_FORMAT_SIZE(R16G16B16_UINT, 3, uint16_t)
-  CASE_FORMAT_SIZE(R16G16B16_SINT, 3, uint16_t)
-  CASE_FORMAT_SIZE(R16G16B16_SFLOAT, 3, uint16_t)
-  CASE_FORMAT_SIZE(R16G16B16A16_UNORM, 4, uint16_t)
-  CASE_FORMAT_SIZE(R16G16B16A16_SNORM, 4, uint16_t)
-  CASE_FORMAT_SIZE(R16G16B16A16_UINT, 4, uint16_t)
-  CASE_FORMAT_SIZE(R16G16B16A16_SINT, 4, uint16_t)
-  CASE_FORMAT_SIZE(R16G16B16A16_SFLOAT, 4, uint16_t)
+            // depth formats
+            2, 3, 4, 4, 5,
+        };
 
-  CASE_FORMAT_SIZE(R32_UINT, 1, uint32_t)
-  CASE_FORMAT_SIZE(R32_SINT, 1, uint32_t)
-  CASE_FORMAT_SIZE(R32_SFLOAT, 1, uint32_t)
-  CASE_FORMAT_SIZE(R32G32_UINT, 2, uint32_t)
-  CASE_FORMAT_SIZE(R32G32_SINT, 2, uint32_t)
-  CASE_FORMAT_SIZE(R32G32_SFLOAT, 2, uint32_t)
-  CASE_FORMAT_SIZE(R32G32B32_UINT, 3, uint32_t)
-  CASE_FORMAT_SIZE(R32G32B32_SINT, 3, uint32_t)
-  CASE_FORMAT_SIZE(R32G32B32_SFLOAT, 3, uint32_t)
-  CASE_FORMAT_SIZE(R32G32B32A32_UINT, 4, uint32_t)
-  CASE_FORMAT_SIZE(R32G32B32A32_SINT, 4, uint32_t)
-  CASE_FORMAT_SIZE(R32G32B32A32_SFLOAT, 4, uint32_t)
-
-    // depth formats
-  CASE_FORMAT_SIZE(D16_UNORM, 2, uint8_t)
-  CASE_FORMAT_SIZE(D16_UNORM_S8_UINT, 2, uint8_t)
-  CASE_FORMAT_SIZE(D24_UNORM_S8_UINT, 3, uint8_t)
-  CASE_FORMAT_SIZE(D32_SFLOAT, 4, uint8_t)
-  CASE_FORMAT_SIZE(D32_SFLOAT_S8_UINT, 4, uint8_t)
-  }
-#undef CASE_FORMAT_SIZE
-  return 0;
+    return supported_formats[static_cast<int>(format)];
 }
 
 static uint8_t toIndexSize(IndexSize size)
@@ -309,6 +239,128 @@ static VkImageAspectFlags toImageAspectFlags(VkFormat format)
   return VK_IMAGE_ASPECT_COLOR_BIT;
 }
 
+static Format fromFormat(VkFormat format)
+{
+  switch (format)
+  {
+    case VK_FORMAT_UNDEFINED: return Format::UNDEFINED;
+
+    case VK_FORMAT_R8_UNORM: return Format::R8_UNORM;
+    case VK_FORMAT_R8_SNORM: return Format::R8_SNORM;
+    case VK_FORMAT_R8_UINT: return Format::R8_UINT;
+    case VK_FORMAT_R8_SINT: return Format::R8_SINT;
+    case VK_FORMAT_R8G8_UNORM: return Format::R8G8_UNORM;
+    case VK_FORMAT_R8G8_SNORM: return Format::R8G8_SNORM;
+    case VK_FORMAT_R8G8_UINT: return Format::R8G8_UINT;
+    case VK_FORMAT_R8G8_SINT: return Format::R8G8_SINT;
+    case VK_FORMAT_R8G8B8_UNORM: return Format::R8G8B8_UNORM;
+    case VK_FORMAT_R8G8B8_SNORM: return Format::R8G8B8_SNORM;
+    case VK_FORMAT_R8G8B8_UINT: return Format::R8G8B8_UINT;
+    case VK_FORMAT_R8G8B8_SINT: return Format::R8G8B8_SINT;
+    case VK_FORMAT_B8G8R8_UNORM: return Format::B8G8R8_UNORM;
+    case VK_FORMAT_B8G8R8_SNORM: return Format::B8G8R8_SNORM;
+    case VK_FORMAT_B8G8R8_UINT: return Format::B8G8R8_UINT;
+    case VK_FORMAT_B8G8R8_SINT: return Format::B8G8R8_SINT;
+    case VK_FORMAT_R8G8B8A8_UNORM: return Format::R8G8B8A8_UNORM;
+    case VK_FORMAT_R8G8B8A8_SNORM: return Format::R8G8B8A8_SNORM;
+    case VK_FORMAT_R8G8B8A8_UINT: return Format::R8G8B8A8_UINT;
+    case VK_FORMAT_R8G8B8A8_SINT: return Format::R8G8B8A8_SINT;
+    case VK_FORMAT_B8G8R8A8_UNORM: return Format::B8G8R8A8_UNORM;
+    case VK_FORMAT_B8G8R8A8_SNORM: return Format::B8G8R8A8_SNORM;
+    case VK_FORMAT_B8G8R8A8_UINT: return Format::B8G8R8A8_UINT;
+    case VK_FORMAT_B8G8R8A8_SINT: return Format::B8G8R8A8_SINT;
+
+    case VK_FORMAT_R16_UNORM: return Format::R16_UNORM;
+    case VK_FORMAT_R16_SNORM: return Format::R16_SNORM;
+    case VK_FORMAT_R16_UINT: return Format::R16_UINT;
+    case VK_FORMAT_R16_SINT: return Format::R16_SINT;
+    case VK_FORMAT_R16_SFLOAT: return Format::R16_SFLOAT;
+    case VK_FORMAT_R16G16_UNORM: return Format::R16G16_UNORM;
+    case VK_FORMAT_R16G16_SNORM: return Format::R16G16_SNORM;
+    case VK_FORMAT_R16G16_UINT: return Format::R16G16_UINT;
+    case VK_FORMAT_R16G16_SINT: return Format::R16G16_SINT;
+    case VK_FORMAT_R16G16_SFLOAT: return Format::R16G16_SFLOAT;
+    case VK_FORMAT_R16G16B16_UNORM: return Format::R16G16B16_UNORM;
+    case VK_FORMAT_R16G16B16_SNORM: return Format::R16G16B16_SNORM;
+    case VK_FORMAT_R16G16B16_UINT: return Format::R16G16B16_UINT;
+    case VK_FORMAT_R16G16B16_SINT: return Format::R16G16B16_SINT;
+    case VK_FORMAT_R16G16B16_SFLOAT: return Format::R16G16B16_SFLOAT;
+    case VK_FORMAT_R16G16B16A16_UNORM: return Format::R16G16B16A16_UNORM;
+    case VK_FORMAT_R16G16B16A16_SNORM: return Format::R16G16B16A16_SNORM;
+    case VK_FORMAT_R16G16B16A16_UINT: return Format::R16G16B16A16_UINT;
+    case VK_FORMAT_R16G16B16A16_SINT: return Format::R16G16B16A16_SINT;
+    case VK_FORMAT_R16G16B16A16_SFLOAT: return Format::R16G16B16A16_SFLOAT;
+
+    case VK_FORMAT_R32_UINT: return Format::R32_UINT;
+    case VK_FORMAT_R32_SINT: return Format::R32_SINT;
+    case VK_FORMAT_R32_SFLOAT: return Format::R32_SFLOAT;
+    case VK_FORMAT_R32G32_UINT: return Format::R32G32_UINT;
+    case VK_FORMAT_R32G32_SINT: return Format::R32G32_SINT;
+    case VK_FORMAT_R32G32_SFLOAT: return Format::R32G32_SFLOAT;
+    case VK_FORMAT_R32G32B32_UINT: return Format::R32G32B32_UINT;
+    case VK_FORMAT_R32G32B32_SINT: return Format::R32G32B32_SINT;
+    case VK_FORMAT_R32G32B32_SFLOAT: return Format::R32G32B32_SFLOAT;
+    case VK_FORMAT_R32G32B32A32_UINT: return Format::R32G32B32A32_UINT;
+    case VK_FORMAT_R32G32B32A32_SINT: return Format::R32G32B32A32_SINT;
+    case VK_FORMAT_R32G32B32A32_SFLOAT: return Format::R32G32B32A32_SFLOAT;
+
+    case VK_FORMAT_D16_UNORM: return Format::D16_UNORM;
+    case VK_FORMAT_D16_UNORM_S8_UINT: return Format::D16_UNORM_S8_UINT;
+    case VK_FORMAT_D24_UNORM_S8_UINT: return Format::D24_UNORM_S8_UINT;
+    case VK_FORMAT_D32_SFLOAT: return Format::D32_SFLOAT;
+    case VK_FORMAT_D32_SFLOAT_S8_UINT: return Format::D32_SFLOAT_S8_UINT;
+
+    default:
+    {
+      std::cerr << "vulkan::fromFormat(): unsupported format " << format << std::endl;
+      return Format::UNDEFINED;
+    }
+  }
+}
+
+static VkSampleCountFlagBits toSamples(Multisample samples)
+{
+  static VkSampleCountFlagBits supported_samples[static_cast<int>(Multisample::MAX)] =
+      {
+          VK_SAMPLE_COUNT_1_BIT, VK_SAMPLE_COUNT_2_BIT,
+          VK_SAMPLE_COUNT_4_BIT, VK_SAMPLE_COUNT_8_BIT,
+          VK_SAMPLE_COUNT_16_BIT, VK_SAMPLE_COUNT_32_BIT,
+          VK_SAMPLE_COUNT_64_BIT,
+      };
+
+  return supported_samples[static_cast<int>(samples)];
+}
+
+static Multisample fromSamples(VkSampleCountFlagBits samples)
+{
+  if (samples & VK_SAMPLE_COUNT_64_BIT) { return Multisample::COUNT_64; }
+  if (samples & VK_SAMPLE_COUNT_32_BIT) { return Multisample::COUNT_32; }
+  if (samples & VK_SAMPLE_COUNT_16_BIT) { return Multisample::COUNT_16; }
+  if (samples & VK_SAMPLE_COUNT_8_BIT) { return Multisample::COUNT_8; }
+  if (samples & VK_SAMPLE_COUNT_4_BIT) { return Multisample::COUNT_4; }
+  if (samples & VK_SAMPLE_COUNT_2_BIT) { return Multisample::COUNT_2; }
+
+  return Multisample::COUNT_1;
+}
+
+static VkImageUsageFlags toImageUsageFlags(VkFormat format)
+{
+  if (format == VK_FORMAT_UNDEFINED)
+    return 0;
+
+  switch (format)
+  {
+    case VK_FORMAT_D16_UNORM:
+    case VK_FORMAT_D32_SFLOAT:
+    case VK_FORMAT_D16_UNORM_S8_UINT:
+    case VK_FORMAT_D24_UNORM_S8_UINT:
+    case VK_FORMAT_D32_SFLOAT_S8_UINT: return VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+  }
+
+  return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+}
+
+
 static VkImageViewType toImageBaseViewType(VkImageType type, VkImageCreateFlags flags, uint32_t num_layers)
 {
   if ((type == VK_IMAGE_TYPE_2D) && (num_layers == 1) && (flags == 0))
@@ -329,12 +381,13 @@ static VkImageViewType toImageBaseViewType(VkImageType type, VkImageCreateFlags 
 static void createTextureData(const VulkanContext *context, Texture *texture,
                         Format format, const void *data,
                         int num_data_mipmaps, int num_data_layer) {
+  VkImageUsageFlags usage_flags = toImageUsageFlags(texture->format);
+
   VulkanUtils::createImage(context, texture->type,
                            texture->width, texture->height, texture->depth,
                            texture->num_layers,texture->num_mipmaps, texture->samples,
                            texture->format, texture->tiling,
-                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT
-                               | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | usage_flags,
                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture->flags,
                            texture->image, texture->imageMemory);
 
@@ -490,15 +543,15 @@ static bool  createTransientSwapchainObjects(VulkanContext* context, SwapChain* 
   swapChainInfo.presentMode =  swapchain->present_mode; // settings.presentMode;
   swapChainInfo.clipped =VK_TRUE;
   swapChainInfo.oldSwapchain = VK_NULL_HANDLE;
-  if (vkCreateSwapchainKHR(context->Device(), &swapChainInfo, nullptr, &swapchain->swapchain) != VK_SUCCESS)
+  if (vkCreateSwapchainKHR(context->Device(), &swapChainInfo, nullptr, &swapchain->swap_chain) != VK_SUCCESS)
   {
     std::cerr << "vulkan::createTransientSwapChainObjects(): vkCreateSwapchainKHR failed" << std::endl;
     return false;
   }
 
-  vkGetSwapchainImagesKHR(context->Device(),swapchain->swapchain,&swapchain->num_images, nullptr);
+  vkGetSwapchainImagesKHR(context->Device(),swapchain->swap_chain,&swapchain->num_images, nullptr);
   assert(swapchain->num_images > 0  && swapchain->num_images < render::backend::vulkan::SwapChain::MAX_IMAGES);
-  vkGetSwapchainImagesKHR(context->Device(),swapchain->swapchain,&swapchain->num_images,swapchain->images);
+  vkGetSwapchainImagesKHR(context->Device(),swapchain->swap_chain,&swapchain->num_images,swapchain->images);
 
   for (int i = 0; i <swapchain->num_images; ++i) {
     swapchain->views[i] = VulkanUtils::createImageView(context->Device(),
@@ -518,8 +571,8 @@ static void destroyTransientSwapchainObjects(VulkanContext* context, SwapChain* 
     swapchain->views[i] =VK_NULL_HANDLE;
     swapchain->images[i] =VK_NULL_HANDLE;
   }
-  vkDestroySwapchainKHR(context->Device(),swapchain->swapchain, nullptr);
-  swapchain->swapchain = VK_NULL_HANDLE;
+  vkDestroySwapchainKHR(context->Device(),swapchain->swap_chain, nullptr);
+  swapchain->swap_chain = VK_NULL_HANDLE;
 }
 
 VulkanDriver::~VulkanDriver() noexcept {
@@ -596,17 +649,18 @@ Texture *VulkanDriver::createTexture2D(uint32_t width,
                                  uint32_t height,
                                  uint32_t num_mipmaps,
                                  Format format,
+                                 Multisample samples ,
                                  const void *data,
                                  uint32_t num_data_mipmaps) {
   vulkan::Texture *texture = new vulkan::Texture();
   texture->width = width;
   texture->height = height;
   texture->depth =1;
-  texture->format = toVKFormat(format);
+  texture->format = toFormat(format);
   texture->num_mipmaps = num_mipmaps;
   texture->num_layers = 1;
   texture->type = VK_IMAGE_TYPE_2D;
-  texture->samples = VK_SAMPLE_COUNT_1_BIT;
+  texture->samples = vulkan::toSamples(samples);
   texture->tiling = VK_IMAGE_TILING_OPTIMAL;
   texture->flags = 0;
 
@@ -628,7 +682,7 @@ Texture *VulkanDriver::createTexture2DArray(uint32_t width,
   texture->width = width;
   texture->height = height;
   texture->depth = 1;
-  texture->format = toVKFormat(format);
+  texture->format = toFormat(format);
   texture->num_mipmaps = num_mipmaps;
   texture->num_layers = num_layers;
   texture->samples = VK_SAMPLE_COUNT_1_BIT;
@@ -652,7 +706,7 @@ Texture *VulkanDriver::createTexture3D(uint32_t width,
   texture->width = width;
   texture->height = height;
   texture->depth = depth;
-  texture->format = toVKFormat(format);
+  texture->format = toFormat(format);
   texture->num_mipmaps = num_mipmaps;
   texture->num_layers = 1;
   texture->samples = VK_SAMPLE_COUNT_1_BIT;
@@ -674,7 +728,7 @@ Texture *VulkanDriver::createTextureCube(uint32_t width,
   texture->width = width;
   texture->height = height;
   texture->depth = 1;
-  texture->format = toVKFormat(format);
+  texture->format = toFormat(format);
   texture->num_mipmaps = num_mipmaps;
   texture->num_layers = 6;
   texture->samples = VK_SAMPLE_COUNT_1_BIT;
@@ -685,17 +739,12 @@ Texture *VulkanDriver::createTextureCube(uint32_t width,
   return texture;
 }
 
-FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_color_attachments,
-                                       const render::backend::FrameBufferColorAttachment *color_attachments,
-                                       const render::backend::FrameBufferDepthStencilAttachment *depthstencil_attachment) {
-  assert((depthstencil_attachment != nullptr && num_color_attachments == 0) || (num_color_attachments != 0) && "Invalid attachments");
-
+FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
+                                             const FrameBufferAttachment *attachments) {
   // TODO: check for equal sizes (color + depthstencil)
 
   vulkan::FrameBuffer *result = new vulkan::FrameBuffer();
 
-  VkImageView attachments[vulkan::FrameBuffer::MAX_COLOR_ATTACHMENTS + 1];
-  uint8_t num_attachments = 0;
   uint32_t width = 0;
   uint32_t height = 0;
   VulkanRenderPassBuilder builder = VulkanRenderPassBuilder(context);
@@ -703,49 +752,87 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_color_attachments,
   builder.addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS);
 
   // add color attachments
-  result->num_color_attachments = num_color_attachments;
-  for (uint8_t i = 0; i < num_color_attachments; ++i)
+  result->num_attachments = 0;
+  for (uint8_t i = 0; i < num_attachments; ++i)
   {
-    backend::FrameBufferColorAttachment attachment = color_attachments[i];
-    const vulkan::Texture *texture = static_cast<const vulkan::Texture *>(attachment.texture);
+    const FrameBufferAttachment &attachment = attachments[i];
+    VkImageView view = VK_NULL_HANDLE;
 
-    VkImageView view = VulkanUtils::createImageView(
-        context->Device(),
-        texture->image, texture->format,
-        VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_VIEW_TYPE_2D,
-        attachment.base_mip, attachment.num_mips,
-        attachment.base_layer, attachment.num_layers
-    );
+    if (attachment.type == FrameBufferAttachmentType::COLOR)
+    {
+      //TODO ERROR IN
+      const FrameBufferAttachment::Color &color = attachment.color;
+      const vulkan::Texture *color_texture = static_cast<const vulkan::Texture *>(color.texture);
+      VkImageAspectFlags flags = vulkan::toImageAspectFlags(color_texture->format);
 
-    result->color_attachments[i].view = view;
-    attachments[num_attachments++] = view;
+      view = VulkanUtils::createImageView(
+          context->Device(),
+          color_texture->image, color_texture->format,
+          flags, VK_IMAGE_VIEW_TYPE_2D,
+          color.base_mip, color.num_mips,
+          color.base_layer, color.num_layers
+      );
 
-    width = std::max<int>(1, texture->width / (1 << attachment.base_mip));
-    height = std::max<int>(1, texture->height / (1 << attachment.base_mip));
+      width = std::max<int>(1, color_texture->width / (1 << color.base_mip));
+      height = std::max<int>(1, color_texture->height / (1 << color.base_mip));
 
-    builder.addColorAttachment(texture->format, texture->samples);
-    builder.addColorAttachmentReference(0, i);
-  }
+      if (color.resolve_attachment)
+      {
+        builder.addColorResolveAttachment(color_texture->format);
+        builder.addColorResolveAttachmentReference(0, i);
+      }
+      else
+      {
+        builder.addColorAttachment(color_texture->format, color_texture->samples);
+        builder.addColorAttachmentReference(0, i);
+      }
+    }
+    else if (attachment.type == FrameBufferAttachmentType::DEPTH)
+    {
+      const FrameBufferAttachment::Depth &depth = attachment.depth;
+      const vulkan::Texture *depth_texture = static_cast<const vulkan::Texture *>(depth.texture);
+      VkImageAspectFlags flags = vulkan::toImageAspectFlags(depth_texture->format);
 
-  // add depthstencil attachment
-  if (depthstencil_attachment != nullptr)
-  {
-    const vulkan::Texture *texture = static_cast<const vulkan::Texture *>(depthstencil_attachment->texture);
+      view = VulkanUtils::createImageView(
+          context->Device(),
+          depth_texture->image, depth_texture->format,
+          flags, VK_IMAGE_VIEW_TYPE_2D
+      );
 
-    VkImageAspectFlags flags = vulkan::toImageAspectFlags(texture->format);
-    assert((flags & VK_IMAGE_ASPECT_DEPTH_BIT) && "Invalid depthstencil attachment format");
+      width = depth_texture->width;
+      height = depth_texture->height;
 
-    VkImageView view = VulkanUtils::createImageView(
-        context->Device(),
-        texture->image, texture->format,
-        flags, VK_IMAGE_VIEW_TYPE_2D
-    );
+      builder.addDepthStencilAttachment(depth_texture->format, depth_texture->samples);
+      builder.setDepthStencilAttachmentReference(0, i);
+    }
+    else if (attachment.type == FrameBufferAttachmentType::SWAP_CHAIN_COLOR)
+    {
+      const FrameBufferAttachment::SwapChainColor &swap_chain_color = attachment.swap_chain_color;
+      const vulkan::SwapChain *swap_chain = static_cast<const vulkan::SwapChain *>(swap_chain_color.swap_chain);
+      VkImageAspectFlags flags = vulkan::toImageAspectFlags(swap_chain->surface_format.format);
 
-    result->depthstencil_attachment.view = view;
-    attachments[num_attachments++] = view;
+      view = VulkanUtils::createImageView(
+          context->Device(),
+          swap_chain->images[swap_chain_color.base_image], swap_chain->surface_format.format,
+          flags, VK_IMAGE_VIEW_TYPE_2D
+      );
 
-    builder.addDepthStencilAttachment(texture->format, texture->samples);
-    builder.setDepthStencilAttachment(0, num_color_attachments);
+      width = swap_chain->sizes.width;
+      height = swap_chain->sizes.height;
+
+      if (swap_chain_color.resolve_attachment)
+      {
+        builder.addColorResolveAttachment(swap_chain->surface_format.format);
+        builder.addColorResolveAttachmentReference(0, i);
+      }
+      else
+      {
+        builder.addColorAttachment(swap_chain->surface_format.format, VK_SAMPLE_COUNT_1_BIT);
+        builder.addColorAttachmentReference(0, i);
+      }
+    }
+
+    result->attachments[result->num_attachments++] = view;
   }
 
   // create dummy renderpass
@@ -755,8 +842,8 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_color_attachments,
   VkFramebufferCreateInfo framebufferInfo = {};
   framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
   framebufferInfo.renderPass = result->dummy_render_pass;
-  framebufferInfo.attachmentCount = num_attachments;
-  framebufferInfo.pAttachments = attachments;
+  framebufferInfo.attachmentCount = result->num_attachments;
+  framebufferInfo.pAttachments = result->attachments;
   framebufferInfo.width = width;
   framebufferInfo.height = height;
   framebufferInfo.layers = 1;
@@ -917,15 +1004,11 @@ void VulkanDriver::destroyFrameBuffer(render::backend::FrameBuffer *frame_buffer
 
   vulkan::FrameBuffer *vk_frame_buffer = static_cast<vulkan::FrameBuffer *>(frame_buffer);
 
-
-  for (uint8_t i = 0; i < vk_frame_buffer->num_color_attachments; ++i)
+  for (uint8_t i = 0; i < vk_frame_buffer->num_attachments; ++i)
   {
-    vkDestroyImageView(context->Device(), vk_frame_buffer->color_attachments[i].view, nullptr);
-    vk_frame_buffer->color_attachments[i].view = VK_NULL_HANDLE;
+    vkDestroyImageView(context->Device(), vk_frame_buffer->attachments[i], nullptr);
+    vk_frame_buffer->attachments[i] = VK_NULL_HANDLE;
   }
-
-  vkDestroyImageView(context->Device(), vk_frame_buffer->depthstencil_attachment.view, nullptr);
-  vk_frame_buffer->depthstencil_attachment.view = VK_NULL_HANDLE;
 
   vkDestroyFramebuffer(context->Device(), vk_frame_buffer->framebuffer, nullptr);
   vk_frame_buffer->framebuffer = VK_NULL_HANDLE;
@@ -1030,7 +1113,7 @@ SwapChain *VulkanDriver::createSwapChain(void *native_window,uint32_t width,uint
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     if (vkCreateSemaphore(context->Device(), &semaphoreInfo, nullptr, &swapchain->image_available_gpu[i]) != VK_SUCCESS ||
-        vkCreateSemaphore(context->Device(), &semaphoreInfo, nullptr, &swapchain->render_finished_gpu[i]) != VK_SUCCESS ||
+        vkCreateSemaphore(context->Device(), &semaphoreInfo, nullptr, &swapchain->rendering_finished_gpu[i]) != VK_SUCCESS ||
         vkCreateFence(context->Device(), &fenceInfo, nullptr, &swapchain->rendering_finished_cpu[i]) != VK_SUCCESS) {
       std::cerr << "failed to create semaphores!"<<std::endl;
       destroySwapChain(swapchain);
@@ -1052,8 +1135,8 @@ void VulkanDriver::destroySwapChain(render::backend::SwapChain *swapchain) {
   for (size_t i = 0; i <vk_swap_chain->num_images ; ++i) {
       vkDestroySemaphore(context->Device(), vk_swap_chain->image_available_gpu[i], nullptr);
       vk_swap_chain->image_available_gpu[i] = VK_NULL_HANDLE;
-      vkDestroySemaphore(context->Device(),vk_swap_chain->render_finished_gpu[i], nullptr );
-      vk_swap_chain->render_finished_gpu[i] = VK_NULL_HANDLE;
+      vkDestroySemaphore(context->Device(),vk_swap_chain->rendering_finished_gpu[i], nullptr );
+      vk_swap_chain->rendering_finished_gpu[i] = VK_NULL_HANDLE;
       vkDestroyFence(context->Device(),vk_swap_chain->rendering_finished_cpu[i], nullptr) ;
       vk_swap_chain->rendering_finished_cpu[i] =VK_NULL_HANDLE;
   }
@@ -1077,12 +1160,73 @@ void VulkanDriver::destroySwapChain(render::backend::SwapChain *swapchain) {
 
 
 
-bool VulkanDriver::acquire(render::backend::SwapChain *swapchain) {
-  return false;
+bool VulkanDriver::acquire(render::backend::SwapChain *swap_chain,uint32_t* image_index) {
+  vulkan::SwapChain *vk_swap_chain = static_cast<vulkan::SwapChain *>(swap_chain);
+  uint32_t current_image = vk_swap_chain->current_image;
+
+  vkWaitForFences(
+      context->Device(),
+      1, &vk_swap_chain->rendering_finished_cpu[current_image],
+      VK_TRUE, std::numeric_limits<uint64_t>::max()
+  );
+
+  VkResult result = vkAcquireNextImageKHR(
+      context->Device(),
+      vk_swap_chain->swap_chain,
+      std::numeric_limits<uint64_t>::max(),
+      vk_swap_chain->image_available_gpu[current_image],
+      VK_NULL_HANDLE,
+      image_index
+  );
+
+  if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    return false;
+
+  if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+  {
+    // TODO: log fatal
+    // runtime_error("Can't acquire swap chain image");
+    return false;
+  }
+
+  return true;
 }
 
-bool VulkanDriver::present(render::backend::SwapChain  *swapchain) {
-  return false;
+bool VulkanDriver::present(render::backend::SwapChain  *swap_chain) {
+  vulkan::SwapChain *vk_swap_chain = static_cast<vulkan::SwapChain *>(swap_chain);
+  uint32_t current_image = vk_swap_chain->current_image;
+
+  VkPresentInfoKHR info = {};
+  info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+  info.waitSemaphoreCount = 1;
+  info.pWaitSemaphores = &vk_swap_chain->rendering_finished_gpu[current_image]; // TODO: check if we need to wait for this
+  info.swapchainCount = 1;
+  info.pSwapchains = &vk_swap_chain->swap_chain;
+  info.pImageIndices = &current_image;
+
+  VulkanUtils::transitionImageLayout(
+      context,
+      vk_swap_chain->images[current_image],
+      vk_swap_chain->surface_format.format,
+      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+  );
+
+  VkResult result = vkQueuePresentKHR(vk_swap_chain->present_queue, &info);
+  if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    return false;
+
+  if (result != VK_SUCCESS)
+  {
+    // TODO: log fatal
+    // runtime_error("Can't present swap chain image");
+    return false;
+  }
+
+  vk_swap_chain->current_image++;
+  vk_swap_chain->current_image %= vk_swap_chain->num_images;
+
+  return true;
 }
 
 bool VulkanDriver::resize(render::backend::SwapChain *swapchain, uint32_t width, uint32_t height) {
@@ -1148,5 +1292,39 @@ void VulkanDriver::generateTexture2DMipmaps(render::backend::Texture *texture) {
       vk_texture->num_mipmaps
   );
 }
+Multisample VulkanDriver::getMaxSampleCount()
+{
+  assert(context != nullptr && "Invalid context");
 
+  VkSampleCountFlagBits samples = context->getMaxSampleCount();
+  return vulkan::fromSamples(samples);
+}
+
+Format VulkanDriver::getOptimalDepthFormat()
+{
+  assert(context != nullptr && "Invalid context");
+
+  VkFormat format = VulkanUtils::selectOptimalImageFormat(context->PhysicalDevice());
+  return vulkan::fromFormat(format);
+}
+
+VkSampleCountFlagBits VulkanDriver::toMultisample(Multisample samples)
+{
+  return toSamples(samples);
+}
+
+Multisample VulkanDriver::fromMultisample(VkSampleCountFlagBits samples)
+{
+  return vulkan::fromSamples(samples);
+}
+
+VkFormat VulkanDriver::toFormat(Format format)
+{
+  return vulkan::toVkFormat(format);
+}
+
+Format VulkanDriver::fromFormat(VkFormat format)
+{
+  return vulkan::fromFormat(format);
+}
 }

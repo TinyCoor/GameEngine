@@ -29,7 +29,7 @@ public:
   inline const uint32_t GraphicsQueueFamily() const { return graphicsQueueFamily; }
   inline const VkQueue &GraphicsQueue() const { return graphicsQueue; }
   inline const VkDescriptorPool &DescriptorPool() const { return descriptorPool; }
-  inline const VkSampleCountFlagBits MaxMSAASamples() const { return maxMSAASamples; }
+  inline const VkSampleCountFlagBits getMaxSampleCount() const { return maxMSAASamples; }
 private:
 
   int checkPhysicalDevice(VkPhysicalDevice physical_device);

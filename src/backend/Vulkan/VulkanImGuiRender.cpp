@@ -43,7 +43,7 @@ void ImGuiRender::init(VulkanSwapChain* swapChain)
     init_info.QueueFamily = context->GraphicsQueueFamily();
     init_info.Queue = context->GraphicsQueue();
     init_info.DescriptorPool = context->DescriptorPool();
-    init_info.MSAASamples = context->MaxMSAASamples();
+    init_info.MSAASamples = context->getMaxSampleCount();
     init_info.MinImageCount = swapChain->getNumImages();
     init_info.ImageCount = swapChain->getNumImages();
 
@@ -57,26 +57,17 @@ void ImGuiRender::init(VulkanSwapChain* swapChain)
 
 void ImGuiRender::render(const VulkanRenderFrame& frame)
 {
-    VkCommandBuffer commandBuffer = frame.commandBuffer;
-    VkFramebuffer frameBuffer = frame.frameBuffer;
+    VkCommandBuffer commandBuffer = frame.command_buffer;
+    VkFramebuffer frame_buffer = static_cast<vulkan::FrameBuffer *>(frame.frame_buffer)->framebuffer;
 
-    VkRenderPassBeginInfo renderPassInfo = {};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
-    renderPassInfo.framebuffer = frameBuffer;
-    renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = extent;
+    VkRenderPassBeginInfo info = {};
+    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    info.renderPass = renderPass;
+    info.framebuffer = frame_buffer;
+    info.renderArea.offset = {0, 0};
+    info.renderArea.extent = extent;
 
-    std::array<VkClearValue, 3> clearValues = {};
-    clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
-    clearValues[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
-    clearValues[2].depthStencil = {1.0f, 0};
-    renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-    renderPassInfo.pClearValues = clearValues.data();
-
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-    vkCmdEndRenderPass(commandBuffer);
 
 }
 
