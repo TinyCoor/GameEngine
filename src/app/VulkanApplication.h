@@ -75,7 +75,7 @@ private:
   GLFWwindow *window{nullptr};
   bool windowResized = false;
   VulkanContext* context{nullptr};
-  render::backend::vulkan::VulkanDriver* driver;
+  render::backend::Driver* driver{nullptr};
 
   VulkanRenderScene *scene{nullptr};
   RenderState state;
