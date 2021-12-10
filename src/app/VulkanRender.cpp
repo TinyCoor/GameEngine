@@ -260,7 +260,7 @@ void VulkanRender::update(RenderState &state, VulkanRenderScene *scene) {
 }
 
 void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &frame) {
-  VkCommandBuffer commandBuffer = frame.command_buffer;
+  VkCommandBuffer command_buffer = static_cast<vulkan::CommandBuffer*>(frame.command_buffer)->command_buffer;
   VkDescriptorSet descriptor_set = frame.descriptor_set;
 
   std::array<VkDescriptorSet, 2> sets = {descriptor_set, sceneDescriptorSet};
@@ -278,13 +278,13 @@ void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &fra
   scissor.offset = {0, 0};
   scissor.extent = extent;
 
-  vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-  vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+  vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+  vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
 
-  vkCmdBindDescriptorSets(commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,
+  vkCmdBindDescriptorSets(command_buffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,
                           0,sets.size(),sets.data(),0,nullptr);
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
+  vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, skyboxPipeline);
 
   {
     auto skybox = scene->getSkyboxMesh();
@@ -292,14 +292,14 @@ void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &fra
     VkBuffer vertexBuffers[] = {skybox->getVertexBuffer()};
     VkBuffer indexBuffer = skybox->getIndexBuffer();
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-    vkCmdDrawIndexed(commandBuffer, skybox->getNumIndices(), 1, 0, 0, 0);
+    vkCmdDrawIndexed(command_buffer, skybox->getNumIndices(), 1, 0, 0, 0);
   }
 
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipeline);
-  vkCmdBindDescriptorSets(commandBuffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,
+  vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pbrPipeline);
+  vkCmdBindDescriptorSets(command_buffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,
                           0,sets.size(),sets.data(),0,nullptr);
   {
     auto mesh = scene->getMesh();
@@ -307,10 +307,9 @@ void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &fra
     VkBuffer vertexBuffers[] = {mesh->getVertexBuffer()};
     VkBuffer indexBuffer = mesh->getIndexBuffer();
     VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-    vkCmdDrawIndexed(commandBuffer, mesh->getNumIndices(), 1, 0, 0, 0);
+    vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdDrawIndexed(command_buffer, mesh->getNumIndices(), 1, 0, 0, 0);
   }
 }
 

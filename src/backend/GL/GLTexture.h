@@ -172,9 +172,6 @@ inline size_t internal_format_to_size(GLenum format){
 }
 
 
-
-
-
 /// 一个着色器程序会有多个texture_object
 /// 对于一个纹理对象 需要绑定到对应的着色器单元 首先需要设置纹理对象的一些属性
 /// 对于每一个纹理对象会有采样器，采样器需要绑定到对应的绑定点 可能会需要设置一些采样器的属性
@@ -182,7 +179,7 @@ inline size_t internal_format_to_size(GLenum format){
 ///上述代码默认绑定到 纹理单元 1
 ///用代码实现的话 glBindSampler(1,sampler);
 
-/// 分配texture_memory
+/// 分配 texture_memory
 /// glTexStorage*D 1/2/3
 /// 填充数据
 /// glTextureSubImage*D 1/2/3
@@ -203,8 +200,6 @@ private:
     int mipLevel_;
     usage_type usage;
     GLenum internal_format;
-    GLSampler<textureType> sampler;
-
 public:
     static constexpr GLenum type = textureType;
 
@@ -237,8 +232,13 @@ public:
     }
 
     //tbo
-    void BindTextureBuffer(GLBuffer<GL_TEXTURE_BUFFER>& texture_buffer) {
+    template<GLenum bufferType>
+    void BindTextureBuffer(GLBuffer<bufferType>& texture_buffer) {
         glTextureBuffer(this->handle,GL_R32F,texture_buffer.GetHandle());
+    }
+
+    void ReadTextureData(int mipLevel,GLenum format,GLenum type,int bufSize,void* pixels) {
+      //glGetTextureImage(handle,mipLevel,format,bufSize,pixels);
     }
 
     void SetTextureParam(GLenum pname,GLint param){

@@ -13,8 +13,8 @@ namespace render::backend::vulkan {
 struct VulkanRenderFrame {
 
   VkDescriptorSet descriptor_set{VK_NULL_HANDLE};
-  VkCommandBuffer command_buffer{VK_NULL_HANDLE};
 
+  render::backend::CommandBuffer* command_buffer{nullptr};
   render::backend::FrameBuffer *frame_buffer {nullptr};
   render::backend::UniformBuffer *uniform_buffer {nullptr};
   void* uniform_buffer_data{nullptr};
