@@ -41,19 +41,19 @@ void VulkanTexture2DRender::init(VulkanShader &vertShader,
 
     VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    VulkanRenderPassBuilder renderPassBuilder(context);
+    VulkanRenderPassBuilder renderPassBuilder;
     render_pass = renderPassBuilder
            .addColorAttachment(target_texture.getImageFormat(), VK_SAMPLE_COUNT_1_BIT,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_STORE_OP_STORE)
             .addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
             .addColorAttachmentReference(0, 0)
-            .build();
+            .build(context->LogicDevice());
 
 
-    VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
-    pipeline_layout = pipelineLayoutBuilder.build();
+    VulkanPipelineLayoutBuilder pipelineLayoutBuilder;
+    pipeline_layout = pipelineLayoutBuilder.build(context->LogicDevice());
 
 
-    VulkanGraphicsPipelineBuilder pipelineBuilder(context,pipeline_layout,render_pass);
+    VulkanGraphicsPipelineBuilder pipelineBuilder(pipeline_layout,render_pass);
     pipeline = pipelineBuilder
             .addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
             .addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -65,7 +65,7 @@ void VulkanTexture2DRender::init(VulkanShader &vertShader,
             .setMultisampleState(VK_SAMPLE_COUNT_1_BIT)
             .setDepthStencilState(false, false, VK_COMPARE_OP_LESS)
             .addBlendColorAttachment()
-            .build();
+            .build(context->LogicDevice());
 
 
   // Create framebuffer
@@ -84,13 +84,13 @@ void VulkanTexture2DRender::init(VulkanShader &vertShader,
     allocateInfo.commandPool = context->CommandPool();
     allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocateInfo.commandBufferCount = 1;
-    VK_CHECK(vkAllocateCommandBuffers(context->Device(), &allocateInfo, &commandBuffer),"Can't create command buffers");
+    VK_CHECK(vkAllocateCommandBuffers(context->LogicDevice(), &allocateInfo, &commandBuffer),"Can't create command buffers");
 
 
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = 0;
-    VK_CHECK(vkCreateFence(context->Device(), &fenceInfo, nullptr, &fence) ,"Can't create fence");
+    VK_CHECK(vkCreateFence(context->LogicDevice(), &fenceInfo, nullptr, &fence) ,"Can't create fence");
 
 }
 
@@ -100,19 +100,19 @@ void VulkanTexture2DRender::shutdown() {
 
     driver->destroyFrameBuffer(framebuffer);
 
-    vkFreeCommandBuffers(context->Device(),context->CommandPool(),1,&commandBuffer);
+    vkFreeCommandBuffers(context->LogicDevice(),context->CommandPool(),1,&commandBuffer);
     commandBuffer =VK_NULL_HANDLE;
 
-    vkDestroyRenderPass(context->Device(),render_pass, nullptr);
+    vkDestroyRenderPass(context->LogicDevice(),render_pass, nullptr);
     render_pass = VK_NULL_HANDLE;
 
-    vkDestroyPipelineLayout(context->Device(),pipeline_layout, nullptr);
+    vkDestroyPipelineLayout(context->LogicDevice(),pipeline_layout, nullptr);
     pipeline_layout = VK_NULL_HANDLE;
 
-    vkDestroyPipeline(context->Device(),pipeline, nullptr);
+    vkDestroyPipeline(context->LogicDevice(),pipeline, nullptr);
     pipeline = VK_NULL_HANDLE;
 
-    vkDestroyFence(context->Device(), fence, nullptr);
+    vkDestroyFence(context->LogicDevice(), fence, nullptr);
     fence = VK_NULL_HANDLE;
 }
 
@@ -156,8 +156,8 @@ void VulkanTexture2DRender::render() {
     submitInfo.commandBufferCount=1;
     submitInfo.pCommandBuffers =&commandBuffer;
 
-    VK_CHECK( vkResetFences(context->Device(),1,&fence),"Reset Fence Failed");
+    VK_CHECK( vkResetFences(context->LogicDevice(),1,&fence),"Reset Fence Failed");
     VK_CHECK( vkQueueSubmit(context->GraphicsQueue(),1,&submitInfo,fence),"Submit Queue Failed");
-    VK_CHECK(vkWaitForFences(context->Device(), 1, &fence, VK_TRUE, 100000000000),"Can't wait for a fence");
+    VK_CHECK(vkWaitForFences(context->LogicDevice(), 1, &fence, VK_TRUE, 100000000000),"Can't wait for a fence");
 
 }

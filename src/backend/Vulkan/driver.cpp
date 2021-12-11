@@ -4,7 +4,7 @@
 #include "../API.h"
 #include "driver.h"
 #include "VulkanUtils.h"
-#include "VulkanContext.h"
+#include "Device.h"
 #include "Macro.h"
 #include "shaderc.h"
 #include "VulkanRenderPassBuilder.h"
@@ -394,7 +394,7 @@ static VkImageViewType toImageBaseViewType(VkImageType type, VkImageCreateFlags 
     return VK_IMAGE_VIEW_TYPE_MAX_ENUM;
 }
 
-static void createTextureData(const VulkanContext *context, Texture *texture,
+static void createTextureData(const Device *context, Texture *texture,
                               Format format, const void *data,
                               int num_data_mipmaps, int num_data_layer)
 {
@@ -439,7 +439,7 @@ static void createTextureData(const VulkanContext *context, Texture *texture,
 
     // Create image view & sampler
     texture->view = VulkanUtils::createImageView(
-        context->Device(),
+        context->LogicDevice(),
         texture->image,
         texture->format,
         toImageAspectFlags(texture->format),
@@ -448,7 +448,7 @@ static void createTextureData(const VulkanContext *context, Texture *texture,
         0, texture->num_layers
     );
 
-    texture->sampler = VulkanUtils::createSampler(context->Device(), 0, texture->num_mipmaps);
+    texture->sampler = VulkanUtils::createSampler(context->LogicDevice(), 0, texture->num_mipmaps);
 
 }
 
@@ -465,7 +465,7 @@ static VkCommandBufferLevel toVKCommandBufferLevel(CommandBufferType type)
     return VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 }
 
-static void selectOptimalSwapChainSettings(VulkanContext *context, SwapChain *swapchain)
+static void selectOptimalSwapChainSettings(Device *context, SwapChain *swapchain)
 {
     //get surface capability
     auto res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(context->PhysicalDevice(),
@@ -550,7 +550,7 @@ static void selectOptimalSwapChainSettings(VulkanContext *context, SwapChain *sw
 
 }
 
-static bool createSwapchainObjects(VulkanContext *context,
+static bool createSwapchainObjects(Device *context,
                                             SwapChain *swapchain,
                                             uint32_t width,
                                             uint32_t height)
@@ -584,17 +584,17 @@ static bool createSwapchainObjects(VulkanContext *context,
     swapChainInfo.presentMode = swapchain->present_mode; // settings.presentMode;
     swapChainInfo.clipped = VK_TRUE;
     swapChainInfo.oldSwapchain = VK_NULL_HANDLE;
-    if (vkCreateSwapchainKHR(context->Device(), &swapChainInfo, nullptr, &swapchain->swap_chain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(context->LogicDevice(), &swapChainInfo, nullptr, &swapchain->swap_chain) != VK_SUCCESS) {
         std::cerr << "vulkan::createTransientSwapChainObjects(): vkCreateSwapchainKHR failed" << std::endl;
         return false;
     }
 
-    vkGetSwapchainImagesKHR(context->Device(), swapchain->swap_chain, &swapchain->num_images, nullptr);
+    vkGetSwapchainImagesKHR(context->LogicDevice(), swapchain->swap_chain, &swapchain->num_images, nullptr);
     assert(swapchain->num_images > 0 && swapchain->num_images < render::backend::vulkan::SwapChain::MAX_IMAGES);
-    vkGetSwapchainImagesKHR(context->Device(), swapchain->swap_chain, &swapchain->num_images, swapchain->images);
+    vkGetSwapchainImagesKHR(context->LogicDevice(), swapchain->swap_chain, &swapchain->num_images, swapchain->images);
 
     for (int i = 0; i < swapchain->num_images; ++i) {
-        swapchain->views[i] = VulkanUtils::createImageView(context->Device(),
+        swapchain->views[i] = VulkanUtils::createImageView(context->LogicDevice(),
                                                            swapchain->images[i],
                                                            swapchain->surface_format.format,
                                                            VK_IMAGE_ASPECT_COLOR_BIT,
@@ -604,7 +604,7 @@ static bool createSwapchainObjects(VulkanContext *context,
         VkFenceCreateInfo fenceInfo = {};
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-        if (vkCreateSemaphore(context->Device(), &semaphoreInfo, nullptr, &swapchain->image_available_gpu[i])
+        if (vkCreateSemaphore(context->LogicDevice(), &semaphoreInfo, nullptr, &swapchain->image_available_gpu[i])
             != VK_SUCCESS) {
             std::cerr << "failed to create semaphores!" << std::endl;
            // destroySwapChain(swapchain);
@@ -615,16 +615,16 @@ static bool createSwapchainObjects(VulkanContext *context,
     return true;
 }
 
-static void destroySwapchainObjects(VulkanContext *context, SwapChain *swapchain)
+static void destroySwapchainObjects(Device *context, SwapChain *swapchain)
 {
     for (size_t i = 0; i < swapchain->num_images; ++i) {
-        vkDestroyImageView(context->Device(), swapchain->views[i], nullptr);
+        vkDestroyImageView(context->LogicDevice(), swapchain->views[i], nullptr);
         swapchain->views[i] = VK_NULL_HANDLE;
         swapchain->images[i] = VK_NULL_HANDLE;
-        vkDestroySemaphore(context->Device(),swapchain->image_available_gpu[i], nullptr);
+        vkDestroySemaphore(context->LogicDevice(),swapchain->image_available_gpu[i], nullptr);
         swapchain->image_available_gpu[i] =VK_NULL_HANDLE;
     }
-    vkDestroySwapchainKHR(context->Device(), swapchain->swap_chain, nullptr);
+    vkDestroySwapchainKHR(context->LogicDevice(), swapchain->swap_chain, nullptr);
     swapchain->swap_chain = VK_NULL_HANDLE;
 }
 
@@ -809,12 +809,15 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
 
     uint32_t width = 0;
     uint32_t height = 0;
-    VulkanRenderPassBuilder builder = VulkanRenderPassBuilder(context);
+    VulkanRenderPassBuilder builder;
 
     builder.addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     // add color attachments
     result->num_attachments = 0;
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    bool resolve = false;
+    VkSampleCountFlagBits sample =VK_SAMPLE_COUNT_1_BIT;
     for (uint8_t i = 0; i < num_attachments; ++i) {
         const FrameBufferAttachment &attachment = attachments[i];
         VkImageView view = VK_NULL_HANDLE;
@@ -826,7 +829,7 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
             VkImageAspectFlags flags = vulkan::toImageAspectFlags(color_texture->format);
 
             view = VulkanUtils::createImageView(
-                context->Device(),
+                context->LogicDevice(),
                 color_texture->image, color_texture->format,
                 flags, VK_IMAGE_VIEW_TYPE_2D,
                 color.base_mip, color.num_mips,
@@ -835,7 +838,9 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
 
             width = std::max<int>(1, color_texture->width / (1 << color.base_mip));
             height = std::max<int>(1, color_texture->height / (1 << color.base_mip));
-
+            format = color_texture->format;
+            sample =color_texture->samples;
+            resolve = color.resolve_attachment;
             if (color.resolve_attachment) {
                 builder.addColorResolveAttachment(color_texture->format);
                 builder.addColorResolveAttachmentReference(0, i);
@@ -849,14 +854,15 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
             VkImageAspectFlags flags = vulkan::toImageAspectFlags(depth_texture->format);
 
             view = VulkanUtils::createImageView(
-                context->Device(),
+                context->LogicDevice(),
                 depth_texture->image, depth_texture->format,
                 flags, VK_IMAGE_VIEW_TYPE_2D
             );
 
             width = depth_texture->width;
             height = depth_texture->height;
-
+            format = depth_texture->format;
+            sample = depth_texture->samples;
             builder.addDepthStencilAttachment(depth_texture->format, depth_texture->samples);
             builder.setDepthStencilAttachmentReference(0, i);
         } else if (attachment.type == FrameBufferAttachmentType::SWAP_CHAIN_COLOR) {
@@ -865,13 +871,16 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
             VkImageAspectFlags flags = vulkan::toImageAspectFlags(swap_chain->surface_format.format);
 
             view = VulkanUtils::createImageView(
-                context->Device(),
+                context->LogicDevice(),
                 swap_chain->images[swap_chain_color.base_image], swap_chain->surface_format.format,
                 flags, VK_IMAGE_VIEW_TYPE_2D
             );
 
             width = swap_chain->sizes.width;
             height = swap_chain->sizes.height;
+            format = swap_chain->surface_format.format;
+            resolve =swap_chain_color.resolve_attachment;
+            //sample = swap_chain->
 
             if (swap_chain_color.resolve_attachment) {
                 builder.addColorResolveAttachment(swap_chain->surface_format.format);
@@ -882,11 +891,17 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
             }
         }
 
-        result->attachments[result->num_attachments++] = view;
+        result->attachments[result->num_attachments] = view;
+        result->attachment_types[result->num_attachments] =attachment.type;
+        result->attachment_format[i] = format;
+        result->attachment_resolve[i] = resolve;
+        result->num_attachments++;
     }
 
     // create dummy renderpass
-    result->dummy_render_pass = builder.build(); // TODO: move to render pass cache
+    result->dummy_render_pass = builder.build(context->LogicDevice()); // TODO: move to render pass cache
+    result->sizes.width = width;
+    result->sizes.height= height;
 
     // create framebuffer
     VkFramebufferCreateInfo framebufferInfo = {};
@@ -898,7 +913,7 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
     framebufferInfo.height = height;
     framebufferInfo.layers = 1;
 
-    if (vkCreateFramebuffer(context->Device(), &framebufferInfo, nullptr, &result->framebuffer) != VK_SUCCESS) {
+    if (vkCreateFramebuffer(context->LogicDevice(), &framebufferInfo, nullptr, &result->framebuffer) != VK_SUCCESS) {
         // TODO: log error
         delete result;
         result = nullptr;
@@ -919,7 +934,7 @@ CommandBuffer *VulkanDriver::createCommandBuffer(CommandBufferType type)
 
 
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
-    if (vkAllocateCommandBuffers(context->Device(), &allocateInfo, &command_buffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(context->LogicDevice(), &allocateInfo, &command_buffer) != VK_SUCCESS) {
         return nullptr;
     }
     auto vk_command_buffer = new vulkan::CommandBuffer;
@@ -931,9 +946,9 @@ CommandBuffer *VulkanDriver::createCommandBuffer(CommandBufferType type)
     VkFenceCreateInfo fenceInfo = {};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-    if (vkCreateSemaphore(context->Device(), &semaphoreInfo, nullptr, &vk_command_buffer->rendering_finished_gpu)
+    if (vkCreateSemaphore(context->LogicDevice(), &semaphoreInfo, nullptr, &vk_command_buffer->rendering_finished_gpu)
         != VK_SUCCESS ||
-        vkCreateFence(context->Device(), &fenceInfo, nullptr, &vk_command_buffer->rendering_finished_cpu)
+        vkCreateFence(context->LogicDevice(), &fenceInfo, nullptr, &vk_command_buffer->rendering_finished_cpu)
             != VK_SUCCESS
         ){
         ///log
@@ -959,7 +974,7 @@ UniformBuffer *VulkanDriver::createUniformBuffer(BufferType type, uint32_t size,
         result->memory
     );
 
-    if (vkMapMemory(context->Device(), result->memory, 0, size, 0, &result->pointer) != VK_SUCCESS) {
+    if (vkMapMemory(context->LogicDevice(), result->memory, 0, size, 0, &result->pointer) != VK_SUCCESS) {
         // TODO: log error
         delete result;
         return nullptr;
@@ -1009,7 +1024,7 @@ Shader *VulkanDriver::createShaderFromSource(ShaderType type, uint32_t size, con
 
     vulkan::Shader *result = new vulkan::Shader();
     result->type = type;
-    result->shaderModule = VulkanUtils::createShaderModule(context->Device(), bytecode_data, bytecode_size);
+    result->shaderModule = VulkanUtils::createShaderModule(context->LogicDevice(), bytecode_data, bytecode_size);
 
     shaderc_result_release(compilation_result);
     shaderc_compile_options_release(options);
@@ -1025,7 +1040,7 @@ Shader *VulkanDriver::createShaderFromBytecode(ShaderType type, uint32_t size, c
     vulkan::Shader *result = new vulkan::Shader();
     result->type = type;
     result->shaderModule =
-        VulkanUtils::createShaderModule(context->Device(), reinterpret_cast<const uint32_t *>(data), size);
+        VulkanUtils::createShaderModule(context->LogicDevice(), reinterpret_cast<const uint32_t *>(data), size);
 
     return result;
 }
@@ -1036,8 +1051,8 @@ void VulkanDriver::destroyVertexBuffer(render::backend::VertexBuffer *vertex_buf
 
     vulkan::VertexBuffer *vk_vertex_buffer = static_cast<vulkan::VertexBuffer *>(vertex_buffer);
 
-    vkDestroyBuffer(context->Device(), vk_vertex_buffer->buffer, nullptr);
-    vkFreeMemory(context->Device(), vk_vertex_buffer->memory, nullptr);
+    vkDestroyBuffer(context->LogicDevice(), vk_vertex_buffer->buffer, nullptr);
+    vkFreeMemory(context->LogicDevice(), vk_vertex_buffer->memory, nullptr);
 
     vk_vertex_buffer->buffer = VK_NULL_HANDLE;
     vk_vertex_buffer->memory = VK_NULL_HANDLE;
@@ -1052,8 +1067,8 @@ void VulkanDriver::destroyIndexBuffer(render::backend::IndexBuffer *index_buffer
 
     vulkan::IndexBuffer *vk_index_buffer = static_cast<vulkan::IndexBuffer *>(index_buffer);
 
-    vkDestroyBuffer(context->Device(), vk_index_buffer->buffer, nullptr);
-    vkFreeMemory(context->Device(), vk_index_buffer->memory, nullptr);
+    vkDestroyBuffer(context->LogicDevice(), vk_index_buffer->buffer, nullptr);
+    vkFreeMemory(context->LogicDevice(), vk_index_buffer->memory, nullptr);
 
     vk_index_buffer->buffer = VK_NULL_HANDLE;
     vk_index_buffer->memory = VK_NULL_HANDLE;
@@ -1081,8 +1096,8 @@ void VulkanDriver::destroyTexture(render::backend::Texture *texture)
 
     vulkan::Texture *vk_texture = static_cast<vulkan::Texture *>(texture);
 
-    vkDestroyImage(context->Device(), vk_texture->image, nullptr);
-    vkFreeMemory(context->Device(), vk_texture->imageMemory, nullptr);
+    vkDestroyImage(context->LogicDevice(), vk_texture->image, nullptr);
+    vkFreeMemory(context->LogicDevice(), vk_texture->imageMemory, nullptr);
 
     vk_texture->image = VK_NULL_HANDLE;
     vk_texture->imageMemory = VK_NULL_HANDLE;
@@ -1099,14 +1114,14 @@ void VulkanDriver::destroyFrameBuffer(render::backend::FrameBuffer *frame_buffer
     vulkan::FrameBuffer *vk_frame_buffer = static_cast<vulkan::FrameBuffer *>(frame_buffer);
 
     for (uint8_t i = 0; i < vk_frame_buffer->num_attachments; ++i) {
-        vkDestroyImageView(context->Device(), vk_frame_buffer->attachments[i], nullptr);
+        vkDestroyImageView(context->LogicDevice(), vk_frame_buffer->attachments[i], nullptr);
         vk_frame_buffer->attachments[i] = VK_NULL_HANDLE;
     }
 
-    vkDestroyFramebuffer(context->Device(), vk_frame_buffer->framebuffer, nullptr);
+    vkDestroyFramebuffer(context->LogicDevice(), vk_frame_buffer->framebuffer, nullptr);
     vk_frame_buffer->framebuffer = VK_NULL_HANDLE;
 
-    vkDestroyRenderPass(context->Device(), vk_frame_buffer->dummy_render_pass, nullptr);
+    vkDestroyRenderPass(context->LogicDevice(), vk_frame_buffer->dummy_render_pass, nullptr);
     vk_frame_buffer->dummy_render_pass = VK_NULL_HANDLE;
 
     delete frame_buffer;
@@ -1119,8 +1134,8 @@ void VulkanDriver::destroyUniformBuffer(render::backend::UniformBuffer *uniform_
 
     vulkan::UniformBuffer *vk_uniform_buffer = static_cast<vulkan::UniformBuffer *>(uniform_buffer);
 
-    vkDestroyBuffer(context->Device(), vk_uniform_buffer->buffer, nullptr);
-    vkFreeMemory(context->Device(), vk_uniform_buffer->memory, nullptr);
+    vkDestroyBuffer(context->LogicDevice(), vk_uniform_buffer->buffer, nullptr);
+    vkFreeMemory(context->LogicDevice(), vk_uniform_buffer->memory, nullptr);
 
     vk_uniform_buffer->buffer = VK_NULL_HANDLE;
     vk_uniform_buffer->memory = VK_NULL_HANDLE;
@@ -1135,7 +1150,7 @@ void VulkanDriver::destroyShader(render::backend::Shader *shader)
 
     vulkan::Shader *vk_shader = static_cast<vulkan::Shader *>(shader);
 
-    vkDestroyShaderModule(context->Device(), vk_shader->shaderModule, nullptr);
+    vkDestroyShaderModule(context->LogicDevice(), vk_shader->shaderModule, nullptr);
     vk_shader->shaderModule = VK_NULL_HANDLE;
 
     delete shader;
@@ -1186,13 +1201,28 @@ bool VulkanDriver::end(render::backend::CommandBuffer *command_buffer)
 
 void VulkanDriver::beginRenderPass(
     render::backend::CommandBuffer *command_buffer,
-    const render::backend::FrameBuffer *frame_buffer)
+    const render::backend::FrameBuffer *frame_buffer,
+    const RenderPassInfo* info)
 {
     if (command_buffer == nullptr) {
         return;
     }
-    auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer)->command_buffer;
-    //todo create render pass
+    auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer);
+    auto vk_frame_buffer = static_cast<const vulkan::FrameBuffer*>(frame_buffer);
+
+
+//    VkRenderPassBeginInfo render_pass_info = {};
+//    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+//    render_pass_info.renderPass= createFromCache(vk_frame_buffer,info);
+//    render_pass_info.framebuffer = vk_frame_buffer->framebuffer;
+//    render_pass_info.renderArea.offset = {0, 0};
+//    render_pass_info.renderArea.extent = vk_frame_buffer->sizes;
+//
+//    render_pass_info.clearValueCount =vk_command_buffer->num_images;
+//    render_pass_info.pClearValues =reinterpret_cast<VkClearValue*>(info->clear_value);
+//
+//    vkCmdBeginRenderPass(vk_command_buffer->command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
 }
 void VulkanDriver::endRenderPass(render::backend::CommandBuffer *command_buffer)
 {
@@ -1235,7 +1265,7 @@ void VulkanDriver::drawIndexedPrimitiveInstanced(render::backend::CommandBuffer 
     auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer)->command_buffer;
     auto vk_render_primitive = static_cast<const vulkan::RenderPrimitive *>(primitive);
 }
-VulkanDriver::VulkanDriver(const char *app_name, const char *engine_name) : context(new VulkanContext)
+VulkanDriver::VulkanDriver(const char *app_name, const char *engine_name) : context(new Device)
 {
     context->init(app_name, engine_name);
 }
@@ -1261,7 +1291,7 @@ SwapChain *VulkanDriver::createSwapChain(void *native_window, uint32_t width, ui
     );
 
     // Get present queue
-    vkGetDeviceQueue(context->Device(), swapchain->present_queue_family, 0, &swapchain->present_queue);
+    vkGetDeviceQueue(context->LogicDevice(), swapchain->present_queue_family, 0, &swapchain->present_queue);
     if (swapchain->present_queue == VK_NULL_HANDLE) {
         std::cerr << "Can't get present queue from logical device" << std::endl;
         return nullptr;
@@ -1307,7 +1337,7 @@ bool VulkanDriver::acquire(render::backend::SwapChain *swap_chain, uint32_t *ima
     uint32_t current_image = vk_swap_chain->current_image;
 
     VkResult result = vkAcquireNextImageKHR(
-        context->Device(),
+        context->LogicDevice(),
         vk_swap_chain->swap_chain,
         std::numeric_limits<uint64_t>::max(),
         vk_swap_chain->image_available_gpu[current_image],
@@ -1346,7 +1376,7 @@ bool VulkanDriver::submit(render::backend::CommandBuffer *command_buffer)
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &vk_command_buffer->rendering_finished_gpu;
 
-    vkResetFences(context->Device(), 1, &vk_command_buffer->rendering_finished_cpu);
+    vkResetFences(context->LogicDevice(), 1, &vk_command_buffer->rendering_finished_cpu);
     if (vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo, vk_command_buffer->rendering_finished_cpu)
         != VK_SUCCESS)
         return false;
@@ -1377,7 +1407,7 @@ bool VulkanDriver::submitSynced(render::backend::CommandBuffer *command_buffer,
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitInfo.pWaitDstStageMask = waitStages;
     }
-    vkResetFences(context->Device(), 1, &vk_command_buffer->rendering_finished_cpu);
+    vkResetFences(context->LogicDevice(), 1, &vk_command_buffer->rendering_finished_cpu);
     if (vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo, vk_command_buffer->rendering_finished_cpu)
         != VK_SUCCESS)
         return false;
@@ -1414,7 +1444,7 @@ bool VulkanDriver::submitSynced(render::backend::CommandBuffer* command_buffer,
         submitInfo.pWaitDstStageMask = wait_stages.data();
 
     }
-    vkResetFences(context->Device(), 1, &vk_command_buffer->rendering_finished_cpu);
+    vkResetFences(context->LogicDevice(), 1, &vk_command_buffer->rendering_finished_cpu);
     if (vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo, vk_command_buffer->rendering_finished_cpu)
         != VK_SUCCESS)
         return false;
@@ -1471,7 +1501,7 @@ bool VulkanDriver::present(render::backend::SwapChain *swap_chain,
 
     if(wait_fences.size()){
         vkWaitForFences(
-            context->Device(),
+            context->LogicDevice(),
             wait_fences.size(), wait_fences.data(),
             VK_TRUE, std::numeric_limits<uint64_t>::max()
         );
@@ -1586,12 +1616,12 @@ void VulkanDriver::destroyCommandBuffer(render::backend::CommandBuffer *command_
         return;
     }
     auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer);
-    vkFreeCommandBuffers(context->Device(), context->CommandPool(), 1, &vk_command_buffer->command_buffer);
+    vkFreeCommandBuffers(context->LogicDevice(), context->CommandPool(), 1, &vk_command_buffer->command_buffer);
     vk_command_buffer->command_buffer = VK_NULL_HANDLE;
     vk_command_buffer->level = 0;
-    vkDestroySemaphore(context->Device(), vk_command_buffer->rendering_finished_gpu, nullptr);
+    vkDestroySemaphore(context->LogicDevice(), vk_command_buffer->rendering_finished_gpu, nullptr);
     vk_command_buffer->rendering_finished_gpu= VK_NULL_HANDLE;
-    vkDestroyFence(context->Device(), vk_command_buffer->rendering_finished_cpu, nullptr);
+    vkDestroyFence(context->LogicDevice(), vk_command_buffer->rendering_finished_cpu, nullptr);
     vk_command_buffer->rendering_finished_cpu= VK_NULL_HANDLE;
     delete command_buffer;
     command_buffer = nullptr;

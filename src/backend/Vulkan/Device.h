@@ -12,11 +12,11 @@ class GLFWwindow;
 
 //Singleton
 namespace render::backend::vulkan {
-class VulkanContext {
+class Device {
 
 public:
-  VulkanContext();
-  ~VulkanContext();
+  Device();
+  ~Device();
 
   void init(const char* app_name,const char* engine_name);
   void shutdown();
@@ -24,7 +24,7 @@ public:
 
   inline const VkInstance &Instance() const { return instance; }
   inline const VkPhysicalDevice &PhysicalDevice() const { return physicalDevice; }
-  inline const VkDevice &Device() const { return device; }
+  inline const VkDevice &LogicDevice() const { return device; }
   inline const VkCommandPool &CommandPool() const { return commandPool; }
   inline const uint32_t GraphicsQueueFamily() const { return graphicsQueueFamily; }
   inline const VkQueue &GraphicsQueue() const { return graphicsQueue; }

@@ -5,7 +5,7 @@
 #ifndef GAMEENGINE_VULKANRENDERMODEL_H
 #define GAMEENGINE_VULKANRENDERMODEL_H
 #include <vector>
-#include "VulkanContext.h"
+#include "Device.h"
 #include "../core/Vertex.h"
 #include "driver.h"
 

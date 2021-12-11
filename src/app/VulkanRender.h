@@ -13,7 +13,7 @@
 namespace render::backend::vulkan {
 
 struct RenderState;
-class VulkanContext;
+class Device;
 class VulkanSwapChain;
 class VulkanRenderScene;
 class VulkanRenderScene;
@@ -21,7 +21,7 @@ struct VulkanRenderFrame;
 
 class VulkanRender {
 private:
-  const VulkanContext *context{nullptr};
+  const Device *context{nullptr};
   render::backend::Driver *driver{nullptr};
   VkExtent2D extent;
 
@@ -46,7 +46,7 @@ private:
   VkDescriptorSet sceneDescriptorSet{VK_NULL_HANDLE};
 
 public:
-  explicit VulkanRender(const VulkanContext *ctx,
+  explicit VulkanRender(const Device *ctx,
                         render::backend::Driver *driver,
                         VkExtent2D extent,
                         VkDescriptorSetLayout layout,

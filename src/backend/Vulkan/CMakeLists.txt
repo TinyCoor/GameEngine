@@ -17,7 +17,7 @@ set(HEADERS
         VulkanTexture.h
         VulkanUtils.h
         VulkanMesh.h
-        VulkanContext.h
+        Device.h
         VulkanShader.h
         VulkanResourceManager.h
         VulkanGraphicsPipelineBuilder.h
@@ -35,7 +35,7 @@ set(SOURCES
         VulkanTexture.cpp
         VulkanUtils.cpp
         VulkanMesh.cpp
-        VulkanContext.cpp
+        Device.cpp
         VulkanShader.cpp
         VulkanResourceManager.cpp
         VulkanGraphicsPipelineBuilder.cpp

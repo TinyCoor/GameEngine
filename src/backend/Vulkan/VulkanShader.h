@@ -26,14 +26,9 @@ public:
   ~VulkanShader();
 
   bool compileFromFile(const char *path, render::backend::ShaderType type);
-
   bool reload();
-
   void clear();
   const VkShaderModule getShaderModule() const;
-
-private:
-  bool compileFromSource(const char *path, const char *source, size_t size, shaderc_shader_kind kind);
 
 private:
   render::backend::Driver *driver {nullptr};

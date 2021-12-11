@@ -4,22 +4,17 @@
 
 #ifndef GAMEENGINE_VULKANDESCRIPTORSETLAYOUTBUILDER_H
 #define GAMEENGINE_VULKANDESCRIPTORSETLAYOUTBUILDER_H
-#include "VulkanContext.h"
+#include "Device.h"
 namespace render::backend::vulkan {
 class VulkanDescriptorSetLayoutBuilder {
-  const VulkanContext *context;
-  VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
   std::vector<VkDescriptorSetLayoutBinding> bindings;
 public:
-  VulkanDescriptorSetLayoutBuilder(const VulkanContext *ctx) : context(ctx) {
-  }
+  VulkanDescriptorSetLayoutBuilder() {}
 
   VulkanDescriptorSetLayoutBuilder &addDescriptorBinding(VkDescriptorType type,
                                                          VkShaderStageFlags shaderStageFlags);
 
-  inline VkDescriptorSetLayout &getDescriptorSetLayout() { return descriptorSetLayout; }
-
-  VkDescriptorSetLayout build();
+  VkDescriptorSetLayout build(VkDevice device);
 
 };
 }

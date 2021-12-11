@@ -5,10 +5,8 @@
 #ifndef GAMEENGINE_VULKANIMGUIRENDER_H
 #define GAMEENGINE_VULKANIMGUIRENDER_H
 
-#include <memory>
 #include <volk.h>
 struct ImGuiContext;
-
 
 namespace render::backend::vulkan {
 
@@ -18,11 +16,11 @@ class VulkanRenderScene;
 struct VulkanRenderFrame;
 class VulkanSwapChain;
 class VulkanTexture;
-class VulkanContext;
+class Device;
 
 class ImGuiRender {
 public:
-  ImGuiRender(const VulkanContext *ctx,
+  ImGuiRender(const Device *ctx,
                              ImGuiContext *imgui_ctx,
                              VkExtent2D extent,
                              VkRenderPass renderPass);
@@ -38,7 +36,7 @@ public:
   void render(const VulkanRenderFrame &frame);
 
 private:
-  const VulkanContext *context{nullptr};
+  const Device *context{nullptr};
   ImGuiContext *imGuiContext{nullptr};
   VkRenderPass renderPass;
   VkExtent2D extent;

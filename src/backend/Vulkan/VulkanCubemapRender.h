@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "VulkanContext.h"
+#include "Device.h"
 #include "driver.h"
 #include "VulkanMesh.h"
 #include "VulkanShader.h"
@@ -15,7 +15,7 @@ namespace render::backend::vulkan {
 
 class VulkanCubeMapRender {
 private:
-  const VulkanContext *context{nullptr};
+  const Device *context{nullptr};
   render::backend::Driver *driver {nullptr};
   VulkanMesh quad;
 
@@ -36,7 +36,7 @@ private:
   uint32_t push_constants_size {0};
 
 public:
-  VulkanCubeMapRender(const VulkanContext *context, render::backend::Driver *driver)
+  VulkanCubeMapRender(const Device *context, render::backend::Driver *driver)
       : context(context)
       , driver(driver)
       , quad(driver)

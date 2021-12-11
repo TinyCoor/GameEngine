@@ -8,12 +8,12 @@
 #include <volk.h>
 #include <vector>
 namespace render::backend::vulkan {
-class VulkanContext;
+class Device;
 class platform {
 public:
   static const char* getInstanceExtension();
-  static VkSurfaceKHR createSurface(const VulkanContext* context, void* native_window);
-  static void destroySurface(const VulkanContext* context, const VkSurfaceKHR * surface);
+  static VkSurfaceKHR createSurface(const Device* context, void* native_window);
+  static void destroySurface(const Device* context, const VkSurfaceKHR * surface);
 };
 
 }

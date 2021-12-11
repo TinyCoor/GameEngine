@@ -71,7 +71,7 @@ private:
   void shutdownFrames();
 private:
 
-  const VulkanContext *context{nullptr};
+  const Device *context{nullptr};
   render::backend::Driver* driver{nullptr};
   render::backend::SwapChain* swap_chain{nullptr};
 
@@ -80,7 +80,7 @@ private:
   VkRenderPass render_pass{VK_NULL_HANDLE};
   VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
 
-  VkDeviceSize uboSize;
+  VkDeviceSize ubo_size;
 
   render::backend::Texture *color {nullptr};
   render::backend::Texture *depth {nullptr};

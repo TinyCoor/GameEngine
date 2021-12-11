@@ -13,20 +13,21 @@ VulkanPipelineLayoutBuilder::addDescriptorSetLayout(VkDescriptorSetLayout descri
   return *this;
 }
 
-VkPipelineLayout VulkanPipelineLayoutBuilder::build() {
+VkPipelineLayout VulkanPipelineLayoutBuilder::build(VkDevice device) {
 
   // Create pipeline layout
   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
   pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
   pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
-  pipelineLayoutInfo.pushConstantRangeCount = 0; // TODO: add support for push constants
+  pipelineLayoutInfo.pushConstantRangeCount = pushConstants.size();
   pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
 
-  if (vkCreatePipelineLayout(context->Device(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+  VkPipelineLayout pipeline_layout;
+  if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS)
     throw std::runtime_error("Can't create pipeline layout");
 
-  return pipelineLayout;
+  return pipeline_layout;
 
 }
 

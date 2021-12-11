@@ -70,9 +70,18 @@ struct FrameBuffer : public render::backend::FrameBuffer {
     };
 
     VkFramebuffer framebuffer{VK_NULL_HANDLE};
+    VkExtent2D sizes{0,0};
+
     VkRenderPass dummy_render_pass{VK_NULL_HANDLE}; // TODO: move to render pass cache
+
     uint8_t num_attachments{0};
     VkImageView attachments[FrameBuffer::MAX_ATTACHMENTS];
+    FrameBufferAttachmentType attachment_types[FrameBuffer::MAX_ATTACHMENTS];
+    VkFormat attachment_format[FrameBuffer::MAX_ATTACHMENTS];
+    bool attachment_resolve[FrameBuffer::MAX_ATTACHMENTS];
+    VkSampleCountFlagBits attachment_samples[FrameBuffer::MAX_ATTACHMENTS];
+
+
     // TODO: add info about attachment type (color, color resolve, depth)
 };
 
@@ -132,14 +141,14 @@ struct SwapChain : public render::backend::SwapChain {
     VkImageView views[SwapChain::MAX_IMAGES];
 };
 
-class VulkanContext;
+class Device;
 class VulkanDriver : public render::backend::Driver {
-    VulkanContext *context{nullptr};
+    Device *context{nullptr};
 public:
     VulkanDriver(const char *app_name, const char *engine_name);
     ~VulkanDriver();
 
-    VulkanContext *GetVulkanContext() const { return context; }
+    Device *GetDevice() const { return context; }
 
     VertexBuffer *createVertexBuffer(
         BufferType type,
@@ -281,8 +290,8 @@ public:
     // render pass
     void beginRenderPass(
         render::backend::CommandBuffer* command_buffer,
-        const render::backend::FrameBuffer *frame_buffer
-    ) override;
+        const render::backend::FrameBuffer *frame_buffer,
+        const RenderPassInfo* info) override;
 
     void endRenderPass(
        render::backend::CommandBuffer* command_buffer

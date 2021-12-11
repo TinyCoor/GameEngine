@@ -7,13 +7,12 @@
 
 #include <vector>
 #include <volk.h>
-#include "VulkanContext.h"
+#include "Device.h"
 
 
 namespace render::backend::vulkan {
 class VulkanGraphicsPipelineBuilder {
 private:
-  const VulkanContext *context;
   VkRenderPass renderPass{};
   VkPipelineLayout pipelineLayout{};
 
@@ -24,7 +23,6 @@ private:
 
   std::vector<VkViewport> viewports{};
   std::vector<VkRect2D> scissors{};
-
   std::vector<VkDynamicState> dynamicStates{};
 
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{};
@@ -32,16 +30,12 @@ private:
   VkPipelineMultisampleStateCreateInfo multisamplingState{};
   VkPipelineDepthStencilStateCreateInfo depthStencilState{};
 
-  VkPipeline pipeline{};
-
 public:
-  VulkanGraphicsPipelineBuilder(const VulkanContext *ctx,
-                                VkPipelineLayout pipelineLayout,
+  VulkanGraphicsPipelineBuilder(VkPipelineLayout pipelineLayout,
                                 VkRenderPass renderPass)
-      : context(ctx), pipelineLayout(pipelineLayout), renderPass(renderPass) {}
+      : pipelineLayout(pipelineLayout), renderPass(renderPass) {}
 
   inline VkPipelineLayout getPipelineLayout() const { return pipelineLayout; }
-  inline VkPipeline getPipeline() const { return pipeline; }
 
   VulkanGraphicsPipelineBuilder &addShaderStage(
       VkShaderModule shader,
@@ -106,7 +100,7 @@ public:
       float minSampleShading = 1.0
   );
 
-  VkPipeline build();
+  VkPipeline build(VkDevice device);
 };
 }
 

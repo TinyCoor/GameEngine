@@ -47,13 +47,13 @@ void VulkanCubeMapRender::init(VulkanShader& vertShader,
 
   VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
-  VulkanDescriptorSetLayoutBuilder descriptorSetLayoutBuilder(context);
+  VulkanDescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
   descriptor_set_layout = descriptorSetLayoutBuilder
       .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage)
       .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
-      .build();
+      .build(context->LogicDevice());
 
-  VulkanRenderPassBuilder renderPassBuilder(context);
+  VulkanRenderPassBuilder renderPassBuilder;
   render_pass = renderPassBuilder
       .addColorAttachment(target_texture.getImageFormat(),
                           VK_SAMPLE_COUNT_1_BIT,
@@ -86,17 +86,17 @@ void VulkanCubeMapRender::init(VulkanShader& vertShader,
       .addColorAttachmentReference(0, 3)
       .addColorAttachmentReference(0, 4)
       .addColorAttachmentReference(0, 5)
-      .build();
+      .build(context->LogicDevice());
 
-  VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
+  VulkanPipelineLayoutBuilder pipelineLayoutBuilder;
   pipelineLayoutBuilder.addDescriptorSetLayout(descriptor_set_layout);
 
   if (push_constants_size > 0) {
     pipelineLayoutBuilder.addPushConstantRange(VK_SHADER_STAGE_FRAGMENT_BIT, 0, push_constants_size);
   }
-  pipeline_layout = pipelineLayoutBuilder.build();
+  pipeline_layout = pipelineLayoutBuilder.build(context->LogicDevice());
 
-  VulkanGraphicsPipelineBuilder pipelineBuilder(context, pipeline_layout, render_pass);
+  VulkanGraphicsPipelineBuilder pipelineBuilder(pipeline_layout, render_pass);
   pipeline = pipelineBuilder
       .addShaderStage(vertShader.getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
       .addShaderStage(fragShader.getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -118,7 +118,7 @@ void VulkanCubeMapRender::init(VulkanShader& vertShader,
       .addBlendColorAttachment()
       .addBlendColorAttachment()
       .addBlendColorAttachment()
-      .build();
+      .build(context->LogicDevice());
 
     uint32_t ubo_size = sizeof(CubemapFaceOrientationData);
     uniform_buffer = driver->createUniformBuffer(render::backend::BufferType::DYNAMIC, ubo_size);
@@ -129,7 +129,7 @@ void VulkanCubeMapRender::init(VulkanShader& vertShader,
   descriptorSetAllocInfo.descriptorPool = context->DescriptorPool();
   descriptorSetAllocInfo.descriptorSetCount = 1;
   descriptorSetAllocInfo.pSetLayouts = &descriptor_set_layout;
-  VK_CHECK(vkAllocateDescriptorSets(context->Device(), &descriptorSetAllocInfo, &descriptorSet),
+  VK_CHECK(vkAllocateDescriptorSets(context->LogicDevice(), &descriptorSetAllocInfo, &descriptorSet),
            "Can't allocate descriptor sets");
 
 
@@ -153,7 +153,7 @@ void VulkanCubeMapRender::init(VulkanShader& vertShader,
   allocateInfo.commandPool = context->CommandPool();
   allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   allocateInfo.commandBufferCount = 1;
-  VK_CHECK(vkAllocateCommandBuffers(context->Device(), &allocateInfo, &command_buffer), "Can't create command buffers");
+  VK_CHECK(vkAllocateCommandBuffers(context->LogicDevice(), &allocateInfo, &command_buffer), "Can't create command buffers");
 
 
   //fill uniform buffer
@@ -193,7 +193,7 @@ void VulkanCubeMapRender::init(VulkanShader& vertShader,
   driver->unmap(uniform_buffer);
 
   VulkanUtils::bindUniformBuffer(
-      context->Device(),
+      context->LogicDevice(),
       descriptorSet,
       0,
       static_cast<render::backend::vulkan::UniformBuffer *>(uniform_buffer)->buffer,
@@ -203,7 +203,7 @@ void VulkanCubeMapRender::init(VulkanShader& vertShader,
   VkFenceCreateInfo fenceInfo{};
   fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
   fenceInfo.flags = 0;
-  VK_CHECK(vkCreateFence(context->Device(), &fenceInfo, nullptr, &fence), "Can't create fence");
+  VK_CHECK(vkCreateFence(context->LogicDevice(), &fenceInfo, nullptr, &fence), "Can't create fence");
 
 }
 
@@ -220,26 +220,26 @@ void VulkanCubeMapRender::shutdown() {
 
 
 
-  vkFreeCommandBuffers(context->Device(), context->CommandPool(), 1, &command_buffer);
+  vkFreeCommandBuffers(context->LogicDevice(), context->CommandPool(), 1, &command_buffer);
   command_buffer = VK_NULL_HANDLE;
 
 
-  vkDestroyDescriptorSetLayout(context->Device(), descriptor_set_layout, nullptr);
+  vkDestroyDescriptorSetLayout(context->LogicDevice(), descriptor_set_layout, nullptr);
   descriptor_set_layout = VK_NULL_HANDLE;
 
-  vkFreeDescriptorSets(context->Device(), context->DescriptorPool(), 1, &descriptorSet);
+  vkFreeDescriptorSets(context->LogicDevice(), context->DescriptorPool(), 1, &descriptorSet);
   descriptorSet = VK_NULL_HANDLE;
 
-  vkDestroyRenderPass(context->Device(), render_pass, nullptr);
+  vkDestroyRenderPass(context->LogicDevice(), render_pass, nullptr);
   render_pass = VK_NULL_HANDLE;
 
-  vkDestroyPipelineLayout(context->Device(), pipeline_layout, nullptr);
+  vkDestroyPipelineLayout(context->LogicDevice(), pipeline_layout, nullptr);
   pipeline_layout = VK_NULL_HANDLE;
 
-  vkDestroyPipeline(context->Device(), pipeline, nullptr);
+  vkDestroyPipeline(context->LogicDevice(), pipeline, nullptr);
   pipeline = VK_NULL_HANDLE;
 
-  vkDestroyFence(context->Device(), fence, nullptr);
+  vkDestroyFence(context->LogicDevice(), fence, nullptr);
   fence = VK_NULL_HANDLE;
 
 }
@@ -249,7 +249,7 @@ void VulkanCubeMapRender::render(const VulkanTexture& input_texture,
                                  int input_mip) {
 
   VkImageView mip_view = (input_mip == -1) ? VK_NULL_HANDLE : VulkanUtils::createImageView(
-      context->Device(),
+      context->LogicDevice(),
       input_texture.getImage(),
       input_texture.getImageFormat(),
       VK_IMAGE_ASPECT_COLOR_BIT,
@@ -258,7 +258,7 @@ void VulkanCubeMapRender::render(const VulkanTexture& input_texture,
   );
 
   VulkanUtils::bindCombinedImageSampler(
-      context->Device(),
+      context->LogicDevice(),
       descriptorSet,
       1,
       (input_mip == -1) ? input_texture.getImageView() : mip_view,
@@ -317,9 +317,9 @@ void VulkanCubeMapRender::render(const VulkanTexture& input_texture,
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &command_buffer;
 
-  VK_CHECK(vkResetFences(context->Device(), 1, &fence), "Reset Fence Failed");
+  VK_CHECK(vkResetFences(context->LogicDevice(), 1, &fence), "Reset Fence Failed");
   VK_CHECK(vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo, fence), "Submit Queue Failed");
-  VK_CHECK(vkWaitForFences(context->Device(), 1, &fence, VK_TRUE, 100000000000), "Can't wait for a fence");
+  VK_CHECK(vkWaitForFences(context->LogicDevice(), 1, &fence, VK_TRUE, 100000000000), "Can't wait for a fence");
 
 }
 }

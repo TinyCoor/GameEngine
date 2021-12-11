@@ -139,7 +139,7 @@ VulkanRenderPassBuilder &VulkanRenderPassBuilder::setDepthStencilAttachmentRefer
   return *this;
 }
 
-VkRenderPass VulkanRenderPassBuilder::build() {
+VkRenderPass VulkanRenderPassBuilder::build(VkDevice device) {
   for (int i = 0; i < subpassDatas.size(); ++i) {
     SubpassData &data = subpassDatas[i];
     infos[i].pDepthStencilAttachment = data.depthStencilAttachmentReference;
@@ -155,10 +155,11 @@ VkRenderPass VulkanRenderPassBuilder::build() {
   renderPassInfo.subpassCount = infos.size();
   renderPassInfo.pSubpasses = infos.data();
 
-  if (vkCreateRenderPass(context->Device(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+  VkRenderPass render_pass{VK_NULL_HANDLE};
+  if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &render_pass) != VK_SUCCESS)
     throw std::runtime_error("Can't create render pass");
 
-  return renderPass;
+  return render_pass;
 
 }
 }

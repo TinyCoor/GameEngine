@@ -11,14 +11,13 @@
 #include "VulkanMesh.h"
 namespace render::backend::vulkan {
 
-class VulkanContext;
-class VulkanMesh;
+class Device;
 class VulkanTexture;
 class VulkanShader;
 
 class VulkanTexture2DRender {
 public:
-  VulkanTexture2DRender(const VulkanContext *ctx,render::backend::Driver *driver)
+  VulkanTexture2DRender(const Device *ctx,render::backend::Driver *driver)
   : context(ctx), driver(driver), quad(driver)
   { }
 
@@ -31,20 +30,18 @@ public:
   void render();
 
 private:
-  const VulkanContext *context;
+  const Device *context{nullptr};
   render::backend::Driver *driver {nullptr};
   render::backend::FrameBuffer *framebuffer {nullptr};
   VulkanMesh quad;
   VkExtent2D target_extent;
 
-  VkPipeline pipeline;
-  VkPipelineLayout pipeline_layout;
-  VkRenderPass render_pass;
+  VkPipeline pipeline{VK_NULL_HANDLE};
+  VkPipelineLayout pipeline_layout{VK_NULL_HANDLE};
+  VkRenderPass render_pass{VK_NULL_HANDLE};
 
-  VkCommandBuffer commandBuffer;
-  VkFence fence;
-
-
+  VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
+  VkFence fence{VK_NULL_HANDLE};
 
 };
 }

@@ -20,15 +20,17 @@ VulkanDescriptorSetLayoutBuilder::addDescriptorBinding(VkDescriptorType type,
   return *this;
 }
 
-VkDescriptorSetLayout VulkanDescriptorSetLayoutBuilder::build() {
+VkDescriptorSetLayout VulkanDescriptorSetLayoutBuilder::build(VkDevice device) {
   VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo = {};
   descriptorSetLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
   descriptorSetLayoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
   descriptorSetLayoutInfo.pBindings = bindings.data();
 
-  if (vkCreateDescriptorSetLayout(context->Device(), &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout)
-      != VK_SUCCESS)
-    throw std::runtime_error("Can't create descriptor set layout");
+  VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
+  if (vkCreateDescriptorSetLayout(device, &descriptorSetLayoutInfo, nullptr, &descriptorSetLayout)
+      != VK_SUCCESS){
+      throw std::runtime_error("Can't create descriptor set layout");
+  }
 
   return descriptorSetLayout;
 

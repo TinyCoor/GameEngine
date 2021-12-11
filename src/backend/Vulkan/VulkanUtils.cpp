@@ -3,7 +3,7 @@
 //
 
 #include "VulkanUtils.h"
-#include "VulkanContext.h"
+#include "Device.h"
 #include "Macro.h"
 #include <stdexcept>
 #include <fstream>
@@ -87,7 +87,7 @@ QueueFamilyIndices VulkanUtils::fetchFamilyIndices(VkPhysicalDevice &physicalDev
   return indices;
 }
 
-void VulkanUtils::createBuffer(const VulkanContext *context,
+void VulkanUtils::createBuffer(const Device *context,
                                VkDeviceSize size,
                                VkBufferUsageFlags usageFlags,
                                VkMemoryPropertyFlags memoryFlags,
@@ -99,19 +99,19 @@ void VulkanUtils::createBuffer(const VulkanContext *context,
   bufferInfo.size = size;
   bufferInfo.usage = usageFlags;
   bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  VK_CHECK(vkCreateBuffer(context->Device(), &bufferInfo, nullptr, &buffer),
+  VK_CHECK(vkCreateBuffer(context->LogicDevice(), &bufferInfo, nullptr, &buffer),
            "failed to create vertex buffer!");
 
   VkMemoryRequirements memRequirements;
-  vkGetBufferMemoryRequirements(context->Device(), buffer, &memRequirements);
+  vkGetBufferMemoryRequirements(context->LogicDevice(), buffer, &memRequirements);
 
   VkMemoryAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
   allocInfo.allocationSize = memRequirements.size;
   allocInfo.memoryTypeIndex = findMemoryType(context->PhysicalDevice(), memRequirements.memoryTypeBits, memoryFlags);
-  VK_CHECK(vkAllocateMemory(context->Device(), &allocInfo, nullptr, &memory),
+  VK_CHECK(vkAllocateMemory(context->LogicDevice(), &allocInfo, nullptr, &memory),
            "failed to allocate vertex buffer memory!");
-  VK_CHECK(vkBindBufferMemory(context->Device(), buffer, memory, 0), "Bind Buffer VertexBuffer Failed");
+  VK_CHECK(vkBindBufferMemory(context->LogicDevice(), buffer, memory, 0), "Bind Buffer VertexBuffer Failed");
 
 }
 
@@ -129,7 +129,7 @@ uint32_t VulkanUtils::findMemoryType(const VkPhysicalDevice physicalDevice,
   throw std::runtime_error("failed to find suitable memory type!");
 }
 
-void VulkanUtils::copyBuffer(const VulkanContext *context,
+void VulkanUtils::copyBuffer(const Device *context,
                              VkBuffer srcBuffer,
                              VkBuffer dstBuffer,
                              VkDeviceSize size) {
@@ -157,7 +157,7 @@ std::vector<char> VulkanUtils::readFile(const std::string &filename) {
   return buffer;
 }
 
-VkCommandBuffer VulkanUtils::beginSingleTimeCommands(const VulkanContext *context) {
+VkCommandBuffer VulkanUtils::beginSingleTimeCommands(const Device *context) {
   VkCommandBufferAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -165,7 +165,7 @@ VkCommandBuffer VulkanUtils::beginSingleTimeCommands(const VulkanContext *contex
   allocInfo.commandBufferCount = 1;
 
   VkCommandBuffer commandBuffer;
-  vkAllocateCommandBuffers(context->Device(), &allocInfo, &commandBuffer);
+  vkAllocateCommandBuffers(context->LogicDevice(), &allocInfo, &commandBuffer);
   assert(commandBuffer != VK_NULL_HANDLE);
 
   VkCommandBufferBeginInfo beginInfo{};
@@ -177,7 +177,7 @@ VkCommandBuffer VulkanUtils::beginSingleTimeCommands(const VulkanContext *contex
   return commandBuffer;
 }
 
-void VulkanUtils::createImage2D(const VulkanContext *context,
+void VulkanUtils::createImage2D(const Device *context,
                                 uint32_t width, uint32_t height,
                                 uint32_t mipLevel,
                                 VkSampleCountFlagBits numberSample,
@@ -191,7 +191,7 @@ void VulkanUtils::createImage2D(const VulkanContext *context,
               image, memory);
 }
 
-void VulkanUtils::createCubeImage(const VulkanContext *context, uint32_t width, uint32_t height,
+void VulkanUtils::createCubeImage(const Device *context, uint32_t width, uint32_t height,
                                   uint32_t mipLevel, VkSampleCountFlagBits numberSample, VkFormat format,
                                   VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                                   VkImage &image, VkDeviceMemory &memory) {
@@ -253,7 +253,7 @@ VkImageView VulkanUtils::createImageView(VkDevice device,
   return textureImageView;
 }
 
-void VulkanUtils::transitionImageLayout(const VulkanContext *context,
+void VulkanUtils::transitionImageLayout(const Device *context,
                                         VkImage image,
                                         VkFormat format,
                                         VkImageLayout oldLayout,
@@ -368,7 +368,7 @@ void VulkanUtils::transitionImageLayout(const VulkanContext *context,
   endSingleTimeCommands(context, commandBuffer);
 }
 
-void VulkanUtils::copyBufferToImage(const VulkanContext *context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
+void VulkanUtils::copyBufferToImage(const Device *context, VkBuffer srcBuffer, VkImage dstBuffer, uint32_t width,
                                     uint32_t height) {
   auto commandBuffer = beginSingleTimeCommands(context);
 
@@ -395,7 +395,7 @@ void VulkanUtils::copyBufferToImage(const VulkanContext *context, VkBuffer srcBu
   endSingleTimeCommands(context, commandBuffer);
 }
 
-void VulkanUtils::copyBufferToImage(const VulkanContext *context,
+void VulkanUtils::copyBufferToImage(const Device *context,
                                     VkBuffer srcBuffer,
                                     VkImage dstBuffer,
                                     uint32_t width,
@@ -430,7 +430,7 @@ void VulkanUtils::copyBufferToImage(const VulkanContext *context,
 }
 
 void VulkanUtils::createImage(
-    const VulkanContext *context,
+    const Device *context,
     VkImageType imageType,
     uint32_t width,
     uint32_t height,
@@ -463,22 +463,22 @@ void VulkanUtils::createImage(
   imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
   imageInfo.flags = flags;
 
-  VK_CHECK(vkCreateImage(context->Device(), &imageInfo, nullptr, &image),
+  VK_CHECK(vkCreateImage(context->LogicDevice(), &imageInfo, nullptr, &image),
            "failed to create textures!");
 
   VkMemoryRequirements memRequirements;
-  vkGetImageMemoryRequirements(context->Device(), image, &memRequirements);
+  vkGetImageMemoryRequirements(context->LogicDevice(), image, &memRequirements);
 
   VkMemoryAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
   allocInfo.allocationSize = memRequirements.size;
   allocInfo.memoryTypeIndex = findMemoryType(context->PhysicalDevice(), memRequirements.memoryTypeBits, properties);
-  VK_CHECK(vkAllocateMemory(context->Device(), &allocInfo, nullptr, &memory),
+  VK_CHECK(vkAllocateMemory(context->LogicDevice(), &allocInfo, nullptr, &memory),
            "failed to allocate vertex buffer memory!");
-  VK_CHECK(vkBindImageMemory(context->Device(), image, memory, 0), "Bind Buffer VertexBuffer Failed");
+  VK_CHECK(vkBindImageMemory(context->LogicDevice(), image, memory, 0), "Bind Buffer VertexBuffer Failed");
 }
 
-void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
+void VulkanUtils::fillImage(const Device *context, VkImage &image,
                             uint32_t width, uint32_t height, uint32_t depth,
                             uint32_t mipLevel, uint32_t arrayLayers, uint32_t pixel_size,
                             const void *data, VkFormat format, uint32_t dataMipLevel, uint32_t dataLayers
@@ -506,9 +506,9 @@ void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
 
   //
   void *staging_data = nullptr;
-  vkMapMemory(context->Device(), stagingBufferMemory, 0, buffer_size * dataLayers, 0, &staging_data);
+  vkMapMemory(context->LogicDevice(), stagingBufferMemory, 0, buffer_size * dataLayers, 0, &staging_data);
   memcpy(staging_data, data, static_cast<size_t>(buffer_size * dataLayers));
-  vkUnmapMemory(context->Device(), stagingBufferMemory);
+  vkUnmapMemory(context->LogicDevice(), stagingBufferMemory);
 
   // copy to gpu
 
@@ -542,8 +542,8 @@ void VulkanUtils::fillImage(const VulkanContext *context, VkImage &image,
 
   VulkanUtils::endSingleTimeCommands(context, commandBuffer);
   //clean up
-  vkDestroyBuffer(context->Device(), stagingBuffer, nullptr);
-  vkFreeMemory(context->Device(), stagingBufferMemory, nullptr);
+  vkDestroyBuffer(context->LogicDevice(), stagingBuffer, nullptr);
+  vkFreeMemory(context->LogicDevice(), stagingBufferMemory, nullptr);
 }
 
 VkSampler VulkanUtils::createSampler(VkDevice device,
@@ -577,7 +577,7 @@ bool VulkanUtils::hasStencilComponent(VkFormat format) {
 }
 
 void
-VulkanUtils::generateImage2DMipMaps(const VulkanContext *context,
+VulkanUtils::generateImage2DMipMaps(const Device *context,
                                     VkImage image, VkFormat imageFormat, uint32_t width, uint32_t height,
                                     uint32_t mipLevel, VkFormat format,
                                     VkFilter filter) {
@@ -761,7 +761,7 @@ void VulkanUtils::bindCombinedImageSampler(
   //
 }
 
-void VulkanUtils::endSingleTimeCommands(const VulkanContext *context, VkCommandBuffer commandBuffer) {
+void VulkanUtils::endSingleTimeCommands(const Device *context, VkCommandBuffer commandBuffer) {
   vkEndCommandBuffer(commandBuffer);
 
   VkFenceCreateInfo fenceInfo{};
@@ -769,16 +769,16 @@ void VulkanUtils::endSingleTimeCommands(const VulkanContext *context, VkCommandB
   fenceInfo.flags = 0;
 
   VkFence fence{};
-  VK_CHECK(vkCreateFence(context->Device(), &fenceInfo, nullptr, &fence), "Create Fence Failed\n");
+  VK_CHECK(vkCreateFence(context->LogicDevice(), &fenceInfo, nullptr, &fence), "Create Fence Failed\n");
 
   VkSubmitInfo submitInfo{};
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &commandBuffer;
   VK_CHECK(vkQueueSubmit(context->GraphicsQueue(), 1, &submitInfo, fence), "failed to submit command buffer");
-  VK_CHECK(vkWaitForFences(context->Device(), 1, &fence, VK_TRUE, 10000000000), "Wait for Fence failed");
-  vkDestroyFence(context->Device(), fence, nullptr);
-  vkFreeCommandBuffers(context->Device(), context->CommandPool(), 1, &commandBuffer);
+  VK_CHECK(vkWaitForFences(context->LogicDevice(), 1, &fence, VK_TRUE, 10000000000), "Wait for Fence failed");
+  vkDestroyFence(context->LogicDevice(), fence, nullptr);
+  vkFreeCommandBuffers(context->LogicDevice(), context->CommandPool(), 1, &commandBuffer);
 }
 
 VkFormat VulkanUtils::selectOptimalSupportedImageFormat(const VkPhysicalDevice &physicalDevice,
@@ -914,7 +914,7 @@ bool VulkanUtils::checkPhysicalDeviceExtensions(
   return true;
 }
 
-void VulkanUtils::createDeviceLocalBuffer(const VulkanContext *context,
+void VulkanUtils::createDeviceLocalBuffer(const Device *context,
                                           VkDeviceSize size,
                                           const void *data,
                                           VkBufferUsageFlags usageFlags,
@@ -939,14 +939,14 @@ void VulkanUtils::createDeviceLocalBuffer(const VulkanContext *context,
                             stagingBufferMemory);
 
   void *staging_buffer_data = nullptr;
-  vkMapMemory(context->Device(), stagingBufferMemory, 0, size, 0, &staging_buffer_data);
+  vkMapMemory(context->LogicDevice(), stagingBufferMemory, 0, size, 0, &staging_buffer_data);
   memcpy(staging_buffer_data, data, size);
-  vkUnmapMemory(context->Device(), stagingBufferMemory);
+  vkUnmapMemory(context->LogicDevice(), stagingBufferMemory);
 
   VulkanUtils::copyBuffer(context, stagingBuffer, buffer, size);
 
-  vkDestroyBuffer(context->Device(), stagingBuffer, nullptr);
-  vkFreeMemory(context->Device(), stagingBufferMemory, nullptr);
+  vkDestroyBuffer(context->LogicDevice(), stagingBuffer, nullptr);
+  vkFreeMemory(context->LogicDevice(), stagingBufferMemory, nullptr);
 }
 
 bool VulkanUtils::isDepthFormat(VkFormat format) {

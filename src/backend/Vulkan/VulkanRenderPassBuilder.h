@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_VULKANRENDERPASSBUILDER_H
 #define GAMEENGINE_VULKANRENDERPASSBUILDER_H
-#include "VulkanContext.h"
+#include "Device.h"
 namespace render::backend::vulkan {
 class VulkanRenderPassBuilder {
   struct SubpassData {
@@ -14,14 +14,10 @@ class VulkanRenderPassBuilder {
   };
   std::vector<SubpassData> subpassDatas;
   std::vector<VkSubpassDescription> infos{};
-  const VulkanContext *context;
-  VkRenderPass renderPass{VK_NULL_HANDLE};
   std::vector<VkAttachmentDescription> attachments;
 
 public:
-  VulkanRenderPassBuilder(const VulkanContext *ctx) : context(ctx) {}
-
-  inline VkRenderPass getRenderPass() { return renderPass; }
+  VulkanRenderPassBuilder() {}
 
   VulkanRenderPassBuilder &addColorResolveAttachment(VkFormat format,
                                                      VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -61,7 +57,7 @@ public:
 
   VulkanRenderPassBuilder &addSubpass(VkPipelineBindPoint bindPoint);
 
-  VkRenderPass build();
+  VkRenderPass build(VkDevice device);
 
 };
 }

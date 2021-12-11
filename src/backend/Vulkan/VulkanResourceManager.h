@@ -4,7 +4,7 @@
 
 #ifndef GAMEENGINE_VULKANRESOURCEMANAGER_H
 #define GAMEENGINE_VULKANRESOURCEMANAGER_H
-#include "VulkanContext.h"
+#include "Device.h"
 #include "VulkanShader.h"
 #include <unordered_map>
 #include <memory>
@@ -12,9 +12,8 @@ namespace render::backend::vulkan {
 class VulkanShader;
 class VulkanTexture;
 class VulkanMesh;
-class VulkanContext;
+class Device;
 
-//TODO Make User defined Deconstructor
 class VulkanResourceManager {
 public:
   VulkanResourceManager(render::backend::Driver *driver)
@@ -35,7 +34,7 @@ public:
   void shutdown();
 
 private:
-  //May be This is singleton
+
   render::backend::Driver *driver {nullptr};
   std::unordered_map<int, VulkanShader*> shaders;
   std::unordered_map<int, VulkanMesh*> meshes;

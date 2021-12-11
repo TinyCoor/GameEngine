@@ -59,7 +59,7 @@ Application::~Application(){
 }
 void Application::initVulkan() {
     auto vk_driver = dynamic_cast<render::backend::vulkan::VulkanDriver*>(render::backend::createDriver("","",render::backend::Api::VULKAN));
-    context = vk_driver->GetVulkanContext();
+    context = vk_driver->GetDevice();
     driver = vk_driver;
 }
 
@@ -278,7 +278,7 @@ void Application::recreateSwapChain() {
         glfwGetFramebufferSize(window,&width,&height);
         glfwPollEvents();
     }
-    vkDeviceWaitIdle(context->Device());
+    vkDeviceWaitIdle(context->LogicDevice());
 
     glfwGetWindowSize(window,&width,&height);
     swapChain->reinit(width,height);

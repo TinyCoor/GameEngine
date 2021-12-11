@@ -3,14 +3,14 @@
 //
 
 #include "platform.h"
-#include "VulkanContext.h"
+#include "Device.h"
 #include <iostream>
 
 #if defined(WIN32)
 #include <windows.h>
 #endif
 
-void render::backend::vulkan::platform::destroySurface(const render::backend::vulkan::VulkanContext *context,
+void render::backend::vulkan::platform::destroySurface(const render::backend::vulkan::Device *context,
                                                const VkSurfaceKHR *surface) {
     vkDestroySurfaceKHR(context->Instance(),*surface, nullptr);
 }
@@ -24,7 +24,7 @@ const char *render::backend::vulkan::platform::getInstanceExtension() {
   return nullptr;
 }
 
-VkSurfaceKHR render::backend::vulkan::platform::createSurface(const render::backend::vulkan::VulkanContext *context,
+VkSurfaceKHR render::backend::vulkan::platform::createSurface(const render::backend::vulkan::Device *context,
                                                               void *native_window) {
   VkSurfaceKHR surface{VK_NULL_HANDLE};
 #if defined(WIN32)

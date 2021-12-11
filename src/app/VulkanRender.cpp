@@ -19,7 +19,7 @@
 #include <chrono>
 
 namespace render::backend::vulkan {
-VulkanRender::VulkanRender(const VulkanContext *ctx,
+VulkanRender::VulkanRender(const Device *ctx,
                            render::backend::Driver *driver, VkExtent2D size, VkDescriptorSetLayout layout, VkRenderPass pass)
     : context(ctx),
       driver(driver),
@@ -48,7 +48,7 @@ void VulkanRender::init(VulkanRenderScene *scene) {
 
   VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
-  VulkanDescriptorSetLayoutBuilder sceneDescriptorSetLayoutBuilder(context);
+  VulkanDescriptorSetLayoutBuilder sceneDescriptorSetLayoutBuilder;
   sceneDescriptorSetLayout = sceneDescriptorSetLayoutBuilder
       .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
       .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
@@ -58,14 +58,14 @@ void VulkanRender::init(VulkanRenderScene *scene) {
       .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
       .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
       .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
-      .build();
+      .build(context->LogicDevice());
 
-  VulkanPipelineLayoutBuilder pipelineLayoutBuilder(context);
+  VulkanPipelineLayoutBuilder pipelineLayoutBuilder;
   pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
   pipelineLayoutBuilder.addDescriptorSetLayout(sceneDescriptorSetLayout);
-  pipelineLayout = pipelineLayoutBuilder.build();
+  pipelineLayout = pipelineLayoutBuilder.build(context->LogicDevice());
 
-  VulkanGraphicsPipelineBuilder pbrpipelineBuilder(context, pipelineLayout, renderPass);
+  VulkanGraphicsPipelineBuilder pbrpipelineBuilder(pipelineLayout, renderPass);
   pbrPipeline = pbrpipelineBuilder.addShaderStage(vertShader->getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
       .addShaderStage(fragShader->getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
       .addVertexInput(VulkanMesh::getVertexInputBindingDescription(), VulkanMesh::getAttributeDescriptions())
@@ -79,9 +79,9 @@ void VulkanRender::init(VulkanRenderScene *scene) {
       .setMultisampleState(context->getMaxSampleCount(), true)
       .setDepthStencilState(true, true, VK_COMPARE_OP_LESS)
       .addBlendColorAttachment()
-      .build();
+      .build(context->LogicDevice());
 
-  VulkanGraphicsPipelineBuilder skyboxPipelineBuilder(context, pipelineLayout, renderPass);
+  VulkanGraphicsPipelineBuilder skyboxPipelineBuilder(pipelineLayout, renderPass);
   skyboxPipeline = skyboxPipelineBuilder
       .addShaderStage(skyboxVertexShader->getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
       .addShaderStage(skyboxFragmentShader->getShaderModule(), VK_SHADER_STAGE_FRAGMENT_BIT)
@@ -100,7 +100,7 @@ void VulkanRender::init(VulkanRenderScene *scene) {
       .setMultisampleState(context->getMaxSampleCount(), true)
       .setDepthStencilState(true, true, VK_COMPARE_OP_LESS)
       .addBlendColorAttachment()
-      .build();
+      .build(context->LogicDevice());
 
   brdfBaked.create2D(render::backend::Format::R16G16_SFLOAT, 256, 256, 1);
   environmentCubemap.createCube(render::backend::Format::R32G32B32A32_SFLOAT, 256, 256, 1);
@@ -170,7 +170,7 @@ void VulkanRender::init(VulkanRenderScene *scene) {
   descriptorSetAllocInfo.descriptorSetCount = 1;
   descriptorSetAllocInfo.pSetLayouts = &sceneDescriptorSetLayout;
 
-  VK_CHECK(vkAllocateDescriptorSets(context->Device(), &descriptorSetAllocInfo, &sceneDescriptorSet),
+  VK_CHECK(vkAllocateDescriptorSets(context->LogicDevice(), &descriptorSetAllocInfo, &sceneDescriptorSet),
            "Can't allocate descriptor sets");
 
   std::array<VulkanTexture*, 8> textures =
@@ -187,7 +187,7 @@ void VulkanRender::init(VulkanRenderScene *scene) {
 
   for (int k = 0; k < textures.size(); k++)
     VulkanUtils::bindCombinedImageSampler(
-        context->Device(),
+        context->LogicDevice(),
         sceneDescriptorSet,
         k,
         textures[k]->getImageView(),
@@ -216,19 +216,19 @@ void VulkanRender::shutdown() {
   diffuseIrradianceCubemap.clearGPUData();
   diffuseIrradianceCubemap.clearCPUData();
 
-  vkFreeDescriptorSets(context->Device(), context->DescriptorPool(), 1, &sceneDescriptorSet);
+  vkFreeDescriptorSets(context->LogicDevice(), context->DescriptorPool(), 1, &sceneDescriptorSet);
   sceneDescriptorSet = VK_NULL_HANDLE;
 
-  vkDestroyDescriptorSetLayout(context->Device(), sceneDescriptorSetLayout, nullptr);
+  vkDestroyDescriptorSetLayout(context->LogicDevice(), sceneDescriptorSetLayout, nullptr);
   sceneDescriptorSetLayout = VK_NULL_HANDLE;
 
-  vkDestroyPipelineLayout(context->Device(), pipelineLayout, nullptr);
+  vkDestroyPipelineLayout(context->LogicDevice(), pipelineLayout, nullptr);
   pipelineLayout = VK_NULL_HANDLE;
 
-  vkDestroyPipeline(context->Device(), pbrPipeline, nullptr);
+  vkDestroyPipeline(context->LogicDevice(), pbrPipeline, nullptr);
   pbrPipeline = VK_NULL_HANDLE;
 
-  vkDestroyPipeline(context->Device(), skyboxPipeline, nullptr);
+  vkDestroyPipeline(context->LogicDevice(), skyboxPipeline, nullptr);
   skyboxPipeline = VK_NULL_HANDLE;
 
 }
@@ -398,7 +398,7 @@ void VulkanRender::setEnvironment(VulkanTexture* texture) {
 
   for (int k = 0; k < textures.size(); k++)
     VulkanUtils::bindCombinedImageSampler(
-        context->Device(),
+        context->LogicDevice(),
         sceneDescriptorSet,
         k + 5,
         textures[k]->getImageView(),

@@ -19,7 +19,7 @@ struct QueueFamilyIndices {
   }
 };
 
-struct VulkanContext;
+struct Device;
 
 class VulkanUtils {
 
@@ -58,14 +58,14 @@ public:
 
   static VkFormat selectOptimalImageFormat(const VkPhysicalDevice &physicalDevice);
 
-  static void createBuffer(const VulkanContext *context,
+  static void createBuffer(const Device *context,
                            VkDeviceSize size,
                            VkBufferUsageFlags usageFlags,
                            VkMemoryPropertyFlags memoryFlags,
                            VkBuffer &buffer,
                            VkDeviceMemory &memory);
 
-  static void createDeviceLocalBuffer(const VulkanContext *context,
+  static void createDeviceLocalBuffer(const Device *context,
                                  VkDeviceSize size,
                                  const void* data,
                                  VkBufferUsageFlags usageFlags,
@@ -77,18 +77,18 @@ public:
                                  uint32_t typeFilter,
                                  VkMemoryPropertyFlags properties);
 
-  static void copyBuffer(const VulkanContext *context,
+  static void copyBuffer(const Device *context,
                          VkBuffer srcBuffer,
                          VkBuffer dstBuffer,
                          VkDeviceSize size);
 
-  static void copyBufferToImage(const VulkanContext *context,
+  static void copyBufferToImage(const Device *context,
                                 VkBuffer src,
                                 VkImage dst,
                                 uint32_t width,
                                 uint32_t height);
 
-  static void copyBufferToImage(const VulkanContext *context,
+  static void copyBufferToImage(const Device *context,
                                 VkBuffer src,
                                 VkImage dst,
                                 uint32_t width,
@@ -99,7 +99,7 @@ public:
                                 VkDeviceSize bufferOffset);
 
   static void createImage2D(
-      const VulkanContext *context,
+      const Device *context,
       uint32_t width,
       uint32_t height,
       uint32_t mipLevel,
@@ -113,7 +113,7 @@ public:
   );
 
   static void createImage(
-      const VulkanContext *context,
+      const Device *context,
       VkImageType imageType,
       uint32_t width,
       uint32_t height,
@@ -131,13 +131,13 @@ public:
   );
 
   static void fillImage(
-      const VulkanContext *context, VkImage &image,
+      const Device *context, VkImage &image,
       uint32_t width,uint32_t height,uint32_t depth,
       uint32_t mipLevel,uint32_t arrayLayers,uint32_t pixel_size,
       const void* data,VkFormat format,uint32_t dataMipLevel,uint32_t dataLayers
   );
 
-  static void createCubeImage(const VulkanContext *context,
+  static void createCubeImage(const Device *context,
                               uint32_t width,
                               uint32_t height,
                               uint32_t mipLevel,
@@ -166,13 +166,13 @@ public:
                                      uint32_t baseLayer = 0,
                                      uint32_t numLayers = 1);
 
-  static void endSingleTimeCommands(const VulkanContext *context, VkCommandBuffer commandBuffer);
+  static void endSingleTimeCommands(const Device *context, VkCommandBuffer commandBuffer);
 
-  static VkCommandBuffer beginSingleTimeCommands(const VulkanContext *context);
+  static VkCommandBuffer beginSingleTimeCommands(const Device *context);
 
   static std::vector<char> readFile(const std::string &filename);
 
-  static void transitionImageLayout(const VulkanContext *context,
+  static void transitionImageLayout(const Device *context,
                                     VkImage image,
                                     VkFormat format,
                                     VkImageLayout oldLayout,
@@ -188,7 +188,7 @@ public:
 
 
   static void generateImage2DMipMaps(
-      const VulkanContext *context,
+      const Device *context,
       VkImage image,
       VkFormat imageFormat,
       uint32_t width,

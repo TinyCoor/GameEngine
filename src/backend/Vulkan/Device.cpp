@@ -2,7 +2,7 @@
 // Created by y123456 on 2021/10/15.
 //
 
-#include "VulkanContext.h"
+#include "Device.h"
 #include "VulkanUtils.h"
 #include "Macro.h"
 #include <iostream>
@@ -122,19 +122,19 @@ VkSurfaceKHR createSurface(VkInstance &instance, GLFWwindow *window) {
 
 }
 
-VulkanContext::VulkanContext() {
+Device::Device() {
 
 }
 
-VulkanContext::~VulkanContext() {
+Device::~Device() {
   shutdown();
 }
 
-void VulkanContext::wait() {
+void Device::wait() {
   vkDeviceWaitIdle(device);
 }
 
-void VulkanContext::init(const char* app_name,const char* engine_name) {
+void Device::init(const char* app_name,const char* engine_name) {
   VK_CHECK(volkInitialize(), "can not init volk help lib");
   //Get Instance extension
   uint32_t glfwExtensionCount = 0;
@@ -208,7 +208,7 @@ void VulkanContext::init(const char* app_name,const char* engine_name) {
 }
 
 
-int VulkanContext::checkPhysicalDevice(VkPhysicalDevice physical_device) {
+int Device::checkPhysicalDevice(VkPhysicalDevice physical_device) {
   if (!VulkanUtils::checkPhysicalDeviceExtensions(physical_device, requiredPhysicalDeviceExtensions)) {
     return -1;
   }
@@ -243,7 +243,7 @@ int VulkanContext::checkPhysicalDevice(VkPhysicalDevice physical_device) {
   return count;
 }
 
-VkPhysicalDevice VulkanContext::PickPhysicalDevice(VkInstance instance) {
+VkPhysicalDevice Device::PickPhysicalDevice(VkInstance instance) {
   //枚举物理设备
   uint32_t deviceCount = 0;
   vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -268,7 +268,7 @@ VkPhysicalDevice VulkanContext::PickPhysicalDevice(VkInstance instance) {
   return best_device;
 }
 
-void VulkanContext::shutdown() {
+void Device::shutdown() {
   vkDestroyDescriptorPool(device, descriptorPool, nullptr);
   descriptorPool = VK_NULL_HANDLE;
 

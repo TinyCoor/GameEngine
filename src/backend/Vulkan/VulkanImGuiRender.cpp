@@ -15,7 +15,7 @@
 #include <imgui_impl_glfw.h>
 using namespace render::backend::vulkan;
 
-ImGuiRender::ImGuiRender(const VulkanContext *ctx,
+ImGuiRender::ImGuiRender(const Device *ctx,
                                      ImGuiContext* imgui_ctx,
                                      VkExtent2D size,
                                      VkRenderPass pass)
@@ -39,7 +39,7 @@ void ImGuiRender::init(VulkanSwapChain* swapChain)
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = context->Instance();
     init_info.PhysicalDevice = context->PhysicalDevice();
-    init_info.Device = context->Device();
+    init_info.Device = context->LogicDevice();
     init_info.QueueFamily = context->GraphicsQueueFamily();
     init_info.Queue = context->GraphicsQueue();
     init_info.DescriptorPool = context->DescriptorPool();

@@ -7,21 +7,16 @@
 
 #include <vector>
 #include <volk.h>
-#include "VulkanContext.h"
+#include "Device.h"
 namespace render::backend::vulkan {
 class VulkanPipelineLayoutBuilder {
 private:
-  const VulkanContext *context;
-  std::vector<VkDescriptorSetLayout> descriptorSetLayouts{};
-  VkPipelineLayout pipelineLayout{};
 
+  std::vector<VkDescriptorSetLayout> descriptorSetLayouts{};
   std::vector<VkPushConstantRange> pushConstants;
 
 public:
-  VulkanPipelineLayoutBuilder(const VulkanContext *ctx)
-      : context(ctx) {}
-
-  inline VkPipelineLayout getPipelineLayout() const { return pipelineLayout; }
+  VulkanPipelineLayoutBuilder(){}
 
   VulkanPipelineLayoutBuilder &addDescriptorSetLayout(
       VkDescriptorSetLayout descriptorSetLayout
@@ -33,7 +28,7 @@ public:
       uint32_t size
   );
 
-  VkPipelineLayout build();
+  VkPipelineLayout build(VkDevice device);
 };
 }
 

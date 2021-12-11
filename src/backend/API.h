@@ -8,7 +8,7 @@
 #include <cstdint>
 //todo std::function;
 namespace render::backend {
-enum class Api {
+enum class Api :uint8_t {
     DEFAULT,
     VULKAN,
     OPENGL,
@@ -16,14 +16,14 @@ enum class Api {
     CPU,
     MAX,
 };
-enum BufferType : unsigned char {
+enum BufferType : uint8_t {
     STATIC = 0,
     DYNAMIC,
     MAX,
 };
 
 //图元类型
-enum class RenderPrimitiveType {
+enum class RenderPrimitiveType :uint8_t {
     POINTS = 0,
     LINES,
     LINE_STRIP,
@@ -38,13 +38,13 @@ enum class RenderPrimitiveType {
     MAX,
 };
 
-enum class IndexSize {
+enum class IndexSize :uint8_t {
     UINT16 = 0,
     UINT32,
     MAX,
 };
 
-enum class Multisample : unsigned char {
+enum class Multisample : uint8_t {
     COUNT_1 = 0,
     COUNT_2,
     COUNT_4,
@@ -56,7 +56,7 @@ enum class Multisample : unsigned char {
     MAX,
 };
 
-enum class Format {
+enum class Format :uint16_t {
     UNDEFINED = 0,
 
     // 8-bit formats
@@ -167,21 +167,17 @@ enum class CommandBufferType : unsigned char {
     SECONDARY
 };
 
-struct VertexBuffer {
-
-};
-
-struct IndexBuffer {
-
-};
-
-struct RenderPrimitive {
-};
-
+struct VertexBuffer {};
+struct IndexBuffer {};
+struct RenderPrimitive {};
 struct Texture {};
 struct SwapChain {};
 struct FrameBuffer {};
 struct CommandBuffer {};
+struct UniformBuffer {};
+struct Shader {};
+//todo shader storage buffer?
+
 
 enum FrameBufferAttachmentType : unsigned char {
     COLOR = 0,
@@ -217,14 +213,47 @@ struct FrameBufferAttachment {
     };
 };
 
-struct UniformBuffer {
 
+
+struct RenderPass{};
+union RenderPassClearColor{
+    float float32[4];
+    int32_t int32[4];
+    uint32_t uint32[4];
+};
+struct RenderPassClearDepthStencil{
+    float depth;
+    uint32_t stencil;
 };
 
-struct Shader {
 
+union RenderPassClearValue {
+    RenderPassClearColor color;
+    RenderPassClearDepthStencil depth_stencil;
 };
-//todo shader storage buffer?
+
+enum class RenderPassLoadOp :uint8_t {
+    LOAD,
+    CLEAR,
+    DONT_CARE =0
+};
+
+enum class RenderPassStoreOp : uint8_t {
+    STORE,
+    DONT_CARE
+};
+
+struct RenderPassAttachment{
+    uint8_t attachment;
+    RenderPassLoadOp loadOp;
+    RenderPassStoreOp storeOp;
+};
+
+struct RenderPassInfo{
+    RenderPassLoadOp* load_ops{nullptr};
+    RenderPassStoreOp* store_ops{nullptr};
+    RenderPassClearValue* clear_value{nullptr};
+};
 
 struct GraphicsProgram {
 
@@ -380,7 +409,8 @@ public:
     // render pass
     virtual void beginRenderPass(
         CommandBuffer* command_buffer,
-        const FrameBuffer *frame_buffer
+        const FrameBuffer *frame_buffer,
+        const RenderPassInfo* info
     ) = 0;
 
     virtual void endRenderPass(

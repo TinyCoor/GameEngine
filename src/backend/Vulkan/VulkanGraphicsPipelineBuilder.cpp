@@ -102,7 +102,7 @@ VulkanGraphicsPipelineBuilder::setMultisampleState(VkSampleCountFlagBits msaaSam
   return *this;
 }
 
-VkPipeline VulkanGraphicsPipelineBuilder::build() {
+VkPipeline VulkanGraphicsPipelineBuilder::build(VkDevice device) {
 
   VkPipelineVertexInputStateCreateInfo vertexInputState = {};
   vertexInputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -155,7 +155,8 @@ VkPipeline VulkanGraphicsPipelineBuilder::build() {
   pipelineInfo.renderPass = renderPass;
   pipelineInfo.subpass = 0;
 
-  if (vkCreateGraphicsPipelines(context->Device(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
+  VkPipeline pipeline{VK_NULL_HANDLE};
+  if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
     throw std::runtime_error("Can't create graphics pipeline");
 
   return pipeline;
