@@ -15,90 +15,12 @@
 #include <functional>
 #include <chrono>
 
-void renderCube()
-{
-  Vao cubeVAO;
-  GLBuffer<GL_ARRAY_BUFFER> cubeVBO;
-  // initialize (if necessary)
-    float vertices[] = {
-        // back face
-        -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-        1.0f, 1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f, // top-right
-        1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f, // bottom-right
-        1.0f, 1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f, // top-right
-        -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-        -1.0f, 1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f, // top-left
-        // front face
-        -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom-left
-        1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, // bottom-right
-        1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // top-right
-        1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // top-right
-        -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, // top-left
-        -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom-left
-        // left face
-        -1.0f, 1.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-right
-        -1.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top-left
-        -1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-left
-        -1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-left
-        -1.0f, -1.0f, 1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // bottom-right
-        -1.0f, 1.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-right
-        // right face
-        1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-left
-        1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-right
-        1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top-right
-        1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-right
-        1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, // top-left
-        1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // bottom-left
-        // bottom face
-        -1.0f, -1.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
-        1.0f, -1.0f, -1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f, // top-left
-        1.0f, -1.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, // bottom-left
-        1.0f, -1.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, // bottom-left
-        -1.0f, -1.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f, // bottom-right
-        -1.0f, -1.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
-        // top face
-        -1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, // top-left
-        1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom-right
-        1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, // top-right
-        1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom-right
-        -1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, // top-left
-        -1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f  // bottom-left
-    };
-    cubeVAO.Bind();
-    cubeVBO.Bind();
-    cubeVBO.CopyToGPU(vertices, sizeof(vertices),GL_DYNAMIC_STORAGE_BIT);
-    // link vertex attributes
-    cubeVAO.Bind();
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-  cubeVAO.Bind();
-  glDrawArrays(GL_TRIANGLES, 0, 36);
-  cubeVAO.UnBind();
-}
-
 void GLApplication::shutdownGLFW() {
     glfwDestroyWindow(window);
     glfwTerminate();
 }
 
 bool GLApplication::render() {
-
-    GLMesh mesh;
-    mesh.loadFromFile("../../assets/models/SciFiHelmet.fbx");
-
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL); // set depth function to less than AND equal for skybox depth trick.
-
-    // lighting
-    glm::vec3 lightPos(2.2f, 1.0f, 2.0f);
 
     float deltaTime =0;
     float lastFrame = 0;
@@ -122,87 +44,32 @@ bool GLApplication::render() {
         glm::mat4 proj;
         glm::vec3 cameraPosWS;
     };
-
     State state;
-    GLUniformBuffer uniformBuffer(sizeof(State));
-    GLCubeMapRender cubeMapRender;
+    glm::vec3 cameraPos;
 
-    GLTexture<GL_TEXTURE_CUBE_MAP> envCubeMap;
-    cubeMapRender.render(envCubeMap);
+    GLShader vertShader(ShaderKind::vertex);
+    vertShader.compileFromFile("../../assets/shaders/GL/trace.vert");
+    GLShader fragShader(ShaderKind::fragment);
+    fragShader.compileFromFile("../../assets/shaders/GL/trace.frag");
 
-    GLShader skyboxVert(ShaderKind::vertex);
-    skyboxVert.compileFromFile("../../assets/shaders/GL/skybox.vert");
-    GLShader skyboxFrag(ShaderKind::fragment);
-    skyboxFrag.compileFromFile("../../assets/shaders/GL/skybox.frag");
-    GLProgram skybox;
-    skybox.link(skyboxVert,skyboxFrag);
-
-    float vertices[] = {
-        // back face
-        -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-        1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-        1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right
-        1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
-        -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
-        -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
-        // front face
-        -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-        1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
-        1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-        1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
-        -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
-        -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
-        // left face
-        -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-        -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
-        -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-        -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
-        -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-        -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
-        // right face
-        1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-        1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-        1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right
-        1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
-        1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
-        1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left
-        // bottom face
-        -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-        1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
-        1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-        1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
-        -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-        -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
-        // top face
-        -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-        1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-        1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right
-        1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
-        -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
-        -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left
+    GLProgram traceProgram;
+    traceProgram.link(vertShader,fragShader);
+    std::vector<float> vertices{
+        -1.f, 1.f,
+        -1.f, -1.f,
+        1.f, 1.f,
+        1.f, -1.f
     };
-    Vao cubeVao;
-    GLBuffer<GL_ARRAY_BUFFER> cubeVbo;
-    cubeVao.Bind();
-    cubeVbo.Bind();
-    cubeVbo.CopyToGPU(vertices, sizeof(vertices),GL_MAP_WRITE_BIT);
+    Vao vao;
+    vao.Bind();
+    GLBuffer<GL_ARRAY_BUFFER> cubeVertices;
+    cubeVertices.Bind();
+    cubeVertices.CopyToGPU(vertices.data(),vertices.size()* sizeof(float),GL_MAP_WRITE_BIT);
 
-    std::vector<GLVertexAttribute> attributes{
-        {0,3,8* sizeof(float ),0},
-        {1,3,8* sizeof(float ),3* sizeof(float )},
-        {2,2,8* sizeof(float ),6* sizeof(float )},
-    };
+    GLVertexAttribute attribute(0,2, sizeof(float),0);
+    attribute();
 
-    cubeVao.Bind();
-    for (int i = 0; i < attributes.size() ; ++i) {
-      glEnableVertexAttribArray(attributes[i].binding);
-      glVertexAttribPointer(attributes[i].binding,attributes[i].size,GL_FLOAT,GL_FALSE,attributes[i].stride,(void*)attributes[i].offset);
-    }
 
-    skybox.use();
-    skybox.SetUniformInt("environmentMap", 0);
-    glm::mat4 projection = glm::perspective(glm::radians(45.f), (float)1920 / (float)1080, 0.1f, 100.0f);
-    skybox.SetUniformMatrix4fv("projection",1,GL_FALSE,projection);
     while (!glfwWindowShouldClose(window)){
         glfwPollEvents();
 
@@ -213,12 +80,11 @@ bool GLApplication::render() {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        imGuiRender_->update();
+        float time = glfwGetTime();
+        traceProgram.SetUniformFloat("uf_time",time);
+        traceProgram.SetVec2f("uv2_resolution",1920.0,1080.f);
+        traceProgram.use();
 
-        auto pos = imGuiRender_->GetPosition();
-
-
-        glm::vec3 cameraPos;
         cameraPos.x = static_cast<float>(glm::cos(camera.phi) * glm::cos(camera.theta) * camera.radius);
         cameraPos.y = static_cast<float>(glm::sin(camera.phi) * glm::cos(camera.theta) * camera.radius);
         cameraPos.z = static_cast<float>(glm::sin(camera.theta) * camera.radius);
@@ -229,12 +95,9 @@ bool GLApplication::render() {
         state.proj[1][1] *= -1;
         state.cameraPosWS = cameraPos;
 
-        skybox.use();
-        skybox.SetUniformMatrix4fv("projection",1,GL_FALSE, state.proj);
-        skybox.SetUniformMatrix4fv("view",1,GL_FALSE, state.view);
-        envCubeMap.Bind(1);
-        cubeVao.Bind();
-        glDrawArrays(GL_TRIANGLES,0,36);
+        glDrawArrays(GL_TRIANGLE_STRIP,0,8);
+
+        imGuiRender_->update();
         glfwSwapBuffers(window);
     }
     return true;

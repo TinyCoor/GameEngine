@@ -1,9 +1,10 @@
 uniform float uf_time;
+
 uniform vec2 uv2_resolution;
-varying vec2 vv2_pos;
+
+layout(location=0) in vec2 vv2_pos;
 
 float t = uf_time;
-
 float hash(float n){return fract(sin(n) * 43758.5453123);}
 float hash(vec2 co){
     return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -150,6 +151,8 @@ vec3 brdf(vec3 N, vec3 L, vec3 V, material_t m) {
     return PI * mix((1. - Fd)/PI, F * D * G / 4., m.specular) * m.color * NL;
 }
 
+
+
 vec3 enlight(vec3 pos, vec3 normal, vec3 view, vec3 diffuse, vec3 lightpos, vec3 lightcolor) {
     vec3 lightdir = lightpos - pos;
     vec3 nld = normalize(lightdir);
@@ -168,6 +171,13 @@ vec3 directlight(vec3 p, vec3 v) {
     color += enlight(p, n, v, vec3(1.), vec3(-7., 7., 7.), 20.*vec3(.7, .3, .9));
     return color;
 }
+
+vec3 pointlight(vec3 p,vec3 v) {
+    vec3 n = normal(p);
+    vec3 color= vec3(0.0);
+    return color;
+}
+
 
 void main() {
     //t = uf_time * .1;
@@ -196,6 +206,8 @@ void main() {
     if (ll.x > 0. && ll.x < Lmax) {
         vec3 p = refine(o + d * ll.x, o + d * ll.y);
         vec3 n = normal(p);
+
+
         material_t m = material(p);
         color = directlight(p, -d);
         int steps = 8;
@@ -207,14 +219,13 @@ void main() {
             //vec3 sd = reflect(d, n);
             vec3 sd = normalize(mix(reflect(d,n), n + normalize(2. * (vec3(hash(seed+p.x), hash(seed+p.y), hash(seed+p.z)) - .5)), 1.-m.specular));
             vec3 os = p + n * E * 2.;
-            float Lm = 4.;
+            float Lm = 2.;
             vec3 l = trace(os, sd, 0., Lm);
             if (l.x > 0. && l.x < Lm) {
                 //vec3 ps = refine(os + sd * l.x, os + sd * l.y);
                 vec3 ps = os + sd * l.x;
-                color += /* brdf(n, sd, -d, m) */  directlight(ps, -sd)
-                * ksteps  // l.x; // float(steps);
-                ;
+               // color += directlight(ps, -sd) * ksteps;  // l.x; // float(steps);
+                color += brdf(n, sd, -d, m) * directlight(ps, -sd)* ksteps;  // l.x; // float(steps);
             }
         }
     }

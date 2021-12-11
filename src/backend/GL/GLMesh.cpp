@@ -11,7 +11,6 @@ bool GLMesh::loadFromFile(const char* file)
 {
     clear();
     core::loadMesh(file,vertices,indices);
-    std::cout<< vertices.size() << " indices: "<< indices.size();
     uploadToGPU();
     return true;
 }

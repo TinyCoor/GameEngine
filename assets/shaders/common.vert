@@ -23,5 +23,5 @@ void main() {
 	gl_Position = vec4(inPosition.xyz, 1.0f);
 
 	for (int i = 0; i < 6; i++)
-	fragFacePositions[i] = ubo.faces[i] * vec4(inPosition.xyz, 1.0f);
+		fragFacePositions[i] = ubo.faces[i] * vec4(inPosition.xyz, 1.0f);
 }

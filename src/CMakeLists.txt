@@ -16,7 +16,7 @@ add_executable(niagara
         backend/Vulkan/VulkanGraphicsPipelineBuilder.cpp
         app/VulkanRender.cpp
         app/VulkanRenderScene.cpp
-        backend/Vulkan/VulkanContext.cpp
+        backend/Vulkan/Device.cpp
         backend/Vulkan/VulkanShader.cpp
         backend/Vulkan/VulkanTexture.cpp
         app/pbrRender.cpp
@@ -54,7 +54,14 @@ add_executable(niagara
         backend/core/Vertex.h
         backend/core/Vertex.cpp
         backend/Vulkan/driver.cpp
-        backend/Vulkan/driver.h)
+        backend/Vulkan/driver.h
+        backend/Vulkan/platform.cpp
+        backend/Vulkan/platform.h
+        backend/core/typedef.h
+        backend/Vulkan/converter.h
+        backend/Vulkan/VulkanRenderPassCache.cpp
+        backend/Vulkan/VulkanRenderPassCache.h
+        backend/core/utils.h)
 
 
 message(STATUS ${ShaderC_LIBRARIES})

@@ -65,9 +65,10 @@ public:
     }
 
     /**
+     * 此函数使用于布局描述符layout(binding=N)没有设置
      * 将 uniform 名为name 的缓存关联到一块uniform buffer缓存中
      * eg: layout(binding = 0) uniform mat{} 那么name 就是mat
-     *  index 为 1
+     *  binding = 0 ,name ='mat'
      * @param program
      *
      * @param name
@@ -75,14 +76,14 @@ public:
      * @param index
      *          绑定点
      */
-    void BindUniformBuffer(int buffer_index,const GLProgram& program,const char* block_name){
-        glUniformBlockBinding(program.GetHandle(), GetUniformBlockIndex(program,block_name),buffer_index);
-        glBindBufferBase(GL_UNIFORM_BUFFER,buffer_index,this->handle);
+    void BindUniformBuffer(int binding,const GLProgram& program,const char* block_name){
+        glUniformBlockBinding(program.GetHandle(), GetUniformBlockIndex(program,block_name),binding);
+        glBindBufferBase(GL_UNIFORM_BUFFER,binding,this->handle);
         this->Bind();
     }
 
     /**
-     *  返回名为 name 的uniform 块的绑定点
+     *  返回名为 name 的 uniform 块的绑定点
      */
     void GetUniformBindingIndex(const GLProgram& program,const char* block_name,GLint* res){
         glGetActiveUniformBlockiv(program.GetHandle(), GetUniformBlockIndex(program,block_name),GL_UNIFORM_BLOCK_BINDING,res);

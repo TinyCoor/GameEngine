@@ -5,6 +5,18 @@
 #ifndef GAMEENGINE_GLFRAMEBUFFER_H
 #define GAMEENGINE_GLFRAMEBUFFER_H
 #include "GLBuffer.hpp"
+#include "../GLTexture.h"
+
+enum class attachment_type{
+    color_attachment = 0,
+    depth_attachment,
+    depth_stencil_attachment,
+};
+
+struct attachment{
+    attachment_type type;
+    GLTexture<GL_TEXTURE_2D> texture;
+};
 
 /**
  * 用作离屏渲染的窗口系统,用作颜色或者深度模板附件
@@ -48,12 +60,36 @@ private:
  * DEPTH_ATTACHMENT
  * STENCIL_ATTACHMENT
  */
+/**
+  * MRT 将场景渲染多个目标中
+  * fragShader
+  * layout(location = 0) out vec4 outColor0;
+  * layout(location = 1) out vec4 outColor1;
+  * layout(location = 2) out vec4 outColor2;
+  * layout(location = 3) out vec4 outColor3;
+  * layout(location = 4) out vec4 outColor4;
+  * layout(location = 5) out vec4 outColor5;
+  *
+  * c++
+  *     GLenum Buffers[6];
+  *     for(int i=0; i< 6;++i){
+  *         glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0+i,GL_TEXTURE_2D,textures[i]);
+  *     }
+  *     Buffers[0] = GL_COLOR_ATTACHMENT0;
+  *     Buffers[1] = GL_COLOR_ATTACHMENT1;
+  *     Buffers[2] = GL_COLOR_ATTACHMENT2;
+  *     Buffers[3] = GL_COLOR_ATTACHMENT3;
+  *     Buffers[4] = GL_COLOR_ATTACHMENT4;
+  *     Buffers[5] = GL_COLOR_ATTACHMENT5;
+  *     glDrawBuffers(6,Buffers);
+  */
+
 class GLFrameBuffer: public GLObject {
     GLenum format;
     size_t width;
     size_t height;
 
-    GLHANDLE create(){
+    GLHANDLE create() {
         GLHANDLE  handle;
         glCreateFramebuffers(1,&handle);
         return handle;
@@ -65,40 +101,41 @@ public:
                   :GLObject(create(),"GLFrameBuffer") ,width(w),height(h),format(fmt)
     {}
 
-    ~GLFrameBuffer(){
+    ~GLFrameBuffer() {
       glDeleteFramebuffers(1,&handle);
     }
 
-    void Bind(){
+    void Bind() {
       glBindFramebuffer(GL_FRAMEBUFFER, this->handle);
     }
 
-    void UnBind(){
+    void UnBind() {
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     //纹理绑定到framebuffer
-    void BindDepthTexture(GLuint texture,int mipLevel =0){
-        glNamedFramebufferTexture(this->handle,GL_DEPTH_ATTACHMENT,texture,mipLevel);
+    template<GLenum textureType>
+    void BindDepthTexture(GLTexture<textureType>& texture) {
+        glNamedFramebufferTexture(this->handle,GL_DEPTH_ATTACHMENT,texture,texture.getMipLevel());
     }
 
-    void BindColorTexture(GLuint texture,int attchment_index,int mipLevel =0){
-        glNamedFramebufferTexture(this->handle,GL_COLOR_ATTACHMENT0+ attchment_index,texture,mipLevel);
+    void BindColorTexture(GLuint texture,int attchment_index,int mipLevel =0) {
+        glNamedFramebufferTexture(this->handle,GL_COLOR_ATTACHMENT0 + attchment_index,texture,mipLevel);
     }
 
     //note
-    void BindDepthStencilTexture(GLuint texture,int mipLevel =0){
+    void BindDepthStencilTexture(GLuint texture,int mipLevel =0) {
         glNamedFramebufferTexture(this->handle,GL_DEPTH_ATTACHMENT,texture,mipLevel);
     }
 
-    void AttachRenderBuffer(GLRenderBuffer& rbo){
+    ///
+    void AttachRenderBuffer(GLRenderBuffer& rbo) {
        glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,rbo.GetHandle());
     }
 
-    bool Check(){
+    bool Check() {
       auto res = glCheckFramebufferStatus(GL_FRAMEBUFFER);
       if (res == GL_FRAMEBUFFER_COMPLETE){
-        printf("frame bufffer ready");
         return true;
       }else if(res ==  GL_FRAMEBUFFER_UNDEFINED){
         printf("Undefined frame buffer\n");

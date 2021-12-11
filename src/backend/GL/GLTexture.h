@@ -46,7 +46,7 @@ struct GLTextureCreatePolicy{
     }
 };
 
-template<GLenum texture_type>
+
 struct SamplerCreatePolicy{
     static GLHANDLE create(){
         GLHANDLE sampler;
@@ -63,16 +63,16 @@ struct SamplerCreatePolicy{
     }
 };
 
-template<GLenum texture_type, template<GLenum> class SamplerManagePolicy=SamplerCreatePolicy>
+template<typename SamplerManagePolicy=SamplerCreatePolicy>
 class GLSampler: GLObject {
 public:
-    GLSampler(): GLObject(SamplerCreatePolicy<texture_type>::create(),"Sampler"){}
+    GLSampler(): GLObject(SamplerCreatePolicy::create(),"Sampler"){}
 
     void init() {
-        this->handle = SamplerCreatePolicy<texture_type>::create();
+        this->handle = SamplerCreatePolicy::create();
     }
     void BindSampler(int unit){
-        SamplerManagePolicy<texture_type>::bindSampler(unit,this->handle);
+        SamplerManagePolicy::bindSampler(unit,this->handle);
     }
 
     void SetSamplerParamInt(GLenum pname,const GLint param ){
@@ -334,6 +334,7 @@ public:
     }
 };
 
+
 template<GLenum texture_type>
 GLTexture<texture_type> createTexture(int width, int height,int mipLevel,GLenum format){
     GLTexture<texture_type> texture;
@@ -342,20 +343,5 @@ GLTexture<texture_type> createTexture(int width, int height,int mipLevel,GLenum 
     return texture;
 }
 
-
-template<GLenum texture_type>
-GLSampler<texture_type> createSamler(){
-    GLSampler<texture_type> sampler;
-    return sampler;
-}
-
-#define GL_ARB_bindless_texture
-
-class GLUnbindlessTexture :GLObject{
-public:
-    GLUnbindlessTexture(): GLObject(0,"UnbindlessTexture"){
-
-    }
-};
 
 #endif //GAMEENGINE_GLTEXTURE_H

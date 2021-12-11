@@ -86,9 +86,9 @@ public:
  * @tparam buf_type
  *      GL_ARRAY_BUFFER:顶点数组缓存，存放顶点数据
  *      ATOMIC_COUNTER_BUFFER
- *      GL_COPY_READ_BUFFER:用于拷贝缓存之间的数据，不会引起OpenGL状态变化
+ *      GL_COPY_READ_BUFFER: 用于拷贝缓存之间的数据，不会引起OpenGL状态变化
  *      DISPATCH_INDIRECT_BUFFER
- *      GL_COPY_WRITE_BUFFER:用于拷贝缓存之间的数据，不会引起OpenGL状态变化
+ *      GL_COPY_WRITE_BUFFER: 用于拷贝缓存之间的数据，不会引起OpenGL状态变化
  *      GL_DRAW_INDIRECT_BUFFER:如果采取间接绘制，该缓存存放间接绘制的命令
  *      PARAMETER_BUFFER
  *      QUERY_BUFFER
@@ -101,7 +101,7 @@ public:
  *      GL_UNIFORM_BUFFER: uniform 缓存变量
  * @tparam BufferTypePolicy
  */
-
+ ///buffer 是线性数组无格式与texture不同
 template<GLenum buf_type,template<GLenum > class BufferTypePolicy = BufferPolicy>
 class GLBuffer : public GLObject {
 protected:

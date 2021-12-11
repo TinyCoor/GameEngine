@@ -22,6 +22,18 @@ struct GLVertexAttribute{
     int size;
     int stride;
     size_t offset;
+    GLenum data_type= GL_FLOAT;
+    GLboolean normalized= GL_FALSE;
+    GLVertexAttribute(int binding,int size,int stride,int offset,
+                      GLenum data_type=GL_FLOAT,GLboolean normalized =GL_FALSE)
+                      :binding(binding),size(size),stride(stride),offset(offset),
+                      data_type(data_type),normalized(normalized){}
+
+
+    void operator()(){
+      glEnableVertexAttribArray(binding);
+      glVertexAttribPointer(binding,size,GL_FLOAT,GL_FALSE,stride,(void*)offset);
+    }
 };
 
 class GLMesh  : public RenderObject {

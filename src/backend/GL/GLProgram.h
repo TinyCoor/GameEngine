@@ -11,6 +11,23 @@
 #include <glm/detail/type_mat4x4.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+enum uniform_variable_t{
+  Float,
+  Int,
+  Vec3,
+  Vec2,
+  Mat2,
+  Mat3,
+  Mat4,
+};
+
+typedef  struct uniform_variable{
+  const char* name;
+  uniform_variable_t type;
+  int count;
+}uniform_variable;
+
+
 //todo support spv format
 class GLProgram : public GLObject{
 
@@ -59,6 +76,10 @@ public:
 
     void SetUniformInt(const char* name,int value){
         glUniform1d(GetUniformLocation(name),value);
+    }
+
+    void SetVec2f(const char* name,float x,float y){
+        glUniform2f(GetUniformLocation(name),x,y);
     }
 
     void SetUniformMatrix3f(const char* name,GLsizei count, GLboolean transpose,GLfloat* values){

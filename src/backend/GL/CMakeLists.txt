@@ -27,7 +27,7 @@ add_executable(OpenGL
         Buffer/GLPixelBuffer.cpp
         Buffer/GLVertexBuffer.cpp
         Buffer/GLShaderMemory.cpp
-        Buffer/GLSSBO.hpp GLRender.cpp GLRender.h GLUitils.cpp GLUitils.h)
+        Buffer/GLSSBO.hpp GLRender.cpp GLRender.h GLUitils.cpp GLUitils.h GLPipeline.cpp GLPipeline.h)
 
 target_include_directories(niagara PRIVATE ../../../extern/volk)
 target_include_directories(OpenGL PRIVATE  ../../../extern/glfw/include)

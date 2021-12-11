@@ -19,6 +19,8 @@ namespace core {
 
     bool loadMesh(const char *name, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices);
     bool tinyobjLoadMesh(const char *name, std::vector<Vertex> &vertices, std::vector<uint32_t> &indices);
+
+    void generateSphere();
 }
 
 #endif //GAMEENGINE_VERTEX_H

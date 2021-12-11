@@ -18,6 +18,8 @@ public:
      GLCubeMapRender(){}
     ~GLCubeMapRender(){}
 
+    void init(const char* vert,const char* frag);
+
     void render(GLTexture<GL_TEXTURE_CUBE_MAP>& envCubeMap);
 
 private:
