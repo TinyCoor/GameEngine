@@ -1,0 +1,13 @@
+//
+// Created by 12132 on 2021/12/11.
+//
+
+#ifndef GAMEENGINE_SRC_BACKEND_CORE_WINDOW_H
+#define GAMEENGINE_SRC_BACKEND_CORE_WINDOW_H
+
+class Window
+{
+
+};
+
+#endif //GAMEENGINE_SRC_BACKEND_CORE_WINDOW_H
