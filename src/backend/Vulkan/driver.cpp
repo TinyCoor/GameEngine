@@ -17,6 +17,7 @@
 #include <functional>
 #include <GLFW/glfw3.h>
 #include "platform.h"
+#include "VulkanRenderPassCache.h"
 
 namespace render::backend {
 namespace shaderc {
@@ -839,7 +840,7 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
             width = std::max<int>(1, color_texture->width / (1 << color.base_mip));
             height = std::max<int>(1, color_texture->height / (1 << color.base_mip));
             format = color_texture->format;
-            sample =color_texture->samples;
+            sample = color_texture->samples;
             resolve = color.resolve_attachment;
             if (color.resolve_attachment) {
                 builder.addColorResolveAttachment(color_texture->format);
@@ -1210,18 +1211,17 @@ void VulkanDriver::beginRenderPass(
     auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer);
     auto vk_frame_buffer = static_cast<const vulkan::FrameBuffer*>(frame_buffer);
 
+    VkRenderPassBeginInfo render_pass_info = {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass= render_pass_cache->fetch(vk_frame_buffer,info);
+    render_pass_info.framebuffer = vk_frame_buffer->framebuffer;
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent = vk_frame_buffer->sizes;
 
-//    VkRenderPassBeginInfo render_pass_info = {};
-//    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-//    render_pass_info.renderPass= createFromCache(vk_frame_buffer,info);
-//    render_pass_info.framebuffer = vk_frame_buffer->framebuffer;
-//    render_pass_info.renderArea.offset = {0, 0};
-//    render_pass_info.renderArea.extent = vk_frame_buffer->sizes;
-//
-//    render_pass_info.clearValueCount =vk_command_buffer->num_images;
-//    render_pass_info.pClearValues =reinterpret_cast<VkClearValue*>(info->clear_value);
-//
-//    vkCmdBeginRenderPass(vk_command_buffer->command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+    render_pass_info.clearValueCount =vk_frame_buffer->num_attachments;
+    render_pass_info.pClearValues =reinterpret_cast<VkClearValue*>(info->clear_value);
+
+    vkCmdBeginRenderPass(vk_command_buffer->command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
 }
 void VulkanDriver::endRenderPass(render::backend::CommandBuffer *command_buffer)
@@ -1268,6 +1268,8 @@ void VulkanDriver::drawIndexedPrimitiveInstanced(render::backend::CommandBuffer 
 VulkanDriver::VulkanDriver(const char *app_name, const char *engine_name) : context(new Device)
 {
     context->init(app_name, engine_name);
+    render_pass_cache = new VulkanRenderPassCache(context);
+
 }
 
 SwapChain *VulkanDriver::createSwapChain(void *native_window, uint32_t width, uint32_t height)

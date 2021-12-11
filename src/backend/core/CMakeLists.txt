@@ -4,7 +4,7 @@ set(Target core)
 
 add_library(${Target} STATIC
         file.cpp
-        Vertex.cpp)
+        Vertex.cpp Window.cpp Window.h)
 
 target_include_directories(${Target} PRIVATE ../../../extern/volk)
 target_include_directories(${Target} PRIVATE  ../../../extern/glfw/include)

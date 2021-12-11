@@ -174,8 +174,8 @@ void VulkanSwapChain::initPersistent(VkFormat image_format) {
 
 void VulkanSwapChain::shutdownPersistent() {
 
-    vkDestroyRenderPass(context->LogicDevice(), render_pass, nullptr);
-    render_pass = VK_NULL_HANDLE;
+//    vkDestroyRenderPass(context->LogicDevice(), render_pass, nullptr);
+//    render_pass = VK_NULL_HANDLE;
 
     vkDestroyDescriptorSetLayout(context->LogicDevice(), descriptorSetLayout, nullptr);
     descriptorSetLayout = VK_NULL_HANDLE;
@@ -219,6 +219,17 @@ void VulkanSwapChain::beginFrame(void *state, const VulkanRenderFrame &frame) {
 
     driver->reset(frame.command_buffer);
     driver->begin(frame.command_buffer);
+//    std::array<VkClearValue, 3> clear_values = {};
+//    clear_values[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+//    clear_values[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
+//    clear_values[2].depthStencil = {1.0f, 0};
+//    std::array<RenderPassLoadOp,3> load_ops{RenderPassLoadOp::CLEAR,RenderPassLoadOp::DONT_CARE,RenderPassLoadOp::CLEAR};
+//    std::array<RenderPassStoreOp,3> store_ops{RenderPassStoreOp::DONT_CARE,RenderPassStoreOp::STORE,RenderPassStoreOp::DONT_CARE};
+//    RenderPassInfo info;
+//    info.load_ops = load_ops.data();
+//    info.store_ops = store_ops.data();
+//    info.clear_value = reinterpret_cast<RenderPassClearValue *>(clear_values.data());
+//    driver->beginRenderPass(frame.command_buffer,frame.frame_buffer,&info);
 
 
     VkRenderPassBeginInfo render_pass_info = {};
@@ -242,4 +253,8 @@ void VulkanSwapChain::endFrame(const VulkanRenderFrame &frame) {
     driver->endRenderPass(frame.command_buffer);
     driver->end(frame.command_buffer);
     driver->submitSynced(frame.command_buffer,swap_chain);
+}
+VkRenderPass VulkanSwapChain::getDummyRenderPass() const
+{
+    return static_cast<vulkan::FrameBuffer*>(frames[0].frame_buffer)->dummy_render_pass;
 }

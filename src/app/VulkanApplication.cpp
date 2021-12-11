@@ -228,7 +228,7 @@ void Application::shutdownRenders() {
 
 void Application::initRenders() {
     if(!render){
-        render = new VulkanRender(context,driver,swapChain->getExtent(),swapChain->getDescriptorSetLayout(),swapChain->getRenderPass());
+        render = new VulkanRender(context,driver,swapChain->getExtent(),swapChain->getDescriptorSetLayout(),swapChain->getDummyRenderPass());
         render->init(scene);
     }
 
@@ -237,7 +237,7 @@ void Application::initRenders() {
     if (!imGuiRender){
         imGuiRender = new ImGuiRender(context,
                                             ImGui::GetCurrentContext(),
-                                            swapChain->getExtent(),swapChain->getRenderPass());
+                                            swapChain->getExtent(),swapChain->getDummyRenderPass());
          imGuiRender->init(swapChain);
     }
 }

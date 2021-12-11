@@ -40,7 +40,7 @@ public:
 
   VkExtent2D getExtent() const ;
   uint32_t getNumImages() const ;
-  inline VkRenderPass getRenderPass() const { return render_pass; }
+  VkRenderPass getDummyRenderPass() const;
   inline VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
 
 

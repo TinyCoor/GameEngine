@@ -142,8 +142,10 @@ struct SwapChain : public render::backend::SwapChain {
 };
 
 class Device;
+class VulkanRenderPassCache;
 class VulkanDriver : public render::backend::Driver {
     Device *context{nullptr};
+    VulkanRenderPassCache* render_pass_cache{nullptr};
 public:
     VulkanDriver(const char *app_name, const char *engine_name);
     ~VulkanDriver();

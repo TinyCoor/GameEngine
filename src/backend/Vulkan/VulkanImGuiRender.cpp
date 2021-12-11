@@ -47,7 +47,7 @@ void ImGuiRender::init(VulkanSwapChain* swapChain)
     init_info.MinImageCount = swapChain->getNumImages();
     init_info.ImageCount = swapChain->getNumImages();
 
-    ImGui_ImplVulkan_Init(&init_info,swapChain->getRenderPass());
+    ImGui_ImplVulkan_Init(&init_info,swapChain->getDummyRenderPass());
 
     VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(context);
     ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
