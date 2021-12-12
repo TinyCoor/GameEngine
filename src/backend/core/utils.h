@@ -14,6 +14,14 @@ constexpr float toRadians(float degree){
     return degree * PI / 180;
 }
 
+template <class T>
+static void hash_combine(uint64_t &s, const T &v)
+{
+    std::hash<T> h;
+    s^= h(v) + 0x9e3779b9 + (s << 6) + (s>> 2);
+}
+
+
 inline std::vector<float> generateSphere(float radius,float angleSpan){
     std::vector<float> vertices;
     for (int Vangle =-90; Vangle < 90;Vangle= Vangle+angleSpan) {

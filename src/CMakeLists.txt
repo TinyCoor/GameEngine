@@ -61,7 +61,12 @@ add_executable(niagara
         backend/Vulkan/converter.h
         backend/Vulkan/VulkanRenderPassCache.cpp
         backend/Vulkan/VulkanRenderPassCache.h
-        backend/core/utils.h)
+        backend/core/utils.h
+        backend/Vulkan/PipelineCache.cpp
+        backend/Vulkan/PipelineCache.h
+        backend/Vulkan/DescriptorSetLayoutCache.cpp
+        backend/Vulkan/DescriptorSetCache.cpp
+        backend/Vulkan/DescriptorSetCache.h)
 
 
 message(STATUS ${ShaderC_LIBRARIES})

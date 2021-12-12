@@ -19,6 +19,8 @@
 #include <cstring>
 #include "platform.h"
 #include "VulkanRenderPassCache.h"
+#include "DescriptorSetLayoutCache.h"
+#include "DescriptorSetCache.h"
 
 namespace render::backend {
 namespace shaderc {
@@ -636,6 +638,11 @@ VulkanDriver::~VulkanDriver() noexcept
         context->shutdown();
         delete context;
     }
+    delete descriptor_set_layout_cache;
+    descriptor_set_layout_cache = nullptr;
+    delete descriptor_set_cache;
+    descriptor_set_cache = nullptr;
+
 }
 VertexBuffer *VulkanDriver::createVertexBuffer(BufferType type,
                                                uint16_t vertex_size,
@@ -1340,7 +1347,8 @@ VulkanDriver::VulkanDriver(const char *app_name, const char *engine_name) : cont
 {
     context->init(app_name, engine_name);
     render_pass_cache = new VulkanRenderPassCache(context);
-
+    descriptor_set_layout_cache= new DescriptorSetLayoutCache(context);
+    descriptor_set_cache = new DescriptorSetCache(context,descriptor_set_layout_cache);
 }
 
 SwapChain *VulkanDriver::createSwapChain(void *native_window, uint32_t width, uint32_t height)
