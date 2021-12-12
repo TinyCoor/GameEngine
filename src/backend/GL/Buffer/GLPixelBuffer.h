@@ -18,10 +18,6 @@ public:
     GLReadPixelBuffer(size_t width,size_t height,GLenum pixel_type)
         :GLBuffer<GL_PIXEL_PACK_BUFFER>(width,height,pixel_type){}
 
-    void Bind(){
-        GLBuffer<GL_PIXEL_PACK_BUFFER>::Bind();
-    }
-
 
 };
 
@@ -32,9 +28,8 @@ class GLWritePixelBuffer : public GLBuffer<GL_PIXEL_UNPACK_BUFFER>{
 public:
     GLWritePixelBuffer(size_t width,size_t height,size_t data_size)
     :GLBuffer<GL_PIXEL_UNPACK_BUFFER>(width,height,data_size)
-    {
+    {}
 
-    }
 
 
 };

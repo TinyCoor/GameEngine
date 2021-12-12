@@ -1722,11 +1722,24 @@ BindSet *VulkanDriver::createBindSet()
 
 void VulkanDriver::destroyBindSet(render::backend::BindSet *set)
 {
-
     if (!set){
         auto vk_bind_set = static_cast<vulkan::BindSet*>(set);
+        for (int i = 0; i < render::backend::vulkan::BindSet::MAX_BINDINGS; ++i) {
+            if(!vk_bind_set->bind_used[i]){
+                continue;
+            }
+
+            auto& info = vk_bind_set->bindings[i];
+            if(info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER){
+                continue;
+            }
+            auto& data = vk_bind_set->bind_data[i];
+            vkDestroyImageView(context->LogicDevice(),data.texture.view, nullptr);
+        }
+
         delete vk_bind_set;
         set = nullptr;
+
     }
 }
 

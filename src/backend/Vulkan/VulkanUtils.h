@@ -11,6 +11,7 @@
 #include <optional>
 
 namespace render::backend::vulkan {
+
 struct QueueFamilyIndices {
   std::optional<uint32_t> graphicsFamily{std::nullopt};
   std::optional<uint32_t> presentFamily{std::nullopt};

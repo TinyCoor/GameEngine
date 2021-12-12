@@ -73,7 +73,6 @@ void Application::initImGui() {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     ImGui::StyleColorsDark();
-    //TODO
     ImGui_ImplGlfw_InitForVulkan(window,true);
 
 }
@@ -235,8 +234,7 @@ void Application::initRenders() {
     render->setEnvironment(scene->getHDRTexture( state.currentEnvironment));
 
     if (!imGuiRender){
-        imGuiRender = new ImGuiRender(context,
-                                            ImGui::GetCurrentContext(),
+        imGuiRender = new ImGuiRender(context,ImGui::GetCurrentContext(),
                                             swapChain->getExtent(),swapChain->getDummyRenderPass());
          imGuiRender->init(swapChain);
     }

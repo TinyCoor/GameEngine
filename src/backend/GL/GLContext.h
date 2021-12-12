@@ -6,10 +6,17 @@
 #define GAMEENGINE_GLCONTEXT_H
 #include "GLObject.h"
 //顶点属性
-//TODO Special GL_DOUBLE
-class VertexInputAttribute {
+typedef unsigned int HANDLE
 
-public:
+enum VertexType{
+    FLOAT,
+    DOUBLE,
+    INT,
+    BYTE,
+};
+
+struct GLVertexInputAttributeDescription {
+
     static void SetVertexInputAttribute(int binding,int size,GLenum data_type,bool normalized,int stride,void* data){
         glVertexAttribPointer(binding,size,data_type,normalized,stride,data);
         glEnableVertexAttribArray(binding);
@@ -27,7 +34,7 @@ struct Scissor{
 
     }
 
-    void SetStencil(){
+    void SetScissor(){
         glScissor(x_,y_,width_,height_);
     }
 };

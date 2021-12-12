@@ -160,8 +160,16 @@ public:
     *  GL_LEFT,
     *  GL_RIGHT,
     *  GL_COLOR_ATTACHMENTi.
-    *  指定从什么地方读取像素
+    *  设置frag输出到哪个位置，通常mrt 会用
     */
+    void SetRenderTarget(int num_target,GLenum* targets) {
+        glDrawBuffers(num_target,targets);
+    }
+
+    /// format 指定了多少分量，type指定每个分量的占用内存 ,从外部读取数据进frame_buffer
+    void Read(int width,int height,GLenum format,GLenum type,void* data) {
+        glReadPixels(0,0,width,height,format,type,data);
+    }
 
 };
 

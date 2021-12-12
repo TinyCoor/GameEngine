@@ -21,6 +21,7 @@ class GLShader : public  GLObject{
 public:
 
     GLShader(ShaderKind type);
+    ~GLShader();
 
     void init() {
 
@@ -36,6 +37,18 @@ private:
 
 private:
     ShaderKind type;
+};
+
+
+class SpirShader: public GLObject{
+public:
+    SpirShader(ShaderKind type);
+    ~SpirShader();
+
+    bool loadSpirCode(const char *spir_path,const char* entry_point = "main");
+
+private:
+
 };
 
 

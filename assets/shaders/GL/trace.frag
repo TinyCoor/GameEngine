@@ -207,7 +207,6 @@ void main() {
         vec3 p = refine(o + d * ll.x, o + d * ll.y);
         vec3 n = normal(p);
 
-
         material_t m = material(p);
         color = directlight(p, -d);
         int steps = 8;

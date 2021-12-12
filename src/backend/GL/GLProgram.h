@@ -54,6 +54,8 @@ public:
         link(otherShader...);
         glLinkProgram(this->handle);
         GetErrorInformation();
+//        glDetachShader(handle, shader.GetHa);
+//        glDetachShader(program, fragmentShader);
     }
 
 

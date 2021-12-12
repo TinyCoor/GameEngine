@@ -101,7 +101,7 @@ public:
  *      GL_UNIFORM_BUFFER: uniform 缓存变量
  * @tparam BufferTypePolicy
  */
- ///buffer 是线性数组无格式与texture不同
+ ///buffer 是线性数组无格式与texture不同,可能用作 texture
 template<GLenum buf_type,template<GLenum > class BufferTypePolicy = BufferPolicy>
 class GLBuffer : public GLObject {
 protected:
@@ -110,19 +110,9 @@ protected:
     size_t element_size_ = 0;
     size_t bufferSize = 0;
 public:
-      /**
-     * 对于从ShaderProgram找出的Handle 不需要调用Create
-     * glGetUniformLoaction() 返回的 handle
-     * @param handle
-     */
-    GLBuffer(GLHANDLE handle): GLObject(handle,"GLBuffer"){}
-
+    //该函数并未分配GPU buffer
     GLBuffer(): GLObject(BufferTypePolicy<buf_type>::createBufferObject(),"GLBuffer"){}
 
-    void init(size_t size){
-        this->handle = BufferTypePolicy<buf_type>::createBufferObject();
-        glNamedBufferStorage(this->handle,size, nullptr,GL_DYNAMIC_STORAGE_BIT);
-    }
     GLBuffer(size_t capacity)
         : GLObject(BufferTypePolicy<buf_type>::createBufferObject(),"GLBuffer"),
           bufferSize(capacity)
@@ -131,10 +121,11 @@ public:
     }
 
     GLBuffer(size_t width,size_t height,size_t element_size):
-    GLObject(BufferTypePolicy<buf_type>::createBufferObject(),"GLBuffer"),
-    width_(width),height_(height),element_size_(element_size)
+        GLObject(BufferTypePolicy<buf_type>::createBufferObject(),"GLBuffer"),
+        width_(width),height_(height),element_size_(element_size)
     {
-        glNamedBufferStorage(this->handle,width_*height_*element_size_, nullptr,GL_DYNAMIC_STORAGE_BIT);
+        bufferSize = width*height *element_size;
+        glNamedBufferStorage(this->handle,width_ *  height_* element_size_, nullptr,GL_DYNAMIC_STORAGE_BIT);
     }
 
     size_t getBufferSize(){
@@ -234,14 +225,6 @@ public:
     }
 
 };
-
-
-template<GLenum bufferType>
-GLBuffer<bufferType> createGLBuffer(size_t size){
-    GLBuffer<bufferType> buffer;
-    buffer.init(size);
-    return buffer;
-}
 
 
 #endif //GAMEENGINE_GLBUFFER_HPP

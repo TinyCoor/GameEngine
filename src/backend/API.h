@@ -176,6 +176,7 @@ struct FrameBuffer {};
 struct CommandBuffer {};
 struct UniformBuffer {};
 struct Shader {};
+struct BindSet{};
 //todo shader storage buffer?
 
 
@@ -364,6 +365,15 @@ public:
         const void *data
     ) = 0;
 
+public:
+    ///pipeline state
+    virtual void clearShader() = 0;
+    virtual void clearBindSet() = 0;
+    virtual void setShader(ShaderType type,const char* shader) = 0;
+    virtual void setBindSet(const BindSet* set, uint32_t binding) = 0;
+    virtual BindSet* createBindSet() = 0;
+
+
     virtual SwapChain *createSwapChain(void *native_window, uint32_t width, uint32_t height) = 0;
     virtual void destroyVertexBuffer(VertexBuffer *vertex_buffer) = 0;
     virtual void destroyIndexBuffer(IndexBuffer *index_buffer) = 0;
@@ -374,6 +384,7 @@ public:
     virtual void destroyUniformBuffer(UniformBuffer *uniform_buffer) = 0;
     virtual void destroyShader(Shader *shader) = 0;
     virtual void destroySwapChain(SwapChain *swapchain) = 0;
+    virtual void destroyBindSet(BindSet* set) =0;
 
 public:
     virtual Multisample getMaxSampleCount() = 0;
@@ -419,13 +430,20 @@ public:
 
     // bind
     virtual void bindUniformBuffer(
+        BindSet* bind_set,
         uint32_t unit,
         const UniformBuffer *uniform_buffer
     ) = 0;
 
     virtual void bindTexture(
+        BindSet* set,
         uint32_t unit,
-        const Texture *texture
+        const Texture *texture,
+        int base_mip,
+        int num_mip,
+        int base_layer,
+        int num_layer
+
     ) = 0;
 
     virtual void bindShader(
