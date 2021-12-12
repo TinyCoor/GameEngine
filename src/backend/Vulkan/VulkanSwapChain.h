@@ -77,15 +77,12 @@ private:
 
   void* native_window{nullptr};
 
-  VkRenderPass render_pass{VK_NULL_HANDLE};
   VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
 
   VkDeviceSize ubo_size;
 
   render::backend::Texture *color {nullptr};
   render::backend::Texture *depth {nullptr};
-  render::backend::Format depth_format {render::backend::Format::UNDEFINED};
-
   std::vector<VulkanRenderFrame> frames;
 
 };

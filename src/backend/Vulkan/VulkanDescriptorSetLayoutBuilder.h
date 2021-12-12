@@ -12,7 +12,9 @@ public:
   VulkanDescriptorSetLayoutBuilder() {}
 
   VulkanDescriptorSetLayoutBuilder &addDescriptorBinding(VkDescriptorType type,
-                                                         VkShaderStageFlags shaderStageFlags);
+                                                         VkShaderStageFlags shaderStageFlags,
+                                                         uint32_t binding,
+                                                         int descriptor_count = 1);
 
   VkDescriptorSetLayout build(VkDevice device);
 

@@ -49,8 +49,8 @@ void VulkanCubeMapRender::init(VulkanShader& vertShader,
 
   VulkanDescriptorSetLayoutBuilder descriptorSetLayoutBuilder;
   descriptor_set_layout = descriptorSetLayoutBuilder
-      .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage)
-      .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage)
+      .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, stage,0)
+      .addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, stage,1)
       .build(context->LogicDevice());
 
   VulkanRenderPassBuilder renderPassBuilder;

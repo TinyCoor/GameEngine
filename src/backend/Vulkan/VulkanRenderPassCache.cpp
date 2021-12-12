@@ -4,13 +4,14 @@
 
 #include "VulkanRenderPassCache.h"
 #include "VulkanRenderPassBuilder.h"
-#include "Device.h"
 namespace render::backend::vulkan {
-template<typename T>
-static void hash_combine(uint64_t& s,const T& v){
+template <class T>
+static void hash_combine(uint64_t &s, const T &v)
+{
     std::hash<T> h;
-    s^=h(v) + 0x9e3779b9 + (s<<6) + (s >> 2);
+    s^= h(v) + 0x9e3779b9 + (s<< 6) + (s>> 2);
 }
+
 VulkanRenderPassCache::~VulkanRenderPassCache()
 {
     clear();
@@ -40,9 +41,7 @@ VkRenderPass VulkanRenderPassCache::fetch(const render::backend::vulkan::FrameBu
             builder.addColorResolveAttachment(format,load_op,store_op);
             builder.addColorResolveAttachmentReference(0,i);
         }else {
-            builder.addColorAttachment(format,
-                                       frame_buffer->attachment_samples[i],
-                                       load_op,store_op);
+            builder.addColorAttachment(format,samples,load_op,store_op);
             builder.addColorAttachmentReference(0,i);
         }
     }

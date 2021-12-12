@@ -32,6 +32,28 @@ struct RenderPrimitive : public render::backend::RenderPrimitive {
     const IndexBuffer *indexBuffer{nullptr};
 };
 
+struct BindSet: public render::backend::BindSet
+{
+    enum {
+        MAX_BINDINGS = 32,
+    };
+
+    //todo std::variant
+
+    union BindData{
+        struct Texture{
+            VkImageView view;
+            VkSampler sampler;
+        } texture;
+        VkBuffer ubo;
+    };
+
+    VkDescriptorSetLayoutBinding bindings[MAX_BINDINGS];
+    BindData bind_data[MAX_BINDINGS];
+    bool bind_used[MAX_BINDINGS];
+
+};
+
 struct Texture : public render::backend::Texture {
     VkImage image{VK_NULL_HANDLE};
     VkImageView view{VK_NULL_HANDLE};
@@ -56,13 +78,6 @@ struct CommandBuffer : public render::backend::CommandBuffer {
     VkFence rendering_finished_cpu{VK_NULL_HANDLE};
 };
 
-struct FrameBufferColorAttachment {
-    VkImageView view{VK_NULL_HANDLE};
-};
-
-struct FrameBufferDepthStencilAttachment {
-    VkImageView view{VK_NULL_HANDLE};
-};
 
 struct FrameBuffer : public render::backend::FrameBuffer {
     enum {
@@ -242,6 +257,13 @@ public:
         const void *data
     ) override;
 
+    ///pipeline state
+    virtual void clearShader() override;
+    virtual void clearBindSet() override;
+    virtual void setShader(ShaderType type,const char* shader) override;
+    virtual void setBindSet(const render::backend::BindSet* set, uint32_t binding) override;
+    virtual BindSet* createBindSet() override;
+
     void destroyVertexBuffer(render::backend::VertexBuffer *vertex_buffer) override;
     void destroyIndexBuffer(render::backend::IndexBuffer *index_buffer) override;
     void destroyRenderPrimitive(render::backend::RenderPrimitive *render_primitive) override;
@@ -250,6 +272,7 @@ public:
     void destroyCommandBuffer(render::backend::CommandBuffer *command_buffer) override;
     void destroyUniformBuffer(render::backend::UniformBuffer *uniform_buffer) override;
     void destroyShader(render::backend::Shader *shader) override;
+    void destroyBindSet(render::backend::BindSet* set) override;
 
 public:
     Multisample getMaxSampleCount() override;
@@ -302,13 +325,19 @@ public:
 
     // bind
     void bindUniformBuffer(
+       render::backend::BindSet* set,
         uint32_t unit,
         const render::backend::UniformBuffer *uniform_buffer
     ) override;
 
     void bindTexture(
+        render::backend::BindSet* set,
         uint32_t unit,
-        const render::backend::Texture *texture
+        const render::backend::Texture *texture,
+        int base_mip,
+        int num_mip,
+        int base_layer,
+        int num_layer
     ) override;
 
     void bindShader(

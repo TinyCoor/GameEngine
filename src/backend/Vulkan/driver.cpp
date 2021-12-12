@@ -16,6 +16,7 @@
 #include <limits>
 #include <functional>
 #include <GLFW/glfw3.h>
+#include <cstring>
 #include "platform.h"
 #include "VulkanRenderPassCache.h"
 
@@ -816,13 +817,13 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
 
     // add color attachments
     result->num_attachments = 0;
-    VkFormat format = VK_FORMAT_UNDEFINED;
-    bool resolve = false;
+
     VkSampleCountFlagBits sample =VK_SAMPLE_COUNT_1_BIT;
     for (uint8_t i = 0; i < num_attachments; ++i) {
         const FrameBufferAttachment &attachment = attachments[i];
         VkImageView view = VK_NULL_HANDLE;
-
+        VkFormat format = VK_FORMAT_UNDEFINED;
+        bool resolve = false;
         if (attachment.type == FrameBufferAttachmentType::COLOR) {
             //TODO ERROR IN
             const FrameBufferAttachment::Color &color = attachment.color;
@@ -881,7 +882,6 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
             height = swap_chain->sizes.height;
             format = swap_chain->surface_format.format;
             resolve =swap_chain_color.resolve_attachment;
-            //sample = swap_chain->
 
             if (swap_chain_color.resolve_attachment) {
                 builder.addColorResolveAttachment(swap_chain->surface_format.format);
@@ -894,8 +894,9 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
 
         result->attachments[result->num_attachments] = view;
         result->attachment_types[result->num_attachments] =attachment.type;
-        result->attachment_format[i] = format;
-        result->attachment_resolve[i] = resolve;
+        result->attachment_format[result->num_attachments] = format;
+        result->attachment_samples[result->num_attachments] = sample;
+        result->attachment_resolve[result->num_attachments] = resolve;
         result->num_attachments++;
     }
 
@@ -1232,14 +1233,84 @@ void VulkanDriver::endRenderPass(render::backend::CommandBuffer *command_buffer)
     auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer)->command_buffer;
     vkCmdEndRenderPass(vk_command_buffer);
 }
-void VulkanDriver::bindUniformBuffer(uint32_t unit, const render::backend::UniformBuffer *uniform_buffer)
+void VulkanDriver::bindUniformBuffer(render::backend::BindSet* bind_set,
+                                     uint32_t binding,
+                                     const render::backend::UniformBuffer *uniform_buffer)
 {
+    assert(binding < vulkan::BindSet::MAX_BINDINGS);
+    if(bind_set == nullptr){
+        return;
+    }
+    auto vk_bind_set = static_cast<vulkan::BindSet*>(bind_set);
+    auto vk_ubo =static_cast<const vulkan::UniformBuffer*>(uniform_buffer);
+
+    auto& data = vk_bind_set->bind_data[binding];
+    auto& info = vk_bind_set->bindings[binding];
+    VkBuffer ubo =VK_NULL_HANDLE;
+    if(vk_ubo){
+        ubo = vk_ubo->buffer;
+    }
+
+    vk_bind_set->bind_used[binding] = (uniform_buffer != nullptr);
+    data.ubo = ubo;
+    info.binding = binding;
+    info.descriptorCount= 1;
+    info.stageFlags =VK_SHADER_STAGE_ALL ;//todo change to
+    info.descriptorType=VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    info.pImmutableSamplers= nullptr;
 
 }
-void VulkanDriver::bindTexture(uint32_t unit, const render::backend::Texture *texture)
+void VulkanDriver::bindTexture(render::backend::BindSet* bind_set,
+                               uint32_t binding,
+                               const render::backend::Texture *texture,
+                               int base_mip,
+                               int num_mip,
+                               int base_layer,
+                               int num_layer)
 {
+    assert(binding < vulkan::BindSet::MAX_BINDINGS);
+    assert(texture != nullptr);
+    if ( bind_set == nullptr) {
+        return;
+    }
 
+    auto vk_bind_set = static_cast<vulkan::BindSet*>(bind_set);
+    auto vk_texture = static_cast<const vulkan::Texture*>(texture);
+
+    auto& data = vk_bind_set->bind_data[binding];
+    auto& info = vk_bind_set->bindings[binding];
+
+    VkImageView view{VK_NULL_HANDLE};
+    VkSampler sampler{VK_NULL_HANDLE};
+    if (vk_texture) {
+        VulkanUtils::createImageView(context->LogicDevice(),
+                                     vk_texture->image,
+                                     vk_texture->format,
+                                     toImageAspectFlags(vk_texture->format),
+                                     toImageBaseViewType(vk_texture->type,vk_texture->flags,vk_texture->num_layers),
+                                     base_mip,num_mip,
+                                     base_layer,num_layer);
+        sampler = vk_texture->sampler;
+    }
+    //todo assert
+    if(vk_bind_set->bind_used[binding] &&
+        info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+    {
+        vkDestroyImageView(context->LogicDevice(),view, nullptr);
+        info ={};
+        data ={};
+    }
+
+    vk_bind_set->bind_used[binding] = (texture != nullptr);
+    data.texture.sampler = sampler;
+    data.texture.view = view;
+    info.binding = binding;
+    info.descriptorCount= 1;
+    info.stageFlags = VK_SHADER_STAGE_ALL ;//todo change to
+    info.descriptorType=VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    info.pImmutableSamplers= nullptr;
 }
+
 void VulkanDriver::bindShader(const render::backend::Shader *shader)
 {
 
@@ -1277,11 +1348,7 @@ SwapChain *VulkanDriver::createSwapChain(void *native_window, uint32_t width, ui
     assert(native_window != nullptr && "native_window nullptr");
     vulkan::SwapChain *swapchain = new vulkan::SwapChain;
 
-    //create surface
-    //  swapchain->surface = vulkan::platform::createSurface(context,native_window);
-    //  if(swapchain->surface ==VK_NULL_HANDLE){
-    //      std::cerr << "create Platform surface failed" <<std::endl;
-    //  }
+    //todo platform::createSurface()
     VK_CHECK(glfwCreateWindowSurface(context->Instance(), (GLFWwindow *) native_window,
                                      nullptr, &swapchain->surface), "Create Surface failed");
 
@@ -1629,6 +1696,38 @@ void VulkanDriver::destroyCommandBuffer(render::backend::CommandBuffer *command_
     command_buffer = nullptr;
 }
 
+void VulkanDriver::clearShader()
+{
 
+}
+void VulkanDriver::clearBindSet()
+{
+
+}
+void VulkanDriver::setShader(ShaderType type, const char *shader)
+{
+
+}
+void VulkanDriver::setBindSet(const render::backend::BindSet *set, uint32_t binding)
+{
+
+}
+BindSet *VulkanDriver::createBindSet()
+{
+    auto result = new render::backend::vulkan::BindSet;
+    memset(result,0, sizeof(vulkan::BindSet));
+
+    return result;
+}
+
+void VulkanDriver::destroyBindSet(render::backend::BindSet *set)
+{
+
+    if (!set){
+        auto vk_bind_set = static_cast<vulkan::BindSet*>(set);
+        delete vk_bind_set;
+        set = nullptr;
+    }
+}
 
 }

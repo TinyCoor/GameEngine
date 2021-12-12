@@ -7,14 +7,16 @@ namespace render::backend::vulkan {
 
 VulkanDescriptorSetLayoutBuilder &
 VulkanDescriptorSetLayoutBuilder::addDescriptorBinding(VkDescriptorType type,
-                                                       VkShaderStageFlags shaderStageFlags
+                                                       VkShaderStageFlags shaderStageFlags,
+                                                       uint32_t binding,
+                                                       int descriptor_count
 ) {
 
   VkDescriptorSetLayoutBinding descriptorSetLayoutBinding{};
-  descriptorSetLayoutBinding.binding = bindings.size();
+  descriptorSetLayoutBinding.binding = binding;
   descriptorSetLayoutBinding.descriptorType = type;
   descriptorSetLayoutBinding.stageFlags = shaderStageFlags;
-  descriptorSetLayoutBinding.descriptorCount = 1;
+  descriptorSetLayoutBinding.descriptorCount = descriptor_count;
   bindings.emplace_back(descriptorSetLayoutBinding);
 
   return *this;

@@ -4,10 +4,8 @@
 #include "../../app/VulkanApplication.h"
 #include "Macro.h"
 #include "VulkanDescriptorSetLayoutBuilder.h"
-#include "VulkanRenderPassBuilder.h"
 #include <functional>
 #include <GLFW/glfw3.h>
-#include <limits>
 #include <cassert>
 
 using namespace render::backend::vulkan;
@@ -145,37 +143,15 @@ void VulkanSwapChain::shutdownFrames() {
 void VulkanSwapChain::initPersistent(VkFormat image_format) {
     assert(native_window);
 
-    depth_format = driver->getOptimalDepthFormat();
-    render::backend::Multisample samples = driver->getMaxSampleCount();
-
-    auto *vk_driver = reinterpret_cast<render::backend::vulkan::VulkanDriver *>(driver);
-    VkFormat vk_depth_format = vk_driver->toFormat(depth_format);
-    VkSampleCountFlagBits vk_samples = vk_driver->toMultisample(samples);
-
     //create descriptor set layout and render pass
     VulkanDescriptorSetLayoutBuilder swapchainDescriptorSetLayoutBuilder;
     descriptorSetLayout = swapchainDescriptorSetLayoutBuilder
-        .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL)
-        .build(context->LogicDevice());
-
-    VulkanRenderPassBuilder renderPassBuilder;
-    render_pass = renderPassBuilder.addColorAttachment(image_format, vk_samples,
-                                                       VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE)
-        .addColorResolveAttachment(image_format,
-                                   VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE)
-        .addDepthStencilAttachment(vk_depth_format, vk_samples, VK_ATTACHMENT_LOAD_OP_CLEAR)
-        .addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
-        .addColorAttachmentReference(0, 0)
-        .addColorResolveAttachmentReference(0, 1)
-        .setDepthStencilAttachmentReference(0, 2)
+        .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL,0)
         .build(context->LogicDevice());
 
 }
 
 void VulkanSwapChain::shutdownPersistent() {
-
-//    vkDestroyRenderPass(context->LogicDevice(), render_pass, nullptr);
-//    render_pass = VK_NULL_HANDLE;
 
     vkDestroyDescriptorSetLayout(context->LogicDevice(), descriptorSetLayout, nullptr);
     descriptorSetLayout = VK_NULL_HANDLE;
@@ -187,7 +163,8 @@ void VulkanSwapChain::initTransient(int width, int height, VkFormat image_format
 
     render::backend::Multisample max_samples = driver->getMaxSampleCount();
     render::backend::Format format = vk_driver->fromFormat(image_format);
-
+    Format depth_format = driver->getOptimalDepthFormat();
+    ///todo fix
     color = driver->createTexture2D(width, height, 1, format, max_samples);
     depth = driver->createTexture2D(width, height, 1, depth_format, max_samples);
 
@@ -213,40 +190,20 @@ uint32_t VulkanSwapChain::getNumImages() const {
 void VulkanSwapChain::beginFrame(void *state, const VulkanRenderFrame &frame) {
     memcpy(frame.uniform_buffer_data, state, static_cast<size_t>(ubo_size));
 
-    vulkan::SwapChain *vk_swap_chain = static_cast<vulkan::SwapChain *>(swap_chain);
-    VkFramebuffer framebuffer = static_cast<vulkan::FrameBuffer *>(frame.frame_buffer)->framebuffer;
-    VkCommandBuffer command_buffer = static_cast<vulkan::CommandBuffer *>(frame.command_buffer)->command_buffer;
-
     driver->reset(frame.command_buffer);
     driver->begin(frame.command_buffer);
-//    std::array<VkClearValue, 3> clear_values = {};
-//    clear_values[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
-//    clear_values[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
-//    clear_values[2].depthStencil = {1.0f, 0};
-//    std::array<RenderPassLoadOp,3> load_ops{RenderPassLoadOp::CLEAR,RenderPassLoadOp::DONT_CARE,RenderPassLoadOp::CLEAR};
-//    std::array<RenderPassStoreOp,3> store_ops{RenderPassStoreOp::DONT_CARE,RenderPassStoreOp::STORE,RenderPassStoreOp::DONT_CARE};
-//    RenderPassInfo info;
-//    info.load_ops = load_ops.data();
-//    info.store_ops = store_ops.data();
-//    info.clear_value = reinterpret_cast<RenderPassClearValue *>(clear_values.data());
-//    driver->beginRenderPass(frame.command_buffer,frame.frame_buffer,&info);
-
-
-    VkRenderPassBeginInfo render_pass_info = {};
-    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_info.renderPass = render_pass;
-    render_pass_info.framebuffer = framebuffer;
-    render_pass_info.renderArea.offset = {0, 0};
-    render_pass_info.renderArea.extent = vk_swap_chain->sizes;
-
-    std::array<VkClearValue, 3> clear_values = {};
+    std::array<RenderPassClearValue, 3> clear_values = {};
     clear_values[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
     clear_values[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
-    clear_values[2].depthStencil = {1.0f, 0};
-    render_pass_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
-    render_pass_info.pClearValues = clear_values.data();
+    clear_values[2].depth_stencil = {1.0f, 0};
+    std::array<RenderPassLoadOp,3> load_ops{RenderPassLoadOp::CLEAR,RenderPassLoadOp::DONT_CARE,RenderPassLoadOp::CLEAR};
+    std::array<RenderPassStoreOp,3> store_ops{RenderPassStoreOp::STORE,RenderPassStoreOp::STORE,RenderPassStoreOp::DONT_CARE};
+    RenderPassInfo info;
+    info.load_ops = load_ops.data();
+    info.store_ops = store_ops.data();
+    info.clear_value = reinterpret_cast<RenderPassClearValue *>(clear_values.data());
+    driver->beginRenderPass(frame.command_buffer,frame.frame_buffer,&info);
 
-    vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void VulkanSwapChain::endFrame(const VulkanRenderFrame &frame) {

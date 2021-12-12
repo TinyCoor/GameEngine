@@ -58,15 +58,6 @@ void ImGuiRender::init(VulkanSwapChain* swapChain)
 void ImGuiRender::render(const VulkanRenderFrame& frame)
 {
     VkCommandBuffer command_buffer =static_cast<vulkan::CommandBuffer*>(frame.command_buffer)->command_buffer;
-    VkFramebuffer frame_buffer = static_cast<vulkan::FrameBuffer *>(frame.frame_buffer)->framebuffer;
-
-    VkRenderPassBeginInfo info = {};
-    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    info.renderPass = renderPass;
-    info.framebuffer = frame_buffer;
-    info.renderArea.offset = {0, 0};
-    info.renderArea.extent = extent;
-
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), command_buffer);
 
 }
