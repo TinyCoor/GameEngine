@@ -4,52 +4,53 @@
 
 #ifndef GAMEENGINE_RENDER_DATA_H
 #define GAMEENGINE_RENDER_DATA_H
-#include "VulkanUtils.h"
-#include "VulkanRenderContext.h"
-#include "VulkanMesh.h"
-#include "VulkanTexture.h"
-#include <vulkan.h>
-#include <vector>
-#include <string>
-
-#include "Macro.h"
-
-class IModelLoader{
-public:
-    virtual VulkanMesh loadModel(const std::string& path) =0;
-};
-
-class VulkanRenderScene{
+#include <volk.h>
+#include "../backend/Vulkan/VulkanResourceManager.h"
+#include "config.h"
+namespace render::backend::vulkan {
+class VulkanRenderScene {
 private:
-    VulkanRenderContext context;
-    VulkanMesh mesh;
-    VulkanTexture texture;
-    VkShaderModule vertShader=VK_NULL_HANDLE;
-    VkShaderModule fragShader=VK_NULL_HANDLE;
-
-    std::vector<VkBuffer> uniformBuffers{};
-    std::vector<VkDeviceMemory> uniformBuffersMemory{};
-
+  VulkanResourceManager resources;
 public:
-   explicit VulkanRenderScene(VulkanRenderContext& ctx)
-   :context(ctx), mesh(ctx), texture(ctx){
-   }
+  VulkanRenderScene(render::backend::Driver *driver)
+  : resources(driver) { }
+  ~VulkanRenderScene();
 
-    void init(const std::string& vertShaderFile,
-              const std::string& fragShaderFile,
-              const std::string& textureFile,
-              const std::string& modelFile);
+  void init();
+  void shutdown();
 
-     inline VkShaderModule getVertexShader() const {return vertShader;}
-     inline VkShaderModule getFragmentShader() const{return fragShader;}
-     inline VulkanTexture getTexture() const {return texture;}
-     inline const VulkanMesh getMesh() const {return mesh;}
-     void shutdown();
+  inline const VulkanResourceManager &getResource() const { return resources; }
 
-private:
-    VkShaderModule createShader(const std::string &path) const;
+  inline VulkanShader* getPBRVertexShader() { return resources.getShader(config::Shaders::PBRVertex); }
+  inline VulkanShader* getPBRFragmentShader() { return resources.getShader(config::Shaders::PBRFrag); }
 
+  inline VulkanShader* getSkyboxVertexShader() { return resources.getShader(config::Shaders::SkyboxVertex); }
+  inline VulkanShader* getSkyboxFragmentShader() { return resources.getShader(config::Shaders::SkyboxFrag); }
+  inline VulkanShader* getCubeToPrefilteredSpecularShader() const { return resources.getShader(config::Shaders::CubeToPrefilteredSpecular); }
+
+  inline VulkanShader* getCubeVertexShader() { return resources.getShader(config::Shaders::CubeVertex); }
+  inline VulkanShader* getHDRToCubeFragmentShader() { return resources.getShader(config::Shaders::hdriToCubeFrag); }
+  inline VulkanShader* getDiffuseToIrridanceShader() { return resources.getShader(config::Shaders::diffuseIrrandianceFrag); }
+
+  inline VulkanShader* getBakedVertexShader() { return resources.getShader(config::Shaders::BakedBRDFVertex); }
+  inline VulkanShader* getBakedFragmentShader() { return resources.getShader(config::Shaders::BakedBRDFFrag); }
+
+  inline VulkanTexture* getEmissionTexture() { return resources.getTexture(config::Textures::emissionTexture); }
+  inline VulkanTexture* getAlbedoTexture() { return resources.getTexture(config::Textures::albedoTexture); }
+  inline VulkanTexture* getHDRTexture(int index) const {
+    return resources.getHDRTexture(config::Textures::EnvironmentBase + index);
+  }
+  inline VulkanTexture* getNormalTexture() { return resources.getTexture(config::Textures::normalTexture); }
+  inline VulkanTexture* getAOTexture() { return resources.getTexture(config::Textures::aoTexture); }
+  inline VulkanTexture* getShadingTexture() { return resources.getTexture(config::Textures::shadingTexture); }
+  inline VulkanMesh* getMesh() { return resources.getMesh(config::Meshes::SciFiHelmet); }
+  inline VulkanMesh* getSkyboxMesh() { return resources.getMesh(config::Meshes::Skybox); }
+
+  inline size_t getNumHDRTextures() const { return config::hdrTextures.size(); }
+  inline const char *getHDRTexturePath(int index) const { return config::hdrTextures[index]; }
+
+  bool reloadShader();
 
 };
-
+}
 #endif //GAMEENGINE_RENDER_DATA_H

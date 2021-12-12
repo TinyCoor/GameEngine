@@ -17,15 +17,15 @@ endif()
 
 
 #Folder Shortcuts
-set(TINYOBJLOADEREXAMPLES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/examples)
+set(TINYOBJLOADEREXAMPLES_DIR examples)
 
 set(tinyobjloader-Source
-  ${CMAKE_CURRENT_SOURCE_DIR}/tiny_obj_loader.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/tiny_obj_loader.cc
+        tiny_obj_loader.h
+        tiny_obj_loader.cc
   )
 
 set(tinyobjloader-Example-Source
-  ${CMAKE_CURRENT_SOURCE_DIR}/loader_example.cc
+        loader_example.cc
   )
 
 set(tinyobjloader-examples-objsticher
@@ -133,12 +133,12 @@ install(EXPORT
   ${TINYOBJLOADER_CMAKE_DIR}
   )
 install(FILES
-  tiny_obj_loader.h
+        tiny_obj_loader.h
   DESTINATION
   ${TINYOBJLOADER_INCLUDE_DIR}
   )
 install(FILES
-  LICENSE
+        LICENSE
   DESTINATION
   ${TINYOBJLOADER_DOC_DIR}
   )
@@ -156,7 +156,7 @@ install(FILES
 
 if(NOT TARGET uninstall)
   configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in
+          cmake_uninstall.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake IMMEDIATE @ONLY)
 
   add_custom_target(

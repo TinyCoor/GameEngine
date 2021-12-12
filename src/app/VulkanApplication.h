@@ -4,95 +4,93 @@
 
 #ifndef GAMEENGINE_VULKANAPPLICATION_H
 #define GAMEENGINE_VULKANAPPLICATION_H
-
+#include "RenderState.h"
+#include <volk.h>
+#include <memory>
+#include <imgui.h>
+#include "../backend/API.h"
+#include "../backend/Vulkan/VulkanSwapChain.h"
+#include "../backend/Vulkan/VulkanImGuiRender.h"
 #include "VulkanRender.h"
-#include <vulkan.h>
-#include <vector>
+#include "../backend/Vulkan/driver.h"
 
 class GLFWwindow;
+using namespace render::backend::vulkan;
 
-struct SwapchainSupportedDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
+
+
+struct CameraState {
+  double phi{0.0f};
+  double theta{0.0f};
+  double radius{2.0f};
+  glm::vec3 target;
 };
 
-struct SwapchainSettings{
-    VkSurfaceFormatKHR format;
-    VkPresentModeKHR presentMode;
-    VkExtent2D extent;
+struct InputState {
+  const double rotationSpeed{0.01};
+  const double scrollSpeed{1.5};
+  bool rotating{false};
+  double lastMouseX{0.0};
+  double lastMouseY{0.0};
 };
 
-class Application{
+class Application {
 public:
-    void run();
-private:
-    bool checkValidationLayers(std::vector<const char*>& layers);
-    bool checkRequiredExtension(std::vector<const char*>& extensions);
-    bool checkPhysicalDevice(VkPhysicalDevice physical_device,VkSurfaceKHR& v_surface);
-    bool checkRequiredPhysicalDeviceExtensions(VkPhysicalDevice device,
-                                               std::vector<const char*>& extensions);
-    QueueFamilyIndices fetchFamilyIndices(VkPhysicalDevice physical_device);
-    SwapchainSupportedDetails fetchSwapchainSupportedDetails(VkPhysicalDevice& physical_device,
-                                                             VkSurfaceKHR& surface);
-    SwapchainSettings selectOptimalSwapchainSettings(SwapchainSupportedDetails& details);
 
-    void initWindow();
-    void initVulkan();
-    void initVulkanExtensions();
-    void shutdownVulkan();
-    void mainLoop();
-    void RenderFrame();
-    void shutdownWindow();
-
-    void initRender();
-    void shutdownRender();
+  Application();
+  ~Application();
+  void run();
 
 private:
-    GLFWwindow* window{nullptr};
-    VulkanRender* render{nullptr};
 
-    VkInstance instance{VK_NULL_HANDLE};
-    VkPhysicalDevice physicalDevice{VK_NULL_HANDLE};
-    VkDevice device{VK_NULL_HANDLE};
-    VkQueue graphicsQueue {VK_NULL_HANDLE};
-    VkQueue presentQueue {VK_NULL_HANDLE};
-    VkSurfaceKHR surface {VK_NULL_HANDLE};
-    VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
-    VkSwapchainKHR  swapchain{VK_NULL_HANDLE};
+  void initWindow();
+  void initVulkan();
+  void shutdownVulkan();
 
-    VkFormat selectOptimalSupportedFormat(
-                                                 const std::vector<VkFormat>& candiates,
-                                                 VkImageTiling tiling,
-                                                 VkFormatFeatureFlags features);
+  void initVulkanSwapChain();
+  void shutdownSwapChain();
 
-    VkFormat selectOptimalDepthFormat();
+  void initScene();
+  void shutdownScene();
 
-    VkDescriptorPool descriptorPool=VK_NULL_HANDLE;
-    VkCommandPool commandPool =VK_NULL_HANDLE;
-    std::vector<VkImage> swapChainImages;
-    std::vector<VkImageView> swapChainImageViews;
+  void initImGui();
+  void shutdownImGui();
 
-    VkImage depthImage;
-    VkFormat depthFormat;
-    VkDeviceMemory depthImageMemory;
-    VkImageView depthImageView;
+  void initRenders();
+  void shutdownRenders();
 
+  void mainLoop();
+  void update();
+  void RenderFrame();
+  void shutdownWindow();
 
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
-    enum {
-        MAX_FRAME_IN_FLIGHT =2,
-    };
-    size_t currentFrame =0;
+  void recreateSwapChain();
 
-    std::vector<VkSemaphore> imageAvailableSemaphores;
-    std::vector<VkSemaphore> renderFinishedSemaphores;
-    std::vector<VkFence> inFlightFences;
-    static std::vector<const char*> requiredPhysicalDeviceExtensions;
-    static std::vector<const char*> requiredValidationLayers;
-    static PFN_vkCreateDebugUtilsMessengerEXT vkCreateDebugMessenger;
-    static PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugMessenger;
+  static void OnFrameBufferResized(GLFWwindow *window, int width, int height);
+  static void onMousePosition(GLFWwindow *window, double mouseX, double mouseY);
+  static void onMouseButton(GLFWwindow *window, int button, int action, int mods);
+  static void onScroll(GLFWwindow *window, double deltaX, double deltaY);
+
+private:
+  GLFWwindow *window{nullptr};
+  bool windowResized = false;
+  Device* context{nullptr};
+  render::backend::Driver* driver{nullptr};
+
+  VulkanRenderScene *scene{nullptr};
+  RenderState state;
+  //TODO remove
+  static inline ImTextureID bakedBRDF{nullptr};
+
+  VulkanRender *render{nullptr};
+  ImGuiRender *imGuiRender{nullptr};
+
+  VulkanSwapChain* swapChain;
+
+  //TODO move to anther
+  CameraState camera;
+  InputState input;
+
 };
 
 

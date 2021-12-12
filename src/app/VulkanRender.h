@@ -5,43 +5,78 @@
 #ifndef GAMEENGINE_VULKANRENDER_H
 #define GAMEENGINE_VULKANRENDER_H
 
-#include "VulkanRenderScene.h"
-#include "VulkanRenderContext.h"
-#include <string>
+#include "../backend/Vulkan/VulkanCubemapRender.h"
+#include "../backend/Vulkan/VulkanTexture2DRender.h"
+#include <volk.h>
 #include <vector>
-#include <stdexcept>
 
-class VulkanRender{
+namespace render::backend::vulkan {
+
+struct RenderState;
+class Device;
+class VulkanSwapChain;
+class VulkanRenderScene;
+class VulkanRenderScene;
+struct VulkanRenderFrame;
+
+class VulkanRender {
 private:
-    VulkanRenderScene data;
-    VulkanRenderContext context;
-    VkRenderPass renderPass =VK_NULL_HANDLE;
-    VkPipelineLayout pipelineLayout=VK_NULL_HANDLE;
-    VkPipeline graphicsPipeLine = VK_NULL_HANDLE;
+  const Device *context{nullptr};
+  render::backend::Driver *driver{nullptr};
+  VkExtent2D extent;
 
-    VkDescriptorSetLayout descriptorSetLayout =VK_NULL_HANDLE;
-    std::vector<VkDescriptorSet> descriptorSets{};
+  //TODO swapchain descriptorSetLayout
+  VkRenderPass renderPass{VK_NULL_HANDLE};
+  VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
+  VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
 
-    std::vector<VkCommandBuffer> commandBuffers{};
-    //VkCommandBuffer commandBuffer;
-    std::vector<VkFramebuffer> frameBuffers{};
+  VulkanCubeMapRender hdriToCubeRenderer;
+  VulkanCubeMapRender diffuseIrradianceRenderer;
+  std::vector<VulkanCubeMapRender *> cubeToPrefilteredRenderers;
+  VulkanTexture2DRender brdfRender;
 
-    std::vector<VkBuffer> uniformBuffers{};
-    std::vector<VkDeviceMemory> uniformBuffersMemory{};
+  VulkanTexture brdfBaked;
+  VulkanTexture environmentCubemap;
+  VulkanTexture diffuseIrradianceCubemap;
+
+  VkPipeline pbrPipeline{VK_NULL_HANDLE};
+  VkPipeline skyboxPipeline{VK_NULL_HANDLE};
+
+  VkDescriptorSetLayout sceneDescriptorSetLayout{VK_NULL_HANDLE};
+  VkDescriptorSet sceneDescriptorSet{VK_NULL_HANDLE};
 
 public:
-    explicit VulkanRender(VulkanRenderContext& ctx,VulkanRenderScene& renderData)
-                    :context(ctx),data(renderData){
-    }
+  explicit VulkanRender(const Device *ctx,
+                        render::backend::Driver *driver,
+                        VkExtent2D extent,
+                        VkDescriptorSetLayout layout,
+                        VkRenderPass renderPass);
+  virtual ~VulkanRender();
 
-    void init(const std::string& vertShaderFile,
-              const std::string& fragShaderFile,
-              const std::string& textureFile,
-              const std::string& model_path);
+  void setextent(int width, int height) {
+    extent.width = width;
+    extent.height = height;
+  }
 
-    VkCommandBuffer render(uint32_t imageIndex);
-    void shutdown();
+  void init(VulkanRenderScene *scene);
+
+  void update(RenderState &state, VulkanRenderScene *scene);
+
+  void render(VulkanRenderScene *scene, const VulkanRenderFrame &frame);
+
+  void shutdown();
+
+  void resize(const VulkanSwapChain* swapChain);
+
+  void reload(VulkanRenderScene *scene);
+
+  void setEnvironment(VulkanTexture* texture);
+
+  VulkanTexture getBakedBRDF() const { return brdfBaked; }
+
+private:
+
 };
-
+}
 
 #endif //GAMEENGINE_VULKANRENDER_H

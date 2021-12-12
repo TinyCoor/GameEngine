@@ -13,3 +13,10 @@
 [submodule "tinyobjloader"]
 	path = extern/tinyobjloader
 	url = https://github.com/tinyobjloader/tinyobjloader.git
+[submodule "extern/volk"]
+	path = extern/volk
+	url = https://github.com/zeux/volk.git
+[submodule "extern/imgui"]
+	path = extern/imgui
+	url = https://github.com/ocornut/imgui.git
+
