@@ -51,6 +51,7 @@ GLShader::GLShader(ShaderKind type) :
 {
     this->type = type;
 }
+
 GLShader::~GLShader()
 {
     if (handle){
@@ -85,7 +86,7 @@ bool GLShader::GetCompileError(const std::string &file)
     return true;
 }
 
-SpirShader::SpirShader(ShaderKind type) : GLObject(glCreateShader(ToGLShaderType(type)), "SPIRV-Shader")
+SpirShader::SpirShader(ShaderKind type) : GLObject(glCreateShader(ToGLShaderType(type)), "SPIRV-Shader"),type(type)
 {
 }
 

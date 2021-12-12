@@ -48,6 +48,7 @@ public:
     bool loadSpirCode(const char *spir_path,const char* entry_point = "main");
 
 private:
+    ShaderKind type;
 
 };
 
