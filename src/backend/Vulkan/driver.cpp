@@ -894,8 +894,9 @@ FrameBuffer *VulkanDriver::createFrameBuffer(uint8_t num_attachments,
 
         result->attachments[result->num_attachments] = view;
         result->attachment_types[result->num_attachments] =attachment.type;
-        result->attachment_format[i] = format;
-        result->attachment_resolve[i] = resolve;
+        result->attachment_format[result->num_attachments] = format;
+        result->attachment_samples[result->num_attachments] =sample;
+        result->attachment_resolve[result->num_attachments] = resolve;
         result->num_attachments++;
     }
 
