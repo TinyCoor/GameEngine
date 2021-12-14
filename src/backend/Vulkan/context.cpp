@@ -26,6 +26,12 @@ void context::clear()
     clearBindSets();
     current_pass= VK_NULL_HANDLE;
     state = {};
+    state.cull_mode= VK_CULL_MODE_BACK_BIT;
+    state.depth_test = 1;
+    state.blending= 1;
+    state.depth_write=1;
+    state.depth_compare_func= VK_COMPARE_OP_LESS_OR_EQUAL;
+
 }
 
 void context::clearBindSets()
