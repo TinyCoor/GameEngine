@@ -61,9 +61,10 @@ void VulkanRender::init(VulkanRenderScene *scene) {
       .build(context->LogicDevice());
 
   VulkanPipelineLayoutBuilder pipelineLayoutBuilder;
-  pipelineLayoutBuilder.addDescriptorSetLayout(descriptorSetLayout);
-  pipelineLayoutBuilder.addDescriptorSetLayout(sceneDescriptorSetLayout);
-  pipelineLayout = pipelineLayoutBuilder.build(context->LogicDevice());
+    pipelineLayout =  pipelineLayoutBuilder
+        .addDescriptorSetLayout(descriptorSetLayout)
+        .addDescriptorSetLayout(sceneDescriptorSetLayout)
+        .build(context->LogicDevice());
 
   VulkanGraphicsPipelineBuilder pbrpipelineBuilder(pipelineLayout, renderPass);
   pbrPipeline = pbrpipelineBuilder.addShaderStage(vertShader->getShaderModule(), VK_SHADER_STAGE_VERTEX_BIT)
@@ -263,7 +264,7 @@ void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &fra
   VkCommandBuffer command_buffer = static_cast<vulkan::CommandBuffer*>(frame.command_buffer)->command_buffer;
   VkDescriptorSet descriptor_set = frame.descriptor_set;
 
-  std::array<VkDescriptorSet, 2> sets = {descriptor_set, sceneDescriptorSet};
+  std::array<VkDescriptorSet, 2> sets = {descriptor_set,sceneDescriptorSet};
 
   VkViewport viewport{};
   viewport.x = 0.0f;

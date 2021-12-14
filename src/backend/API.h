@@ -142,7 +142,7 @@ enum class Format :uint16_t {
     MAX,
 };
 
-enum class ShaderType {
+enum class ShaderType  : uint8_t {
     // Graphics pipeline
     VERTEX = 0,
     TESSELLATION_CONTROL,
@@ -160,12 +160,50 @@ enum class ShaderType {
     CLOSEST_HIT,
     MISS,
     CALLABLE,
+    MAX
 };
 
-enum class CommandBufferType : unsigned char {
+enum class CommandBufferType :uint8_t {
     PRIMARY = 0,
-    SECONDARY
+    SECONDARY,
+    MAX
 };
+
+enum class CullMode : uint8_t {
+    NONE,
+    FRONT,
+    BACK,
+    FRONT_AND_BACK,
+    MAX
+};
+
+enum class DepthCompareFunc :uint8_t {
+    NEVER =0 ,
+    LESS,
+    EQUAL,
+    LESS_OR_EQUAL,
+    LESS_EQUAL,
+    GREATER,
+    NOT_EQUAL,
+    GREATER_OR_EQUAL,
+    ALWAYS,
+    MAX
+};
+
+enum class BlendFactor : uint8_t {
+    ZERO =0,
+    ONE,
+    SRC_COLOR,
+    ONE_MINUS_SRC_COLOR,
+    DEST_COLOR,
+    ONE_MINUS_DEST_COLOR,
+    SRC_ALPHA,
+    ONE_MINUS_SRC_ALPHA,
+    DEST_ALPHA,
+    ONE_MINUS_DEST_ALPHA,
+    MAX
+};
+
 
 struct VertexBuffer {};
 struct IndexBuffer {};
@@ -366,12 +404,23 @@ public:
     ) = 0;
 
 public:
+    //todo using c functions
     ///pipeline state
-    virtual void clearShader() = 0;
-    virtual void clearBindSet() = 0;
-    virtual void setShader(ShaderType type,const char* shader) = 0;
-    virtual void setBindSet(const BindSet* set, uint32_t binding) = 0;
+    virtual void clearShaders() = 0;
+    virtual void clearBindSets() = 0;
+    virtual void setShader(ShaderType type,const Shader* shader) = 0;
+    virtual void setBindSet( uint32_t binding,const BindSet* set) = 0;
+    virtual void pushBindSet(const BindSet* set) = 0;
     virtual BindSet* createBindSet() = 0;
+
+    /// Render State
+    virtual void setCullMode(CullMode cull_mode) = 0;
+    virtual void setDepthTest(bool enable) =0;
+    virtual void setDepthWrite(bool enable) =0 ;
+    virtual void setDepthCompareFunc(DepthCompareFunc depth_compare_func) =0;
+    virtual void setBlending(bool enable) = 0;
+    virtual void setBlendFactor(BlendFactor src_factor,BlendFactor dst_factor) = 0;
+
 
 
     virtual SwapChain *createSwapChain(void *native_window, uint32_t width, uint32_t height) = 0;

@@ -6,6 +6,8 @@
 #define GAMEENGINE_DRIVER_H
 #include "../API.h"
 #include <volk.h>
+
+
 namespace render::backend::vulkan {
 
 struct VertexBuffer : public render::backend::VertexBuffer {
@@ -110,7 +112,6 @@ struct UniformBuffer : public render::backend::UniformBuffer {
 struct Shader : public render::backend::Shader {
     ShaderType type{ShaderType::FRAGMENT};
     VkShaderModule shaderModule{VK_NULL_HANDLE};
-
 };
 
 struct GraphicsProgram : public render::backend::GraphicsProgram {
@@ -160,16 +161,19 @@ class Device;
 class VulkanRenderPassCache;
 class DescriptorSetLayoutCache;
 class DescriptorSetCache;
+class context;
 class VulkanDriver : public render::backend::Driver {
-    Device *context{nullptr};
+    Device *device{nullptr};
+    context* vk_context{nullptr};
     VulkanRenderPassCache* render_pass_cache{nullptr};
     DescriptorSetLayoutCache* descriptor_set_layout_cache{nullptr};
     DescriptorSetCache* descriptor_set_cache{nullptr};
+
 public:
     VulkanDriver(const char *app_name, const char *engine_name);
     ~VulkanDriver();
 
-    Device *GetDevice() const { return context; }
+    Device *GetDevice() const { return device; }
 
     VertexBuffer *createVertexBuffer(
         BufferType type,
@@ -262,11 +266,21 @@ public:
     ) override;
 
     ///pipeline state
-    virtual void clearShader() override;
-    virtual void clearBindSet() override;
-    virtual void setShader(ShaderType type,const char* shader) override;
-    virtual void setBindSet(const render::backend::BindSet* set, uint32_t binding) override;
-    virtual BindSet* createBindSet() override;
+    void clearShaders() override;
+    void clearBindSets() override;
+    void setShader(ShaderType type,const render::backend::Shader* shader) override;
+    void setBindSet( uint32_t binding,const render::backend::BindSet* set) override;
+    void pushBindSet(const render::backend::BindSet* set) override;
+    BindSet* createBindSet() override;
+
+
+    /// todo Render State
+    void setCullMode(CullMode cull_mode) override;
+    void setDepthTest(bool enable) override;
+    void setDepthWrite(bool enable) override ;
+    void setDepthCompareFunc(DepthCompareFunc depth_compare_func) override;
+    void setBlending(bool enable) override;
+    void setBlendFactor(BlendFactor src_factor,BlendFactor dst_factor) override;
 
     void destroyVertexBuffer(render::backend::VertexBuffer *vertex_buffer) override;
     void destroyIndexBuffer(render::backend::IndexBuffer *index_buffer) override;
