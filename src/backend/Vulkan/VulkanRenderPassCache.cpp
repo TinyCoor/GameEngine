@@ -4,18 +4,14 @@
 
 #include "VulkanRenderPassCache.h"
 #include "VulkanRenderPassBuilder.h"
+#include "auxiliary.h"
 namespace render::backend::vulkan {
-template <class T>
-static void hash_combine(uint64_t &s, const T &v)
-{
-    std::hash<T> h;
-    s^= h(v) + 0x9e3779b9 + (s<< 6) + (s>> 2);
-}
 
 VulkanRenderPassCache::~VulkanRenderPassCache()
 {
     clear();
 }
+
 VkRenderPass VulkanRenderPassCache::fetch(const render::backend::vulkan::FrameBuffer *frame_buffer,
                                                                    const render::backend::RenderPassInfo *info)
 {

@@ -61,7 +61,24 @@ void context::setBindSet(uint8_t binding, const BindSet *bind_set)
     assert(bind_set);
     set[binding]= *bind_set;
 }
+void context::setFrameBuffer(const FrameBuffer *frame_buffer)
+{
+    samples = VK_SAMPLE_COUNT_1_BIT;
+    num_color_attachment = 0;
 
+    if (frame_buffer == nullptr)
+        return;
 
+    for (uint8_t index = 0; frame_buffer->num_attachments; ++index) {
+        if (frame_buffer->attachment_types[index] == FrameBufferAttachmentType::COLOR) {
+            continue;
+        }
+        if (frame_buffer->attachment_resolve[index])
+            continue;
+        num_color_attachment++;
+        samples = std::max(samples,frame_buffer->attachment_samples[index]);
+
+    }
+}
 
 }

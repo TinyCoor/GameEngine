@@ -5,13 +5,8 @@
 #include "DescriptorSetCache.h"
 #include "Device.h"
 #include "DescriptorSetLayoutCache.h"
+#include "auxiliary.h"
 namespace render::backend::vulkan {
-template <class T>
-static void hash_combine(uint64_t &s, const T &v)
-{
-    std::hash<T> h;
-    s^= h(v) + 0x9e3779b9 + (s<< 6) + (s>> 2);
-}
 
 uint64_t DescriptorSetCache::getHash(const BindSet *bind_set) const
 {

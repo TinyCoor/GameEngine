@@ -17,8 +17,8 @@ struct VertexBuffer : public render::backend::VertexBuffer {
     uint16_t vertex_size{0};
     uint32_t num_vertices{0};
     uint8_t num_attributes{0};
-    VkVertexInputAttributeDescription attributes[MAX_ATTRIBUTES];
-
+    VkFormat attribute_formats[MAX_ATTRIBUTES];
+    uint32_t attribute_offsets[MAX_ATTRIBUTES];
 };
 
 struct IndexBuffer : public render::backend::IndexBuffer {
@@ -29,7 +29,7 @@ struct IndexBuffer : public render::backend::IndexBuffer {
 };
 
 struct RenderPrimitive : public render::backend::RenderPrimitive {
-    VkPrimitiveTopology type{VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
+    VkPrimitiveTopology topology{VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
     const VertexBuffer *vertexBuffer{nullptr};
     const IndexBuffer *indexBuffer{nullptr};
 };
@@ -162,12 +162,17 @@ class VulkanRenderPassCache;
 class DescriptorSetLayoutCache;
 class DescriptorSetCache;
 class context;
+class PipelineLayoutCache;
+class PipelineCache;
+
 class VulkanDriver : public render::backend::Driver {
     Device *device{nullptr};
     context* vk_context{nullptr};
     VulkanRenderPassCache* render_pass_cache{nullptr};
     DescriptorSetLayoutCache* descriptor_set_layout_cache{nullptr};
     DescriptorSetCache* descriptor_set_cache{nullptr};
+    PipelineLayoutCache* pipeline_layout_cache{nullptr};
+    PipelineCache* pipeline_cache{nullptr};
 
 public:
     VulkanDriver(const char *app_name, const char *engine_name);

@@ -32,11 +32,16 @@ public:
     inline void setDepthTest(bool enabled) {state.depth_test =enabled;}
     inline void setDepthWrite(bool enabled) {state.depth_write=enabled;}
     inline void setBlending(bool enabled) {state.blending = enabled;}
+    void  setFrameBuffer(const FrameBuffer* frame_buffer);
+    VkSampleCountFlagBits getMaxSampleCount() const {return samples;}
 
 
     // getters
-    VkRenderPass getRenderPass() const{return current_pass;}
-    inline VkShaderModule getShader(ShaderType type) { return shaders[static_cast<uint32_t>(type)];}
+    inline uint8_t getNumColorAttachment() const { return num_color_attachment;}
+    inline VkRenderPass getRenderPass() const{return current_pass;}
+    inline uint8_t getNumBindSets() const {return num_sets;}
+    inline const BindSet* getBindSet(uint8_t index) const {return &set[index];}
+    inline VkShaderModule getShader(ShaderType type) const { return shaders[static_cast<uint32_t>(type)];}
     inline VkCullModeFlags getCullMode() const {return state.cull_mode;}
     inline VkBlendFactor getBlendSrcFactor() const { return state.blend_src_factor;}
     inline VkBlendFactor getBlendDstFactor() const { return state.blend_dst_factor;}
@@ -65,7 +70,8 @@ private:
     uint8_t num_sets{0};
 
     VkShaderModule shaders[static_cast<uint32_t>(ShaderType::MAX)];
-
+    uint32_t num_color_attachment{0};
+    VkSampleCountFlagBits samples;
     RenderState state;
     VkRenderPass current_pass{VK_NULL_HANDLE};
 
