@@ -31,7 +31,7 @@ VkRenderPass VulkanRenderPassCache::fetch(const render::backend::vulkan::FrameBu
         VkAttachmentStoreOp store_op = static_cast<VkAttachmentStoreOp>(info->store_ops[i]);
         bool resolve = frame_buffer->attachment_resolve[i];
         if(type == FrameBufferAttachmentType::DEPTH){
-            builder.addDepthStencilAttachment(format,samples);
+            builder.addDepthStencilAttachment(format,samples,load_op, store_op);
             builder.setDepthStencilAttachmentReference(0,i);
         } else if( resolve){
             builder.addColorResolveAttachment(format,load_op,store_op);

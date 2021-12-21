@@ -58,7 +58,6 @@ add_executable(niagara
         backend/Vulkan/platform.cpp
         backend/Vulkan/platform.h
         backend/core/typedef.h
-        backend/Vulkan/converter.h
         backend/Vulkan/VulkanRenderPassCache.cpp
         backend/Vulkan/VulkanRenderPassCache.h
         backend/core/utils.h

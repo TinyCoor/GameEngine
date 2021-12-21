@@ -13,12 +13,11 @@ uint64_t DescriptorSetLayoutCache::getHash(const BindSet *bind_set) const
     uint64_t hash  =0;
 
     for (int i =0 ;i <BindSet::MAX_BINDINGS; ++i ) {
-        if(!bind_set->bind_used[i]){
+        if(!bind_set->binding_used[i]){
             continue;
         }
         auto& info = bind_set->bindings[i];
         hash_combine(hash,info.binding);
-        hash_combine(hash,info.descriptorCount);
         hash_combine(hash,info.stageFlags);
     }
     return hash;
@@ -47,7 +46,9 @@ VkDescriptorSetLayout DescriptorSetLayoutCache::fetch(const BindSet *bind_set)
 
     for (int i = 0; i <render::backend::vulkan::BindSet::MAX_BINDINGS ; ++i) {
         auto& info  = bind_set->bindings[i];
-        if(!bind_set->bind_used[i]){continue;}
+        if(!bind_set->binding_used[i]){
+            continue;
+        }
         builder.addDescriptorBinding(info.descriptorType,info.stageFlags,info.binding);
     }
     auto res  = builder.build(device->LogicDevice());

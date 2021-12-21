@@ -16,8 +16,8 @@ public:
     ~context();
     void clearBindSets();
     void clearShaders();
-    void pushBindSet(const BindSet* bind_set);
-    void setBindSet(uint8_t binding,const BindSet* set);
+    void pushBindSet(BindSet* bind_set);
+    void setBindSet(uint8_t binding,BindSet* set);
 
     // setter
     inline void setRenderPass(VkRenderPass render_pass) {current_pass = render_pass;}
@@ -37,10 +37,13 @@ public:
 
 
     // getters
+    inline VkViewport getViewport() const {return  viewport;}
+    inline VkRect2D getScissor() const {return scissor;}
     inline uint8_t getNumColorAttachment() const { return num_color_attachment;}
     inline VkRenderPass getRenderPass() const{return current_pass;}
     inline uint8_t getNumBindSets() const {return num_sets;}
-    inline const BindSet* getBindSet(uint8_t index) const {return &set[index];}
+    inline BindSet* getBindSet(uint8_t index)   {return set[index];}
+    inline const BindSet* getBindSet(uint8_t index) const  {return set[index];}
     inline VkShaderModule getShader(ShaderType type) const { return shaders[static_cast<uint32_t>(type)];}
     inline VkCullModeFlags getCullMode() const {return state.cull_mode;}
     inline VkBlendFactor getBlendSrcFactor() const { return state.blend_src_factor;}
@@ -66,8 +69,11 @@ private:
     enum {
         MAX_SET =16
     };
-    BindSet set[MAX_SET];
+    BindSet* set[MAX_SET];
     uint8_t num_sets{0};
+
+    VkViewport viewport;
+    VkRect2D scissor;
 
     VkShaderModule shaders[static_cast<uint32_t>(ShaderType::MAX)];
     uint32_t num_color_attachment{0};

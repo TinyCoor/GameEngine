@@ -17,9 +17,8 @@ class VulkanShader;
 
 class VulkanTexture2DRender {
 public:
-  VulkanTexture2DRender(const Device *ctx,render::backend::Driver *driver)
-  : context(ctx), driver(driver), quad(driver)
-  { }
+
+  VulkanTexture2DRender(render::backend::Driver *driver);
 
   void init(VulkanShader &vertex_shader,
             VulkanShader &fragment_shader,

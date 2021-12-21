@@ -12,30 +12,32 @@
 #include <string>
 namespace render::backend::vulkan {
 enum class ShaderKind {
-  vertex = 0,
-  fragment,
-  compute,
-  geometry,
-  tessellation_control,
-  tessellation_evaluation,
+    vertex = 0,
+    fragment,
+    compute,
+    geometry,
+    tessellation_control,
+    tessellation_evaluation,
 };
 
 class VulkanShader {
 public:
-  explicit VulkanShader(render::backend::Driver *driver) : driver(driver) {}
-  ~VulkanShader();
+    explicit VulkanShader(render::backend::Driver *driver) : driver(driver)
+    {}
+    ~VulkanShader();
 
-  bool compileFromFile(const char *path, render::backend::ShaderType type);
-  bool reload();
-  void clear();
-  const VkShaderModule getShaderModule() const;
+    bool compileFromFile(const char *path, render::backend::ShaderType type);
+    bool reload();
+    void clear();
+    render::backend::Shader *getShader() const { return shader; }
+    VkShaderModule getShaderModule() const;
 
 private:
-  render::backend::Driver *driver {nullptr};
-  render::backend::Shader *shader {nullptr};
-  render::backend::ShaderType type {render::backend::ShaderType::FRAGMENT};
+    render::backend::Driver *driver{nullptr};
+    render::backend::Shader *shader{nullptr};
+    render::backend::ShaderType type{render::backend::ShaderType::FRAGMENT};
 
-  std::string path;
+    std::string path;
 };
 
 }

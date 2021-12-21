@@ -30,8 +30,8 @@ struct IndexBuffer : public render::backend::IndexBuffer {
 
 struct RenderPrimitive : public render::backend::RenderPrimitive {
     VkPrimitiveTopology topology{VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
-    const VertexBuffer *vertexBuffer{nullptr};
-    const IndexBuffer *indexBuffer{nullptr};
+    const VertexBuffer *vertex_buffer{nullptr};
+    const IndexBuffer *index_buffer{nullptr};
 };
 
 struct BindSet: public render::backend::BindSet
@@ -47,13 +47,17 @@ struct BindSet: public render::backend::BindSet
             VkImageView view;
             VkSampler sampler;
         } texture;
-        VkBuffer ubo;
+        struct UBO{
+            VkBuffer buffer;
+            uint32_t offset;
+            uint32_t size;
+        }ubo;
     };
 
     VkDescriptorSetLayoutBinding bindings[MAX_BINDINGS];
-    BindData bind_data[MAX_BINDINGS];
-    bool bind_used[MAX_BINDINGS];
-
+    BindData binding_data[MAX_BINDINGS];
+    bool binding_used[MAX_BINDINGS];
+    bool binding_dirty[MAX_BINDINGS];
 };
 
 struct Texture : public render::backend::Texture {
@@ -274,8 +278,8 @@ public:
     void clearShaders() override;
     void clearBindSets() override;
     void setShader(ShaderType type,const render::backend::Shader* shader) override;
-    void setBindSet( uint32_t binding,const render::backend::BindSet* set) override;
-    void pushBindSet(const render::backend::BindSet* set) override;
+    void setBindSet( uint32_t binding,render::backend::BindSet* set) override;
+    void pushBindSet(render::backend::BindSet* set) override;
     BindSet* createBindSet() override;
 
 
@@ -324,14 +328,14 @@ public:
                               uint32_t num_wait_command_buffers,
                               const render::backend::CommandBuffer* wait_command_buffers) override;
 public:
-    bool reset(
+    bool resetCommandBuffer(
         render::backend::CommandBuffer* command_buffer
     ) override;
 
-    bool begin(
+    bool beginCommandBuffer(
         render::backend::CommandBuffer* command_buffer) override;
 
-     bool end(
+     bool endCommandBuffer(
          render::backend::CommandBuffer* command_buffer
     ) override;
 
@@ -353,6 +357,11 @@ public:
         const render::backend::UniformBuffer *uniform_buffer
     ) override;
 
+    virtual void bindTexture(
+        render::backend::BindSet* set,
+        uint32_t unit,
+        const render::backend::Texture *texture) override;
+
     void bindTexture(
         render::backend::BindSet* set,
         uint32_t unit,
@@ -361,10 +370,6 @@ public:
         int num_mip,
         int base_layer,
         int num_layer
-    ) override;
-
-    void bindShader(
-        const render::backend::Shader *shader
     ) override;
 
     // draw

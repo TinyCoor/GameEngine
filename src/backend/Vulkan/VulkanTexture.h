@@ -12,7 +12,7 @@ public:
   VulkanTexture(render::backend::Driver *driver):driver(driver) { }
   ~VulkanTexture();
 
-  inline const render::backend::Texture *getBackend() const { return texture; }
+  inline const render::backend::Texture *getTexture() const { return texture; }
   void create2D(render::backend::Format format, int width, int height, int num_mips);
   void createCube(render::backend::Format format, int width, int height, int num_mips);
 

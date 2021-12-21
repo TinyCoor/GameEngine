@@ -13,21 +13,22 @@ uint64_t DescriptorSetCache::getHash(const BindSet *bind_set) const
     uint64_t hash  =0;
 
     for (int i =0 ;i <BindSet::MAX_BINDINGS; ++i ) {
-        if(!bind_set->bind_used[i]){
+        if(!bind_set->binding_used[i]){
             continue;
         }
         auto& info = bind_set->bindings[i];
-        auto& data = bind_set->bind_data[i];
+        auto& data = bind_set->binding_data[i];
 
         hash_combine(hash,info.descriptorType);
         hash_combine(hash,info.binding);
-        hash_combine(hash,info.descriptorCount);
         hash_combine(hash,info.stageFlags);
         if(info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER){
             hash_combine(hash,data.texture.view);
             hash_combine(hash,data.texture.sampler);
-        } else{
-            hash_combine(hash,data.ubo);
+        } else {
+            hash_combine(hash,data.ubo.buffer);
+            hash_combine(hash,data.ubo.offset);
+            hash_combine(hash,data.ubo.size);
         }
     }
     return hash;

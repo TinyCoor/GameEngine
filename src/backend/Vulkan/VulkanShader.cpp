@@ -44,10 +44,11 @@ bool VulkanShader::reload() {
   return compileFromFile(path.c_str(), type);
 }
 
-const VkShaderModule VulkanShader::getShaderModule() const {
-  if (shader == nullptr)
-    return VK_NULL_HANDLE;
-
-  return static_cast<render::backend::vulkan::Shader *>(shader)->shaderModule;
+VkShaderModule VulkanShader::getShaderModule() const
+{
+    if (shader == nullptr)
+        return VK_NULL_HANDLE;
+    return static_cast<vulkan::Shader*>(shader)->shaderModule;
 }
+
 }

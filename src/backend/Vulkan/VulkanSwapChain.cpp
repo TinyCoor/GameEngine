@@ -1,12 +1,7 @@
 
 #include "VulkanSwapChain.h"
-#include "VulkanUtils.h"
-#include "../../app/VulkanApplication.h"
-#include "Macro.h"
-#include "VulkanDescriptorSetLayoutBuilder.h"
 #include <functional>
-#include <GLFW/glfw3.h>
-#include <cassert>
+#include <cstring>
 
 using namespace render::backend::vulkan;
 
@@ -14,8 +9,6 @@ VulkanSwapChain::VulkanSwapChain(render::backend::Driver *driver, void *nativeWi
     : driver(driver),
       native_window(nativeWindow),
       ubo_size(uboSize) {
-    context = static_cast<render::backend::vulkan::VulkanDriver *>(driver)->GetDevice();
-
 }
 
 VulkanSwapChain::~VulkanSwapChain() {
@@ -24,11 +17,9 @@ VulkanSwapChain::~VulkanSwapChain() {
 void VulkanSwapChain::init(int width, int height) {
     swap_chain = driver->createSwapChain(native_window, width, height);
     auto vk_swap_chain = reinterpret_cast<vulkan::SwapChain *>(swap_chain);
-    initPersistent(vk_swap_chain->surface_format.format);
     initTransient(width, height, vk_swap_chain->surface_format.format);
     initFrames(ubo_size, vk_swap_chain->sizes.width, vk_swap_chain->sizes.height,
                vk_swap_chain->num_images);
-
 }
 
 void VulkanSwapChain::reinit(int width, int height) {
@@ -49,7 +40,6 @@ void VulkanSwapChain::reinit(int width, int height) {
 void VulkanSwapChain::shutdown() {
     shutdownTransient();
     shutdownFrames();
-    shutdownPersistent();
 }
 
 bool VulkanSwapChain::Acquire(void *state, VulkanRenderFrame &frame) {
@@ -77,28 +67,9 @@ void VulkanSwapChain::initFrames(VkDeviceSize uboSize, uint32_t width, uint32_t 
         frame.uniform_buffer = driver->createUniformBuffer(BufferType::DYNAMIC, static_cast<uint32_t>(uboSize));
         frame.uniform_buffer_data = driver->map(frame.uniform_buffer);
 
-        //Create descriptor Set
-        VkDescriptorSetAllocateInfo swapchainDescriptorSetAllocInfo = {};
-        swapchainDescriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        swapchainDescriptorSetAllocInfo.descriptorPool = context->DescriptorPool();
-        swapchainDescriptorSetAllocInfo.descriptorSetCount = 1;
-        swapchainDescriptorSetAllocInfo.pSetLayouts = &descriptorSetLayout;
+        frame.bind_set = driver->createBindSet();
 
-        VK_CHECK(vkAllocateDescriptorSets(context->LogicDevice(),
-                                          &swapchainDescriptorSetAllocInfo,
-                                          &frame.descriptor_set),
-                 "Can't allocate swap chain descriptor sets");
-        VkBuffer ubo = static_cast<vulkan::UniformBuffer *>(frame.uniform_buffer)->buffer;
-
-        VulkanUtils::bindUniformBuffer(
-            context->LogicDevice(),
-            frame.descriptor_set,
-            0,
-            ubo,
-            0,
-            sizeof(RenderState)
-        );
-
+        driver->bindUniformBuffer(frame.bind_set,0,frame.uniform_buffer);
 
         //create Frame buffer
         FrameBufferAttachment attachments[3] = {{}, {}, {}};
@@ -130,31 +101,13 @@ void VulkanSwapChain::initFrames(VkDeviceSize uboSize, uint32_t width, uint32_t 
 void VulkanSwapChain::shutdownFrames() {
 
     for (VulkanRenderFrame &frame: frames) {
-        vkFreeDescriptorSets(context->LogicDevice(), context->DescriptorPool(), 1, &frame.descriptor_set);
+        driver->destroyBindSet(frame.bind_set);
         driver->unmap(frame.uniform_buffer);
         driver->destroyUniformBuffer(frame.uniform_buffer);
         driver->destroyFrameBuffer(frame.frame_buffer);
         driver->destroyCommandBuffer(frame.command_buffer);
     }
     frames.clear();
-
-}
-
-void VulkanSwapChain::initPersistent(VkFormat image_format) {
-    assert(native_window);
-
-    //create descriptor set layout and render pass
-    VulkanDescriptorSetLayoutBuilder swapchainDescriptorSetLayoutBuilder;
-    descriptorSetLayout = swapchainDescriptorSetLayoutBuilder
-        .addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL,0)
-        .build(context->LogicDevice());
-
-}
-
-void VulkanSwapChain::shutdownPersistent() {
-
-    vkDestroyDescriptorSetLayout(context->LogicDevice(), descriptorSetLayout, nullptr);
-    descriptorSetLayout = VK_NULL_HANDLE;
 
 }
 
@@ -190,10 +143,10 @@ uint32_t VulkanSwapChain::getNumImages() const {
 void VulkanSwapChain::beginFrame(void *state, const VulkanRenderFrame &frame) {
     memcpy(frame.uniform_buffer_data, state, static_cast<size_t>(ubo_size));
 
-    driver->reset(frame.command_buffer);
-    driver->begin(frame.command_buffer);
+    driver->resetCommandBuffer(frame.command_buffer);
+    driver->beginCommandBuffer(frame.command_buffer);
     std::array<RenderPassClearValue, 3> clear_values = {};
-    clear_values[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[0].color = {0.2f, 0.2f, 0.2f, 1.0f};
     clear_values[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
     clear_values[2].depth_stencil = {1.0f, 0};
     std::array<RenderPassLoadOp,3> load_ops{RenderPassLoadOp::CLEAR,RenderPassLoadOp::DONT_CARE,RenderPassLoadOp::CLEAR};
@@ -204,11 +157,14 @@ void VulkanSwapChain::beginFrame(void *state, const VulkanRenderFrame &frame) {
     info.clear_value = reinterpret_cast<RenderPassClearValue *>(clear_values.data());
     driver->beginRenderPass(frame.command_buffer,frame.frame_buffer,&info);
 
+    driver->clearBindSets();
+    driver->clearShaders();
+    driver->pushBindSet(frame.bind_set);
 }
 
 void VulkanSwapChain::endFrame(const VulkanRenderFrame &frame) {
     driver->endRenderPass(frame.command_buffer);
-    driver->end(frame.command_buffer);
+    driver->endCommandBuffer(frame.command_buffer);
     driver->submitSynced(frame.command_buffer,swap_chain);
 }
 VkRenderPass VulkanSwapChain::getDummyRenderPass() const

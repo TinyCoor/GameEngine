@@ -25,12 +25,14 @@ PipelineLayoutCache::~PipelineLayoutCache()
 {
     clear();
 }
+
 VkPipelineLayout PipelineLayoutCache::fetch(const context* ctx)
 {
     std::vector<VkDescriptorSetLayout> layouts(ctx->getNumBindSets());
     uint8_t index =0;
     for (auto& layout :layouts) {
         layout = descriptor_set_layout_cache->fetch(ctx->getBindSet(index));
+        index++;
     }
     uint64_t hash = getHash(layouts.size(),layouts.data());
     auto it = cache.find(hash);
@@ -42,7 +44,6 @@ VkPipelineLayout PipelineLayoutCache::fetch(const context* ctx)
     for (auto& layout :layouts) {
         builder.addDescriptorSetLayout(layout);
     }
-
     /// TODO push constant
     auto res =  builder.build(device->LogicDevice());
     cache[hash]= res;

@@ -11,8 +11,6 @@
 #include "VulkanTexture.h"
 #include <memory>
 namespace render::backend::vulkan {
-
-
 class VulkanCubeMapRender {
 private:
   const Device *context{nullptr};
@@ -36,11 +34,7 @@ private:
   uint32_t push_constants_size {0};
 
 public:
-  VulkanCubeMapRender(const Device *context, render::backend::Driver *driver)
-      : context(context)
-      , driver(driver)
-      , quad(driver)
-  { }
+  VulkanCubeMapRender(render::backend::Driver *driver);
 
   void init(VulkanShader& vertShader,
             VulkanShader& fragShader,

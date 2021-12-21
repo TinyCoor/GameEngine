@@ -215,8 +215,8 @@ RenderPrimitive *VulkanDriver::createRenderPrimitive(RenderPrimitiveType type,
     const vulkan::IndexBuffer *i_buffer = static_cast<const vulkan::IndexBuffer *>(index_buffer);
 
     vulkan::RenderPrimitive *primitive = new vulkan::RenderPrimitive;
-    primitive->vertexBuffer = v_buffer;
-    primitive->indexBuffer = i_buffer;
+    primitive->vertex_buffer = v_buffer;
+    primitive->index_buffer = i_buffer;
     primitive->topology = toPrimitiveTopology(type);
     return primitive;
 }
@@ -600,8 +600,8 @@ void VulkanDriver::destroyRenderPrimitive(render::backend::RenderPrimitive *rend
 
     vulkan::RenderPrimitive *vk_render_primitive = static_cast<vulkan::RenderPrimitive *>(render_primitive);
 
-    vk_render_primitive->vertexBuffer = nullptr;
-    vk_render_primitive->indexBuffer = nullptr;
+    vk_render_primitive->vertex_buffer = nullptr;
+    vk_render_primitive->index_buffer = nullptr;
 
     delete render_primitive;
     render_primitive = nullptr;
@@ -674,7 +674,7 @@ void VulkanDriver::destroyShader(render::backend::Shader *shader)
     shader = nullptr;
 }
 
-bool VulkanDriver::reset(render::backend::CommandBuffer *command_buffer)
+bool VulkanDriver::resetCommandBuffer(render::backend::CommandBuffer *command_buffer)
 {
 
     if (command_buffer == nullptr) {
@@ -688,7 +688,7 @@ bool VulkanDriver::reset(render::backend::CommandBuffer *command_buffer)
     return true;
 }
 
-bool VulkanDriver::begin(render::backend::CommandBuffer *command_buffer)
+bool VulkanDriver::beginCommandBuffer(render::backend::CommandBuffer *command_buffer)
 {
     if (command_buffer == nullptr) {
         return false;
@@ -704,7 +704,7 @@ bool VulkanDriver::begin(render::backend::CommandBuffer *command_buffer)
     return true;
 }
 
-bool VulkanDriver::end(render::backend::CommandBuffer *command_buffer)
+bool VulkanDriver::endCommandBuffer(render::backend::CommandBuffer *command_buffer)
 {
     if (command_buffer == nullptr) {
         return false;
@@ -766,16 +766,19 @@ void VulkanDriver::bindUniformBuffer(render::backend::BindSet* bind_set,
     }
     auto vk_bind_set = static_cast<vulkan::BindSet*>(bind_set);
     auto vk_ubo =static_cast<const vulkan::UniformBuffer*>(uniform_buffer);
+    vk_bind_set->binding_used[binding] = (uniform_buffer != nullptr);
+    vk_bind_set->binding_dirty[binding] = true;
 
-    auto& data = vk_bind_set->bind_data[binding];
+    auto& data = vk_bind_set->binding_data[binding];
     auto& info = vk_bind_set->bindings[binding];
-    VkBuffer ubo =VK_NULL_HANDLE;
-    if(vk_ubo){
-        ubo = vk_ubo->buffer;
+    if(vk_ubo == nullptr){
+        return;
     }
 
-    vk_bind_set->bind_used[binding] = (uniform_buffer != nullptr);
-    data.ubo = ubo;
+    data.ubo.buffer = vk_ubo->buffer;;
+    data.ubo.size = vk_ubo->size;
+    data.ubo.offset  = 0;
+
     info.binding = binding;
     info.descriptorCount= 1;
     info.stageFlags =VK_SHADER_STAGE_ALL ;//todo change to
@@ -783,6 +786,23 @@ void VulkanDriver::bindUniformBuffer(render::backend::BindSet* bind_set,
     info.pImmutableSamplers= nullptr;
 
 }
+
+void VulkanDriver::bindTexture(render::backend::BindSet* bind_set,
+                               uint32_t binding,
+                               const render::backend::Texture *texture)
+{
+    assert(binding < vulkan::BindSet::MAX_BINDINGS);
+
+    if (bind_set == nullptr)
+        return;
+
+    vulkan::BindSet *vk_bind_set = static_cast<vulkan::BindSet *>(bind_set);
+    const vulkan::Texture *vk_texture = static_cast<const vulkan::Texture *>(texture);
+
+    bindTexture(bind_set, binding, texture, 0, vk_texture->num_mipmaps, 0, vk_texture->num_layers);
+
+}
+
 void VulkanDriver::bindTexture(render::backend::BindSet* bind_set,
                                uint32_t binding,
                                const render::backend::Texture *texture,
@@ -800,13 +820,21 @@ void VulkanDriver::bindTexture(render::backend::BindSet* bind_set,
     auto vk_bind_set = static_cast<vulkan::BindSet*>(bind_set);
     auto vk_texture = static_cast<const vulkan::Texture*>(texture);
 
-    auto& data = vk_bind_set->bind_data[binding];
+    auto& data = vk_bind_set->binding_data[binding];
     auto& info = vk_bind_set->bindings[binding];
+
+    if(vk_bind_set->binding_used[binding] &&
+        info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+    {
+        vkDestroyImageView(device->LogicDevice(),data.texture.view, nullptr);
+        info ={};
+        data ={};
+    }
 
     VkImageView view{VK_NULL_HANDLE};
     VkSampler sampler{VK_NULL_HANDLE};
     if (vk_texture) {
-        VulkanUtils::createImageView(device->LogicDevice(),
+      view =  VulkanUtils::createImageView(device->LogicDevice(),
                                      vk_texture->image,
                                      vk_texture->format,
                                      toImageAspectFlags(vk_texture->format),
@@ -815,17 +843,10 @@ void VulkanDriver::bindTexture(render::backend::BindSet* bind_set,
                                      base_layer,num_layer);
         sampler = vk_texture->sampler;
     }
-    //todo assert
-    if(vk_bind_set->bind_used[binding] &&
-        info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-    {
-        vkDestroyImageView(device->LogicDevice(),view, nullptr);
-        info ={};
-        data ={};
-    }
 
-    vk_bind_set->bind_used[binding] = (texture != nullptr);
+    vk_bind_set->binding_used[binding] = (texture != nullptr);
     data.texture.sampler = sampler;
+    vk_bind_set->binding_dirty[binding] = true;
     data.texture.view = view;
     info.binding = binding;
     info.descriptorCount= 1;
@@ -834,10 +855,7 @@ void VulkanDriver::bindTexture(render::backend::BindSet* bind_set,
     info.pImmutableSamplers= nullptr;
 }
 
-void VulkanDriver::bindShader(const render::backend::Shader *shader)
-{
 
-}
 void VulkanDriver::drawIndexedPrimitive(
     render::backend::CommandBuffer *command_buffer,
     const render::backend::RenderPrimitive *render_primitive)
@@ -845,29 +863,94 @@ void VulkanDriver::drawIndexedPrimitive(
     if (command_buffer == nullptr) {
         return;
     }
+    auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer);
+    auto vk_render_primitive = static_cast<const vulkan::RenderPrimitive*>(render_primitive);
 
     std::vector<VkDescriptorSet> sets(vk_context->getNumBindSets());
-    for (int i = 0; i < sets.size(); ++i) {
-        sets[i] = descriptor_set_cache->fetch(vk_context->getBindSet(i));
+    std::vector<VkWriteDescriptorSet> writes;
+    std::vector<VkDescriptorImageInfo> image_infos;
+    std::vector<VkDescriptorBufferInfo> buffer_infos;
 
+    writes.reserve(vulkan::BindSet::MAX_BINDINGS * vk_context->getNumBindSets());
+    image_infos.reserve(vulkan::BindSet::MAX_BINDINGS * vk_context->getNumBindSets());
+    buffer_infos.reserve(vulkan::BindSet::MAX_BINDINGS * vk_context->getNumBindSets());
+
+    for (uint8_t i = 0; i < vk_context->getNumBindSets(); ++i)
+    {
+        auto *bind_set = vk_context->getBindSet(i);
+        sets[i] = descriptor_set_cache->fetch(bind_set);
+
+        for (uint8_t j = 0; j < vulkan::BindSet::MAX_BINDINGS; ++j)
+        {
+            if (!bind_set->binding_used[j])
+                continue;
+
+            if (!bind_set->binding_dirty[j])
+                continue;
+
+            VkDescriptorType descriptor_type = bind_set->bindings[j].descriptorType;
+            auto &data = bind_set->binding_data[j];
+
+            VkWriteDescriptorSet write_set = {};
+            write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write_set.dstSet = sets[i];
+            write_set.dstBinding = j;
+            write_set.dstArrayElement = 0;
+
+            if (descriptor_type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+            {
+                VkDescriptorImageInfo info = {};
+                info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                info.imageView = data.texture.view;
+                info.sampler = data.texture.sampler;
+
+                image_infos.push_back(info);
+                write_set.pImageInfo = &image_infos[image_infos.size() - 1];
+            }
+            else if (descriptor_type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+            {
+                VkDescriptorBufferInfo info = {};
+                info.buffer = data.ubo.buffer;
+                info.offset = data.ubo.offset;
+                info.range = data.ubo.size;
+
+                buffer_infos.push_back(info);
+                write_set.pBufferInfo = &buffer_infos[buffer_infos.size() - 1];
+            }
+            else
+                continue;
+
+            write_set.descriptorType = descriptor_type;
+            write_set.descriptorCount = 1;
+
+            writes.push_back(write_set);
+
+            bind_set->binding_dirty[j] = false;
+        }
     }
 
-    auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer);
-    auto vk_render_primitive = static_cast<const vulkan::RenderPrimitive*>( render_primitive);
-   auto  pipelineLayout = pipeline_layout_cache->fetch(vk_context);
+    if (writes.size() > 0)
+        vkUpdateDescriptorSets(device->LogicDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
-    vkCmdBindDescriptorSets(vk_command_buffer->command_buffer,VK_PIPELINE_BIND_POINT_GRAPHICS,pipelineLayout,
-                            0,sets.size(),sets.data(),0,nullptr);
-    ////
-    /// pipeline_layout_cache->fetch();
-    auto pipeline = pipeline_cache->fetch(vk_context,vk_render_primitive);
+    VkPipelineLayout pipeline_layout = pipeline_layout_cache->fetch(vk_context);
+    VkPipeline pipeline = pipeline_cache->fetch(vk_context, vk_render_primitive);
+
     vkCmdBindPipeline(vk_command_buffer->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vkCmdBindDescriptorSets(vk_command_buffer->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
 
-    VkBuffer vertexBuffers[] = {vk_render_primitive->vertexBuffer->buffer};
-    VkDeviceSize offsets[] = {0};
-    vkCmdBindVertexBuffers(vk_command_buffer->command_buffer, 0, 1, vertexBuffers, offsets);
-    vkCmdBindIndexBuffer(vk_command_buffer->command_buffer, vk_render_primitive->indexBuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdDrawIndexed(vk_command_buffer->command_buffer, vk_render_primitive->indexBuffer->num_indices, 1, 0, 0, 0);
+    VkViewport viewport = vk_context->getViewport();
+    VkRect2D scissor = vk_context->getScissor();
+
+    vkCmdSetViewport(vk_command_buffer->command_buffer, 0, 1, &viewport);
+    vkCmdSetScissor(vk_command_buffer->command_buffer, 0, 1, &scissor);
+
+    VkBuffer vertex_buffers[] = { vk_render_primitive->vertex_buffer->buffer };
+    VkDeviceSize offsets[] = { 0 };
+
+    vkCmdBindVertexBuffers(vk_command_buffer->command_buffer, 0, 1, vertex_buffers, offsets);
+    vkCmdBindIndexBuffer(vk_command_buffer->command_buffer, vk_render_primitive->index_buffer->buffer, 0, VK_INDEX_TYPE_UINT32);
+
+    vkCmdDrawIndexed(vk_command_buffer->command_buffer, vk_render_primitive->index_buffer->num_indices, 1, 0, 0, 0);
 
 }
 void VulkanDriver::drawIndexedPrimitiveInstanced(render::backend::CommandBuffer *command_buffer,
@@ -1060,7 +1143,6 @@ bool VulkanDriver::submitSynced(render::backend::CommandBuffer* command_buffer,
         != VK_SUCCESS)
         return false;
     return true;
-    return false;
 }
 
 bool VulkanDriver::present(render::backend::SwapChain *swap_chain,
@@ -1255,15 +1337,15 @@ void VulkanDriver::setShader(ShaderType type, const render::backend::Shader*shad
     vk_context->setShader(type,vk_shader);
 }
 
-void VulkanDriver::pushBindSet(const render::backend::BindSet* set)
+void VulkanDriver::pushBindSet(render::backend::BindSet* set)
 {
-    auto vk_bind_set = static_cast<const vulkan::BindSet*>(set);
+    auto vk_bind_set = static_cast<vulkan::BindSet*>(set);
     vk_context->pushBindSet(vk_bind_set);
 }
 
-void VulkanDriver::setBindSet( uint32_t binding,const render::backend::BindSet *set)
+void VulkanDriver::setBindSet( uint32_t binding,render::backend::BindSet *set)
 {
-    auto vk_bind_set = static_cast<const vulkan::BindSet*>(set);
+    auto vk_bind_set = static_cast<vulkan::BindSet*>(set);
     vk_context->setBindSet(binding,vk_bind_set);
 }
 
@@ -1279,7 +1361,7 @@ void VulkanDriver::destroyBindSet(render::backend::BindSet *set)
     if (!set){
         auto vk_bind_set = static_cast<vulkan::BindSet*>(set);
         for (int i = 0; i < render::backend::vulkan::BindSet::MAX_BINDINGS; ++i) {
-            if(!vk_bind_set->bind_used[i]){
+            if(!vk_bind_set->binding_used[i]){
                 continue;
             }
 
@@ -1287,7 +1369,7 @@ void VulkanDriver::destroyBindSet(render::backend::BindSet *set)
             if(info.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER){
                 continue;
             }
-            auto& data = vk_bind_set->bind_data[i];
+            auto& data = vk_bind_set->binding_data[i];
             vkDestroyImageView(device->LogicDevice(),data.texture.view, nullptr);
         }
 
@@ -1296,7 +1378,6 @@ void VulkanDriver::destroyBindSet(render::backend::BindSet *set)
 
     }
 }
-
 
 /// render state
 void VulkanDriver::setCullMode(CullMode cull_mode)

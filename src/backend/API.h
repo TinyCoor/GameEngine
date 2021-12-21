@@ -24,17 +24,15 @@ enum BufferType : uint8_t {
 
 //图元类型
 enum class RenderPrimitiveType :uint8_t {
-    POINTS = 0,
-    LINES,
+    POINT_LIST = 0,
+    LINE_LIST,
+    LINE_PATCH,
     LINE_STRIP,
-    LINE_LOOP,
-    TRIANGLES,
+    TRIANGLE_LIST,
+    TRIANGLE_PATCH,
     TRIANGLE_STRIP,
-    TRIANGLE_LOOP,
-    QUADS,
-    QUAD_STRIP,
-    QUAD_LOOP,
-    PATCHES,
+    TRIANGLE_FAN,
+    QUAD_PATCH,
     MAX,
 };
 
@@ -409,8 +407,8 @@ public:
     virtual void clearShaders() = 0;
     virtual void clearBindSets() = 0;
     virtual void setShader(ShaderType type,const Shader* shader) = 0;
-    virtual void setBindSet( uint32_t binding,const BindSet* set) = 0;
-    virtual void pushBindSet(const BindSet* set) = 0;
+    virtual void setBindSet( uint32_t binding,BindSet* set) = 0;
+    virtual void pushBindSet(BindSet* set) = 0;
     virtual BindSet* createBindSet() = 0;
 
     /// Render State
@@ -455,14 +453,14 @@ public:
                               uint32_t num_wait_command_buffers,
                               const CommandBuffer* wait_command_buffers) = 0;
 public:
-    virtual bool reset(
+    virtual bool resetCommandBuffer(
         CommandBuffer* command_buffer
         ) = 0;
 
-    virtual bool begin(
+    virtual bool beginCommandBuffer(
         CommandBuffer *command_buffer) = 0;
 
-    virtual bool end(
+    virtual bool endCommandBuffer(
         CommandBuffer *command_buffer
     ) = 0;
 
@@ -487,16 +485,17 @@ public:
     virtual void bindTexture(
         BindSet* set,
         uint32_t unit,
+        const Texture *texture) = 0;
+
+    virtual void bindTexture(
+        BindSet* set,
+        uint32_t unit,
         const Texture *texture,
         int base_mip,
         int num_mip,
         int base_layer,
         int num_layer
 
-    ) = 0;
-
-    virtual void bindShader(
-        const Shader *shader
     ) = 0;
 
     // draw

@@ -28,8 +28,8 @@ uint64_t PipelineCache::getHash(VkPipelineLayout layout,const context *ctx, cons
     uint64_t hash =0;
     hash_combine(hash,ctx->getRenderPass());
     hash_combine(hash,layout);
-    auto* vertex_buffer = primitive->vertexBuffer;
-    for (int i = 0; i <primitive->vertexBuffer->num_attributes; ++i) {
+    auto* vertex_buffer = primitive->vertex_buffer;
+    for (int i = 0; i <primitive->vertex_buffer->num_attributes; ++i) {
         hash_combine(hash,vertex_buffer->attribute_formats[i]);
         hash_combine(hash,vertex_buffer->attribute_offsets[i]);
     }
@@ -73,10 +73,10 @@ VkPipeline PipelineCache::fetch(const context *ctx, const RenderPrimitive *rende
         if (module == VK_NULL_HANDLE) continue;
         builder.addShaderStage(module, toShaderStage(static_cast<ShaderType>(i)));
     }
-    auto* vertex_buffer = render_primitive->vertexBuffer;
-    VkVertexInputBindingDescription vertex_input_binding{0,vertex_buffer->vertex_size};
+    auto* vertex_buffer = render_primitive->vertex_buffer;
+    VkVertexInputBindingDescription vertex_input_binding{0,vertex_buffer->vertex_size,VK_VERTEX_INPUT_RATE_VERTEX };
     std::vector<VkVertexInputAttributeDescription> attributes(vertex_buffer->num_attributes);
-    for (uint32_t i = 0; i <vertex_buffer->num_attributes ; ++i) {;
+    for (uint32_t i = 0; i <vertex_buffer->num_attributes ; ++i) {
         attributes[i] = {i,0, vertex_buffer->attribute_formats[i],vertex_buffer->attribute_offsets[i]};
     }
 
@@ -96,7 +96,8 @@ VkPipeline PipelineCache::fetch(const context *ctx, const RenderPrimitive *rende
                                         src_factor,
                                         dst_factor,
                                         VK_BLEND_OP_ADD,
-                                        src_factor,dst_factor);
+                                        src_factor,
+                                        dst_factor);
 
     }
 

@@ -227,7 +227,7 @@ void Application::shutdownRenders() {
 
 void Application::initRenders() {
     if(!render){
-        render = new VulkanRender(context,driver,swapChain->getExtent(),swapChain->getDescriptorSetLayout(),swapChain->getDummyRenderPass());
+        render = new VulkanRender(driver,swapChain->getExtent());
         render->init(scene);
     }
 

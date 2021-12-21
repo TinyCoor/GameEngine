@@ -25,11 +25,6 @@ private:
   render::backend::Driver *driver{nullptr};
   VkExtent2D extent;
 
-  //TODO swapchain descriptorSetLayout
-  VkRenderPass renderPass{VK_NULL_HANDLE};
-  VkPipelineLayout pipelineLayout{VK_NULL_HANDLE};
-  VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
-
   VulkanCubeMapRender hdriToCubeRenderer;
   VulkanCubeMapRender diffuseIrradianceRenderer;
   std::vector<VulkanCubeMapRender *> cubeToPrefilteredRenderers;
@@ -39,18 +34,11 @@ private:
   VulkanTexture environmentCubemap;
   VulkanTexture diffuseIrradianceCubemap;
 
-  VkPipeline pbrPipeline{VK_NULL_HANDLE};
-  VkPipeline skyboxPipeline{VK_NULL_HANDLE};
-
-  VkDescriptorSetLayout sceneDescriptorSetLayout{VK_NULL_HANDLE};
-  VkDescriptorSet sceneDescriptorSet{VK_NULL_HANDLE};
+  render::backend::BindSet* scene_bind_set{nullptr};
 
 public:
-  explicit VulkanRender(const Device *ctx,
-                        render::backend::Driver *driver,
-                        VkExtent2D extent,
-                        VkDescriptorSetLayout layout,
-                        VkRenderPass renderPass);
+  explicit VulkanRender(render::backend::Driver *driver,
+                        VkExtent2D extent);
   virtual ~VulkanRender();
 
   void setextent(int width, int height) {

@@ -21,6 +21,8 @@ private:
   render::backend::VertexBuffer *vertex_buffer {nullptr};
   render::backend::IndexBuffer *index_buffer {nullptr};
 
+  render::backend::RenderPrimitive* primitive{nullptr};
+
 public:
   VulkanMesh(render::backend::Driver *driver)
       : driver(driver) { }
@@ -32,6 +34,7 @@ public:
 
   static VkVertexInputBindingDescription getVertexInputBindingDescription();
   static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
+  inline render::backend::RenderPrimitive* getPrimitive() const {return primitive;}
 
   bool loadFromFile(const char *file);
 

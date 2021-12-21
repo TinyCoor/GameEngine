@@ -103,11 +103,16 @@ void VulkanMesh::clearGPUData() {
 void VulkanMesh::uploadToGPU() {
     createVertexBuffer();
     createIndexBuffer();
+    primitive = driver->createRenderPrimitive(render::backend::RenderPrimitiveType::TRIANGLE_LIST,
+                                              vertex_buffer,index_buffer);
+
 }
 
 void VulkanMesh::clearCPUData() {
   vertices.clear();
   indices.clear();
+  driver->destroyRenderPrimitive(primitive);
+  primitive = nullptr;
 }
 
 void VulkanMesh::createSkybox(float size) {

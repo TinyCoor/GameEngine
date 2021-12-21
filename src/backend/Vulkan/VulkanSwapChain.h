@@ -11,13 +11,11 @@
 namespace render::backend::vulkan {
 
 struct VulkanRenderFrame {
-
-  VkDescriptorSet descriptor_set{VK_NULL_HANDLE};
-
-  render::backend::CommandBuffer* command_buffer{nullptr};
-  render::backend::FrameBuffer *frame_buffer {nullptr};
-  render::backend::UniformBuffer *uniform_buffer {nullptr};
-  void* uniform_buffer_data{nullptr};
+    render::backend::BindSet *bind_set{nullptr};
+    render::backend::CommandBuffer *command_buffer{nullptr};
+    render::backend::FrameBuffer *frame_buffer{nullptr};
+    render::backend::UniformBuffer *uniform_buffer{nullptr};
+    void *uniform_buffer_data{nullptr};
 
 };
 
@@ -25,65 +23,55 @@ struct RenderState;
 
 class VulkanSwapChain {
 public:
-  VulkanSwapChain(render::backend::Driver* driver, void *nativeWindow, VkDeviceSize ubo_size);
-  virtual ~VulkanSwapChain();
+    VulkanSwapChain(render::backend::Driver *driver, void *nativeWindow, VkDeviceSize ubo_size);
+    virtual ~VulkanSwapChain();
 
-  void init(int width, int height);
+    void init(int width, int height);
 
-  bool Acquire(void* state, VulkanRenderFrame &frame);
+    bool Acquire(void *state, VulkanRenderFrame &frame);
 
-  bool Present(VulkanRenderFrame &frame);
+    bool Present(VulkanRenderFrame &frame);
 
-  void reinit(int width, int height);
+    void reinit(int width, int height);
 
-  void shutdown();
+    void shutdown();
 
-  VkExtent2D getExtent() const ;
-  uint32_t getNumImages() const ;
-  VkRenderPass getDummyRenderPass() const;
-  inline VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
-
+    VkExtent2D getExtent() const;
+    uint32_t getNumImages() const;
+    VkRenderPass getDummyRenderPass() const;
 
 private:
 
-  struct SupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-  };
+    struct SupportDetails {
+        VkSurfaceCapabilitiesKHR capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> presentModes;
+    };
 
-  struct Settings {
-    VkSurfaceFormatKHR format;
-    VkPresentModeKHR presentMode;
-  };
+    struct Settings {
+        VkSurfaceFormatKHR format;
+        VkPresentModeKHR presentMode;
+    };
 
 private:
-  void beginFrame(void *state, const VulkanRenderFrame &frame);
-  void endFrame(const VulkanRenderFrame &frame);
+    void beginFrame(void *state, const VulkanRenderFrame &frame);
+    void endFrame(const VulkanRenderFrame &frame);
 
-  void initTransient(int width, int height,VkFormat image_format);
-  void shutdownTransient();
+    void initTransient(int width, int height, VkFormat image_format);
+    void shutdownTransient();
 
-  void initPersistent(VkFormat image_format);
-  void shutdownPersistent();
-
-  void initFrames(VkDeviceSize uboSize,uint32_t width,uint32_t height,uint32_t num_images);
-  void shutdownFrames();
+    void initFrames(VkDeviceSize uboSize, uint32_t width, uint32_t height, uint32_t num_images);
+    void shutdownFrames();
 private:
+    render::backend::Driver *driver{nullptr};
+    render::backend::SwapChain *swap_chain{nullptr};
+    void *native_window{nullptr};
 
-  const Device *context{nullptr};
-  render::backend::Driver* driver{nullptr};
-  render::backend::SwapChain* swap_chain{nullptr};
+    VkDeviceSize ubo_size;
 
-  void* native_window{nullptr};
-
-  VkDescriptorSetLayout descriptorSetLayout{VK_NULL_HANDLE};
-
-  VkDeviceSize ubo_size;
-
-  render::backend::Texture *color {nullptr};
-  render::backend::Texture *depth {nullptr};
-  std::vector<VulkanRenderFrame> frames;
+    render::backend::Texture *color{nullptr};
+    render::backend::Texture *depth{nullptr};
+    std::vector<VulkanRenderFrame> frames;
 
 };
 
