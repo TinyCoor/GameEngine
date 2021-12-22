@@ -123,9 +123,9 @@ void VulkanSwapChain::initTransient(int width, int height, VkFormat image_format
 
 }
 void VulkanSwapChain::shutdownTransient() {
+
     driver->destroyTexture(color);
     color = nullptr;
-
     driver->destroyTexture(depth);
     depth = nullptr;
 
