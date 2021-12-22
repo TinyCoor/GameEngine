@@ -47,8 +47,8 @@ add_executable(niagara
         Entity/light.cpp
         Entity/light.h
         Entity/material.h
-        backend/API.h
-        backend/API.cpp
+        backend/driver.h
+        backend/driver.cpp
         backend/core/file.cpp
         backend/core/file.h
         backend/core/Vertex.h

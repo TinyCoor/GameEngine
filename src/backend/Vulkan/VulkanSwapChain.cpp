@@ -157,9 +157,6 @@ void VulkanSwapChain::beginFrame(void *state, const VulkanRenderFrame &frame) {
     info.clear_value = reinterpret_cast<RenderPassClearValue *>(clear_values.data());
     driver->beginRenderPass(frame.command_buffer,frame.frame_buffer,&info);
 
-    driver->clearBindSets();
-    driver->clearShaders();
-    driver->pushBindSet(frame.bind_set);
 }
 
 void VulkanSwapChain::endFrame(const VulkanRenderFrame &frame) {
@@ -167,6 +164,7 @@ void VulkanSwapChain::endFrame(const VulkanRenderFrame &frame) {
     driver->endCommandBuffer(frame.command_buffer);
     driver->submitSynced(frame.command_buffer,swap_chain);
 }
+
 VkRenderPass VulkanSwapChain::getDummyRenderPass() const
 {
     return static_cast<vulkan::FrameBuffer*>(frames[0].frame_buffer)->dummy_render_pass;

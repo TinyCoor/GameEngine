@@ -177,23 +177,6 @@ void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &fra
     const VulkanShader *skyboxVertexShader = scene->getSkyboxVertexShader();
     const VulkanShader *skyboxFragmentShader = scene->getSkyboxFragmentShader();
 
-    VkCommandBuffer command_buffer = static_cast<vulkan::CommandBuffer *>(frame.command_buffer)->command_buffer;
-
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = extent.width;
-    viewport.height = extent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    //create scissor
-    VkRect2D scissor{};
-    scissor.offset = {0, 0};
-    scissor.extent = extent;
-
-    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
-    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
     driver->clearBindSets();
     driver->pushBindSet(frame.bind_set);

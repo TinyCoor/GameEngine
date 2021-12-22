@@ -1,7 +1,7 @@
 //
 // Created by 12132 on 2021/11/27.
 //
-#include "../API.h"
+#include "../driver.h"
 #include "driver.h"
 #include "VulkanUtils.h"
 #include "Device.h"
@@ -938,6 +938,7 @@ void VulkanDriver::drawIndexedPrimitive(
     vkCmdBindPipeline(vk_command_buffer->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdBindDescriptorSets(vk_command_buffer->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
 
+
     VkViewport viewport = vk_context->getViewport();
     VkRect2D scissor = vk_context->getScissor();
 
@@ -1188,7 +1189,6 @@ bool VulkanDriver::present(render::backend::SwapChain *swap_chain,
 
     if (result != VK_SUCCESS) {
         // TODO: log fatal
-        // runtime_error("Can't present swap chain image");
         return false;
     }
 

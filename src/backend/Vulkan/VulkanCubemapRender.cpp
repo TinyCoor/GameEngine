@@ -143,14 +143,14 @@ void VulkanCubeMapRender::init(VulkanShader &vertShader,
     // Create framebuffer
     render::backend::FrameBufferAttachmentType type = render::backend::FrameBufferAttachmentType::COLOR;
     render::backend::FrameBufferAttachment attachments[6] =
-        {
-            {type, target_texture.getTexture(), mip, 1, 0, 1},
-            {type, target_texture.getTexture(), mip, 1, 1, 1},
-            {type, target_texture.getTexture(), mip, 1, 2, 1},
-            {type, target_texture.getTexture(), mip, 1, 3, 1},
-            {type, target_texture.getTexture(), mip, 1, 4, 1},
-            {type, target_texture.getTexture(), mip, 1, 5, 1},
-        };
+    {
+        {type, target_texture.getTexture(), mip, 1, 0, 1},
+        {type, target_texture.getTexture(), mip, 1, 1, 1},
+        {type, target_texture.getTexture(), mip, 1, 2, 1},
+        {type, target_texture.getTexture(), mip, 1, 3, 1},
+        {type, target_texture.getTexture(), mip, 1, 4, 1},
+        {type, target_texture.getTexture(), mip, 1, 5, 1},
+    };
     framebuffer = driver->createFrameBuffer(6, attachments);
 
     // Create command buffers

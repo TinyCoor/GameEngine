@@ -225,11 +225,11 @@ enum FrameBufferAttachmentType : unsigned char {
 struct FrameBufferAttachment {
     struct Color {
         const Texture *texture{nullptr};
-        int base_mip{0};
-        int num_mips{1};
-        int base_layer{0};
-        int num_layers{1};
-        bool resolve_attachment{false};
+        int base_mip {0};
+        int num_mips {1};
+        int base_layer {0};
+        int num_layers {1};
+        bool resolve_attachment {false};
     };
 
     struct Depth {
@@ -250,14 +250,13 @@ struct FrameBufferAttachment {
     };
 };
 
-
-
 struct RenderPass{};
 union RenderPassClearColor{
     float float32[4];
     int32_t int32[4];
     uint32_t uint32[4];
 };
+
 struct RenderPassClearDepthStencil{
     float depth;
     uint32_t stencil;
@@ -270,13 +269,13 @@ union RenderPassClearValue {
 };
 
 enum class RenderPassLoadOp :uint8_t {
-    LOAD,
+    LOAD =0   ,
     CLEAR,
-    DONT_CARE =0
+    DONT_CARE
 };
 
 enum class RenderPassStoreOp : uint8_t {
-    STORE,
+    STORE=0,
     DONT_CARE
 };
 
