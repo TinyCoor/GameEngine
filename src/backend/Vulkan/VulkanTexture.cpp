@@ -4,8 +4,6 @@
 
 #include "VulkanTexture.h"
 #include "VulkanUtils.h"
-#include "Macro.h"
-#include <stdexcept>
 #include <cassert>
 #include <stb_image.h>
 #include <iostream>

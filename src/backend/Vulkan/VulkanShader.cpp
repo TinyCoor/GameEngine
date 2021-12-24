@@ -6,7 +6,6 @@
 #include "VulkanUtils.h"
 #include <fstream>
 #include <iostream>
-#include <shaderc.h>
 #include <cstring>
 namespace render::backend::vulkan {
 

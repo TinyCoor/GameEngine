@@ -749,6 +749,7 @@ void VulkanDriver::endRenderPass(render::backend::CommandBuffer *command_buffer)
     vkCmdEndRenderPass(vk_command_buffer);
     vk_context->setRenderPass(VK_NULL_HANDLE);
 }
+
 void VulkanDriver::bindUniformBuffer(render::backend::BindSet *bind_set,
                                      uint32_t binding,
                                      const render::backend::UniformBuffer *uniform_buffer)
@@ -927,13 +928,20 @@ void VulkanDriver::drawIndexedPrimitive(
         }
     }
 
+
+
     if (writes.size() > 0)
         vkUpdateDescriptorSets(device->LogicDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
     VkPipelineLayout pipeline_layout = pipeline_layout_cache->fetch(vk_context);
     VkPipeline pipeline = pipeline_cache->fetch(vk_context, vk_render_primitive);
-
     vkCmdBindPipeline(vk_command_buffer->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+    if (vk_context->getPushConstantsSize() > 0) {
+        vkCmdPushConstants(vk_command_buffer->command_buffer,pipeline_layout,VK_SHADER_STAGE_ALL,0,vk_context->getPushConstantsSize(),
+                           vk_context->getPushConstants());
+    }
+
     if (sets.size() > 0){
         vkCmdBindDescriptorSets(vk_command_buffer->command_buffer,
                                 VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -1076,8 +1084,8 @@ bool VulkanDriver::submit(render::backend::CommandBuffer *command_buffer)
     submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &vk_command_buffer->command_buffer;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = &vk_command_buffer->rendering_finished_gpu;
+    //    submitInfo.signalSemaphoreCount = 1;
+    //    submitInfo.pSignalSemaphores = &vk_command_buffer->rendering_finished_gpu;
 
     vkResetFences(device->LogicDevice(), 1, &vk_command_buffer->rendering_finished_cpu);
     if (vkQueueSubmit(device->GraphicsQueue(), 1, &submitInfo, vk_command_buffer->rendering_finished_cpu)
@@ -1440,6 +1448,16 @@ bool VulkanDriver::wait(uint32_t num_wait_command_buffers, render::backend::Comm
             vkWaitForFences(device->LogicDevice(), num_wait_command_buffers, wait_fences.data(), VK_TRUE, UINT64_MAX);
         return result == VK_SUCCESS;
     }
+}
+
+void VulkanDriver::clearPushConstants()
+{
+    vk_context->clearPushConstants();
+}
+
+void VulkanDriver::setPushConstant(uint8_t size, const void *data)
+{
+    vk_context->setPushConstant(size,data);
 }
 
 }

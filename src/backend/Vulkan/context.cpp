@@ -3,6 +3,7 @@
 //
 
 #include <cassert>
+#include <cstring>
 #include "context.h"
 namespace render::backend::vulkan {
 context::context()
@@ -13,6 +14,13 @@ context::context()
 context::~context()
 {
     clear();
+}
+
+void context::setPushConstant(uint8_t size, const void *data)
+{
+    assert(size < MAX_PUSH_CONSTANT);
+    memcpy(push_constants,data,size);
+    push_constants_size = size;
 }
 
 void context::setShader(ShaderType type, const Shader *shader)
@@ -92,5 +100,7 @@ void context::setFrameBuffer(const FrameBuffer *frame_buffer)
     scissor.offset = {0, 0};
     scissor.extent = frame_buffer->sizes;
 }
+
+
 
 }

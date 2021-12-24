@@ -43,7 +43,6 @@ void VulkanTexture2DRender::render(const VulkanShader* vertex_shader,const Vulka
     driver->resetCommandBuffer(command_buffer);
     driver->beginCommandBuffer(command_buffer);
 
-    std::array<RenderPassClearValue, 3> clear_values = {};
     RenderPassClearValue clear_value;
     clear_value.color = {0.0f, 0.0f, 0.0f, 1.0f};
 

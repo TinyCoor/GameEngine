@@ -19,9 +19,10 @@ private:
     DescriptorSetLayoutCache* descriptor_set_layout_cache{nullptr};
     std::unordered_map<uint64_t,VkPipelineLayout> cache;
 private:
-    uint64_t getHash(const uint8_t num_layouts,const VkDescriptorSetLayout* layout) const;
+    uint64_t getHash(uint8_t num_layouts,const VkDescriptorSetLayout* layout,uint8_t push_constant_size) const;
 public:
-    PipelineLayoutCache(Device* device,DescriptorSetLayoutCache* layout):device(device),descriptor_set_layout_cache(layout)
+    PipelineLayoutCache(Device* device,DescriptorSetLayoutCache* layout)
+        :device(device),descriptor_set_layout_cache(layout)
     {}
     ~PipelineLayoutCache();
 

@@ -8,7 +8,7 @@
    
     - VkDevice: 基于物理设备创建的逻辑设备，保存物理设备的相应资源
     - VkCommandPool: 用于分配命令缓冲
-    - VkCommandBuffer: 用于记录绘制或者计算的命令，有CommandPool分配
+    - VkCommandBuffer: 用于记录绘制或者计算的命令，由CommandPool分配
     - VKCommandBufferBeginInfo:携带记录启动命令缓冲的信息
     - VkSubmitInfo: 携带提交给队列执行时必要的信息，包含等待信号量列表等
     - VkQueueFamilyProperties:携带特定队列的家族属性信息，包含队列的数量和能力

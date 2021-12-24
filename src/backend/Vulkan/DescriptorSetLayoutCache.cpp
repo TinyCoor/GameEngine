@@ -7,11 +7,9 @@
 #include "auxiliary.h"
 namespace render::backend::vulkan {
 
-
 uint64_t DescriptorSetLayoutCache::getHash(const BindSet *bind_set) const
 {
     uint64_t hash  =0;
-
     for (int i =0 ;i <BindSet::MAX_BINDINGS; ++i ) {
         if(!bind_set->binding_used[i]){
             continue;
@@ -28,6 +26,7 @@ DescriptorSetLayoutCache::DescriptorSetLayoutCache(const Device *device)
 {
 
 }
+
 DescriptorSetLayoutCache::~DescriptorSetLayoutCache()
 {
     clear();
@@ -43,7 +42,6 @@ VkDescriptorSetLayout DescriptorSetLayoutCache::fetch(const BindSet *bind_set)
     }
 
     VulkanDescriptorSetLayoutBuilder builder;
-
     for (int i = 0; i <render::backend::vulkan::BindSet::MAX_BINDINGS ; ++i) {
         auto& info  = bind_set->bindings[i];
         if(!bind_set->binding_used[i]){

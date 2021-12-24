@@ -274,8 +274,13 @@ public:
         uint32_t size,
         const void *data
     ) override;
+public:
 
     ///pipeline state
+    void clearPushConstants() override;
+    void setPushConstant(
+        uint8_t size,
+        const void* data) override;
     void clearShaders() override;
     void clearBindSets() override;
     void setShader(ShaderType type,const render::backend::Shader* shader) override;

@@ -168,7 +168,7 @@ void Application::update()
     if(ImGui::Button("Reload Shader")){
         scene->reloadShader();
         render->reload(scene);
-        render->setEnvironment(scene->getHDRTexture(state.currentEnvironment));
+        render->setEnvironment(scene,scene->getHDRTexture(state.currentEnvironment));
     }
 
    // int oldCurrentEnvironment =state.currentEnvironment;
@@ -177,7 +177,7 @@ void Application::update()
             bool selected = (i==state.currentEnvironment);
             if (ImGui::Selectable(scene->getHDRTexturePath(i),&selected)){
                 state.currentEnvironment = i;
-                render->setEnvironment(scene->getHDRTexture(state.currentEnvironment));
+                render->setEnvironment(scene, scene->getHDRTexture(state.currentEnvironment));
             }
 
             if (selected)
@@ -231,7 +231,7 @@ void Application::initRenders() {
         render->init(scene);
     }
 
-    render->setEnvironment(scene->getHDRTexture( state.currentEnvironment));
+    render->setEnvironment(scene,scene->getHDRTexture( state.currentEnvironment));
 
     if (!imGuiRender){
         imGuiRender = new ImGuiRender(context,ImGui::GetCurrentContext(),
@@ -251,7 +251,6 @@ void Application::initVulkanSwapChain() {
 }
 
 void Application::shutdownSwapChain() {
-   //TODO
    swapChain->shutdown();
 }
 

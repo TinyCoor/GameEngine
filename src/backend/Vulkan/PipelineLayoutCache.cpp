@@ -11,10 +11,13 @@
 
 namespace render::backend::vulkan{
 
-uint64_t PipelineLayoutCache::getHash(const uint8_t num_layouts,const VkDescriptorSetLayout* layouts) const
+uint64_t PipelineLayoutCache::getHash(const uint8_t num_layouts,
+                                      const VkDescriptorSetLayout* layouts,
+                                      uint8_t push_constant_size) const
 {
     uint64_t hash  =0;
     hash_combine(hash,num_layouts);
+    hash_combine(hash,push_constant_size);
     for (uint8_t i = 0; i < num_layouts; ++i){
         hash_combine(hash,layouts[i]);
     }
@@ -28,13 +31,15 @@ PipelineLayoutCache::~PipelineLayoutCache()
 
 VkPipelineLayout PipelineLayoutCache::fetch(const context* ctx)
 {
-    std::vector<VkDescriptorSetLayout> layouts(ctx->getNumBindSets());
+    uint8_t push_constant_size = ctx->getPushConstantsSize();
+    uint8_t num_bind_set = ctx->getNumBindSets();
+    std::vector<VkDescriptorSetLayout> layouts(num_bind_set);
     uint8_t index =0;
     for (auto& layout :layouts) {
         layout = descriptor_set_layout_cache->fetch(ctx->getBindSet(index));
         index++;
     }
-    uint64_t hash = getHash(layouts.size(),layouts.data());
+    uint64_t hash = getHash(layouts.size(),layouts.data(),push_constant_size);
     auto it = cache.find(hash);
     if(it != cache.end()){
         return it->second;
@@ -44,7 +49,11 @@ VkPipelineLayout PipelineLayoutCache::fetch(const context* ctx)
     for (auto& layout :layouts) {
         builder.addDescriptorSetLayout(layout);
     }
-    /// TODO push constant
+
+    if ( push_constant_size > 0) {
+        builder.addPushConstantRange(VK_SHADER_STAGE_ALL,0,push_constant_size);
+    }
+
     auto res =  builder.build(device->LogicDevice());
     cache[hash]= res;
 

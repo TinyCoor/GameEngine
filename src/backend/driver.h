@@ -251,6 +251,7 @@ struct FrameBufferAttachment {
 };
 
 struct RenderPass{};
+
 union RenderPassClearColor{
     float float32[4];
     int32_t int32[4];
@@ -403,6 +404,10 @@ public:
 public:
     //todo using c functions
     ///pipeline state
+    virtual void clearPushConstants() =0;
+    virtual void setPushConstant(
+        uint8_t size,
+        const void* data) = 0;
     virtual void clearShaders() = 0;
     virtual void clearBindSets() = 0;
     virtual void setShader(ShaderType type,const Shader* shader) = 0;
@@ -417,8 +422,6 @@ public:
     virtual void setDepthCompareFunc(DepthCompareFunc depth_compare_func) =0;
     virtual void setBlending(bool enable) = 0;
     virtual void setBlendFactor(BlendFactor src_factor,BlendFactor dst_factor) = 0;
-
-
 
     virtual SwapChain *createSwapChain(void *native_window, uint32_t width, uint32_t height) = 0;
     virtual void destroyVertexBuffer(VertexBuffer *vertex_buffer) = 0;

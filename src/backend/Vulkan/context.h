@@ -14,6 +14,14 @@ class context {
 public:
     context();
     ~context();
+
+    // push constant
+    void setPushConstant(uint8_t size, const void *data);
+    void clearPushConstants() { push_constants_size =0;}
+    inline const uint8_t * getPushConstants() const {return push_constants;}
+    inline uint8_t getPushConstantsSize() const {return push_constants_size;}
+
+    ///
     void clearBindSets();
     void clearShaders();
     void pushBindSet(BindSet* bind_set);
@@ -37,15 +45,15 @@ public:
 
 
     // getters
-    inline VkViewport getViewport() const {return  viewport;}
-    inline VkRect2D getScissor() const {return scissor;}
+    inline VkViewport getViewport() const { return  viewport;}
+    inline VkRect2D getScissor() const { return scissor;}
     inline uint8_t getNumColorAttachment() const { return num_color_attachment;}
-    inline VkRenderPass getRenderPass() const{return current_pass;}
-    inline uint8_t getNumBindSets() const {return num_sets;}
-    inline BindSet* getBindSet(uint8_t index)   {return set[index];}
-    inline const BindSet* getBindSet(uint8_t index) const  {return set[index];}
+    inline VkRenderPass getRenderPass() const{ return current_pass;}
+    inline uint8_t getNumBindSets() const { return num_sets;}
+    inline BindSet* getBindSet(uint8_t index)   { return set[index];}
+    inline const BindSet* getBindSet(uint8_t index) const  { return set[index];}
     inline VkShaderModule getShader(ShaderType type) const { return shaders[static_cast<uint32_t>(type)];}
-    inline VkCullModeFlags getCullMode() const {return state.cull_mode;}
+    inline VkCullModeFlags getCullMode() const { return state.cull_mode;}
     inline VkBlendFactor getBlendSrcFactor() const { return state.blend_src_factor;}
     inline VkBlendFactor getBlendDstFactor() const { return state.blend_dst_factor;}
     inline VkCompareOp  getDepthCompareFunc() const { return state.depth_compare_func;}
@@ -67,8 +75,12 @@ private:
 
 private:
     enum {
-        MAX_SET =16
+        MAX_SET =16,
+        MAX_PUSH_CONSTANT=128, //todo query hw
     };
+    uint8_t push_constants[MAX_PUSH_CONSTANT];
+    uint8_t push_constants_size = 0;
+
     BindSet* set[MAX_SET];
     uint8_t num_sets{0};
 
@@ -80,7 +92,6 @@ private:
     VkSampleCountFlagBits samples;
     RenderState state;
     VkRenderPass current_pass{VK_NULL_HANDLE};
-
 };
 
 }

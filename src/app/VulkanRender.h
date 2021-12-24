@@ -21,46 +21,47 @@ struct VulkanRenderFrame;
 
 class VulkanRender {
 private:
-  const Device *context{nullptr};
-  render::backend::Driver *driver{nullptr};
-  VkExtent2D extent;
+    render::backend::Driver *driver{nullptr};
+    VkExtent2D extent;
 
-  VulkanCubeMapRender hdriToCubeRenderer;
-  VulkanCubeMapRender diffuseIrradianceRenderer;
-  std::vector<VulkanCubeMapRender *> cubeToPrefilteredRenderers;
-  VulkanTexture2DRender brdfRender;
+    VulkanCubeMapRender hdriToCubeRenderer;
+    VulkanCubeMapRender diffuseIrradianceRenderer;
+    std::vector<VulkanCubeMapRender *> cubeToPrefilteredRenderers;
+    VulkanTexture2DRender brdfRender;
 
-  VulkanTexture brdfBaked;
-  VulkanTexture environmentCubemap;
-  VulkanTexture diffuseIrradianceCubemap;
+    VulkanTexture brdfBaked;
+    VulkanTexture environmentCubemap;
+    VulkanTexture diffuseIrradianceCubemap;
 
-  render::backend::BindSet* scene_bind_set{nullptr};
+    render::backend::BindSet *scene_bind_set{nullptr};
 
 public:
-  explicit VulkanRender(render::backend::Driver *driver,
-                        VkExtent2D extent);
-  virtual ~VulkanRender();
+    explicit VulkanRender(render::backend::Driver *driver,
+                          VkExtent2D extent);
+    virtual ~VulkanRender();
 
-  void setextent(int width, int height) {
-    extent.width = width;
-    extent.height = height;
-  }
+    void setextent(int width, int height)
+    {
+        extent.width = width;
+        extent.height = height;
+    }
 
-  void init(VulkanRenderScene *scene);
+    void init(VulkanRenderScene *scene);
 
-  void update(RenderState &state, VulkanRenderScene *scene);
+    void update(RenderState &state, VulkanRenderScene *scene);
 
-  void render(VulkanRenderScene *scene, const VulkanRenderFrame &frame);
+    void render(VulkanRenderScene *scene, const VulkanRenderFrame &frame);
 
-  void shutdown();
+    void shutdown();
 
-  void resize(const VulkanSwapChain* swapChain);
+    void resize(const VulkanSwapChain *swapChain);
 
-  void reload(VulkanRenderScene *scene);
+    void reload(VulkanRenderScene *scene);
 
-  void setEnvironment(VulkanTexture* texture);
+    void setEnvironment(VulkanRenderScene *scene,VulkanTexture *texture);
 
-  VulkanTexture getBakedBRDF() const { return brdfBaked; }
+    VulkanTexture getBakedBRDF() const
+    { return brdfBaked; }
 
 private:
 
