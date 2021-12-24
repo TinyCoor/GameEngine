@@ -269,7 +269,7 @@ union RenderPassClearValue {
 };
 
 enum class RenderPassLoadOp :uint8_t {
-    LOAD =0   ,
+    LOAD =0 ,
     CLEAR,
     DONT_CARE
 };
@@ -441,6 +441,10 @@ public:
     virtual void *map(render::backend::UniformBuffer *uniform_buffer) = 0;
     virtual void unmap(render::backend::UniformBuffer *uniform_buffer) = 0;
     virtual void wait() = 0;
+    virtual bool wait(
+        uint32_t num_wait_command_buffers,
+        CommandBuffer * const *wait_command_buffers
+    ) = 0;
     virtual bool acquire(SwapChain *swapchain, uint32_t *image_index) = 0;
     virtual bool present(SwapChain *swapchain,
                          uint32_t num_wait_command_buffers,

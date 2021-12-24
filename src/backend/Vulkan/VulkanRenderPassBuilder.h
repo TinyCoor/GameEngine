@@ -20,6 +20,7 @@ public:
   VulkanRenderPassBuilder() {}
 
   VulkanRenderPassBuilder &addColorResolveAttachment(VkFormat format,
+                                                     VkImageLayout finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                      VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                                      VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                                                      VkAttachmentLoadOp stencilOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -27,6 +28,7 @@ public:
 
   VulkanRenderPassBuilder &addDepthStencilAttachment(VkFormat format,
                                                      VkSampleCountFlagBits msaaSamples,
+                                                     VkImageLayout finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                      VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                                      VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                                                      VkAttachmentLoadOp stencilOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
@@ -35,6 +37,7 @@ public:
 
   VulkanRenderPassBuilder &addColorAttachment(VkFormat format,
                                               VkSampleCountFlagBits msaaSamples,
+                                              VkImageLayout finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                               VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
                                               VkAttachmentStoreOp storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
                                               VkAttachmentLoadOp stencilOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,

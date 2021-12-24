@@ -64,8 +64,7 @@ add_executable(niagara
         backend/Vulkan/PipelineLayoutCache.cpp
         backend/Vulkan/PipelineLayoutCache.h
         backend/Vulkan/DescriptorSetLayoutCache.cpp
-        backend/Vulkan/DescriptorSetCache.cpp
-        backend/Vulkan/DescriptorSetCache.h backend/Vulkan/context.cpp backend/Vulkan/context.h backend/Vulkan/auxiliary.h backend/Vulkan/VulkanResourceCache.cpp backend/Vulkan/VulkanResourceCache.h backend/Vulkan/PipelineCache.cpp backend/Vulkan/PipelineCache.h)
+        backend/Vulkan/context.cpp backend/Vulkan/context.h backend/Vulkan/auxiliary.h backend/Vulkan/VulkanResourceCache.cpp backend/Vulkan/VulkanResourceCache.h backend/Vulkan/PipelineCache.cpp backend/Vulkan/PipelineCache.h)
 
 
 message(STATUS ${ShaderC_LIBRARIES})

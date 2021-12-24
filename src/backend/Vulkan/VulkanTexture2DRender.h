@@ -20,27 +20,17 @@ public:
 
   VulkanTexture2DRender(render::backend::Driver *driver);
 
-  void init(VulkanShader &vertex_shader,
-            VulkanShader &fragment_shader,
-            VulkanTexture &target_texture);
+  void init(const VulkanTexture* target_texture);
 
   void shutdown();
 
-  void render();
+  void render(const VulkanShader* vertex_shader,const VulkanShader* fragment_shader);
 
 private:
-  const Device *context{nullptr};
   render::backend::Driver *driver {nullptr};
   render::backend::FrameBuffer *framebuffer {nullptr};
+  render::backend::CommandBuffer* command_buffer{nullptr};
   VulkanMesh quad;
-  VkExtent2D target_extent;
-
-  VkPipeline pipeline{VK_NULL_HANDLE};
-  VkPipelineLayout pipeline_layout{VK_NULL_HANDLE};
-  VkRenderPass render_pass{VK_NULL_HANDLE};
-
-  VkCommandBuffer commandBuffer{VK_NULL_HANDLE};
-  VkFence fence{VK_NULL_HANDLE};
 
 };
 }

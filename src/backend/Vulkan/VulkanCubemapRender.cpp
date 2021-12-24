@@ -61,30 +61,12 @@ void VulkanCubeMapRender::init(VulkanShader &vertShader,
 
     VulkanRenderPassBuilder renderPassBuilder;
     render_pass = renderPassBuilder
-        .addColorAttachment(target_texture.getImageFormat(),
-                            VK_SAMPLE_COUNT_1_BIT,
-                            VK_ATTACHMENT_LOAD_OP_CLEAR,
-                            VK_ATTACHMENT_STORE_OP_STORE)
-        .addColorAttachment(target_texture.getImageFormat(),
-                            VK_SAMPLE_COUNT_1_BIT,
-                            VK_ATTACHMENT_LOAD_OP_CLEAR,
-                            VK_ATTACHMENT_STORE_OP_STORE)
-        .addColorAttachment(target_texture.getImageFormat(),
-                            VK_SAMPLE_COUNT_1_BIT,
-                            VK_ATTACHMENT_LOAD_OP_CLEAR,
-                            VK_ATTACHMENT_STORE_OP_STORE)
-        .addColorAttachment(target_texture.getImageFormat(),
-                            VK_SAMPLE_COUNT_1_BIT,
-                            VK_ATTACHMENT_LOAD_OP_CLEAR,
-                            VK_ATTACHMENT_STORE_OP_STORE)
-        .addColorAttachment(target_texture.getImageFormat(),
-                            VK_SAMPLE_COUNT_1_BIT,
-                            VK_ATTACHMENT_LOAD_OP_CLEAR,
-                            VK_ATTACHMENT_STORE_OP_STORE)
-        .addColorAttachment(target_texture.getImageFormat(),
-                            VK_SAMPLE_COUNT_1_BIT,
-                            VK_ATTACHMENT_LOAD_OP_CLEAR,
-                            VK_ATTACHMENT_STORE_OP_STORE)
+        .addColorAttachment(target_texture.getImageFormat(),VK_SAMPLE_COUNT_1_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_STORE_OP_STORE)
+        .addColorAttachment(target_texture.getImageFormat(),VK_SAMPLE_COUNT_1_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_STORE_OP_STORE)
+        .addColorAttachment(target_texture.getImageFormat(),VK_SAMPLE_COUNT_1_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_STORE_OP_STORE)
+        .addColorAttachment(target_texture.getImageFormat(),VK_SAMPLE_COUNT_1_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_STORE_OP_STORE)
+        .addColorAttachment(target_texture.getImageFormat(),VK_SAMPLE_COUNT_1_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_STORE_OP_STORE)
+        .addColorAttachment(target_texture.getImageFormat(),VK_SAMPLE_COUNT_1_BIT,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_STORE_OP_STORE)
         .addSubpass(VK_PIPELINE_BIND_POINT_GRAPHICS)
         .addColorAttachmentReference(0, 0)
         .addColorAttachmentReference(0, 1)

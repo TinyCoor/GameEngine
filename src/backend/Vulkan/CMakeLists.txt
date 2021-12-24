@@ -22,7 +22,6 @@ set(HEADERS
         VulkanResourceManager.h
         VulkanGraphicsPipelineBuilder.h
         VulkanDescriptorSetLayoutBuilder.h
-        DescriptorSetCache.h
         DescriptorSetLayoutCache.h
         VulkanRenderPassBuilder.h
         VulkanPipelineLayoutBuilder.h
@@ -48,7 +47,6 @@ set(SOURCES
         VulkanPipelineLayoutBuilder.cpp
         VulkanCubemapRender.cpp
         VulkanSwapChain.cpp
-        DescriptorSetCache.cpp
         DescriptorSetLayoutCache.cpp
 
         VulkanImGuiRender.cpp

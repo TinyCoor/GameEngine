@@ -53,6 +53,8 @@ struct BindSet: public render::backend::BindSet
             uint32_t size;
         }ubo;
     };
+    VkDescriptorSetLayout set_layout {VK_NULL_HANDLE};
+    VkDescriptorSet set {VK_NULL_HANDLE};
 
     VkDescriptorSetLayoutBinding bindings[MAX_BINDINGS];
     BindData binding_data[MAX_BINDINGS];
@@ -174,7 +176,6 @@ class VulkanDriver : public render::backend::Driver {
     context* vk_context{nullptr};
     VulkanRenderPassCache* render_pass_cache{nullptr};
     DescriptorSetLayoutCache* descriptor_set_layout_cache{nullptr};
-    DescriptorSetCache* descriptor_set_cache{nullptr};
     PipelineLayoutCache* pipeline_layout_cache{nullptr};
     PipelineCache* pipeline_cache{nullptr};
 
@@ -317,6 +318,10 @@ public:
     void *map(render::backend::UniformBuffer *uniform_buffer) override;
     void unmap(render::backend::UniformBuffer *uniform_buffer) override;
     void wait() override;
+    bool wait(
+        uint32_t num_wait_command_buffers,
+        render::backend::CommandBuffer * const *wait_command_buffers
+    ) override;
     bool acquire(render::backend::SwapChain *swapchain, uint32_t *image_index) override;
     bool present(render::backend::SwapChain *swapchain,
                  uint32_t num_wait_command_buffers,

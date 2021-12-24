@@ -375,8 +375,6 @@ static VkCommandBufferLevel toVKCommandBufferLevel(CommandBufferType type)
     return VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 }
 
-
-
 static void createTextureData(const Device *context, Texture *texture,
                               Format format, const void *data,
                               int num_data_mipmaps, int num_data_layer)
@@ -434,8 +432,6 @@ static void createTextureData(const Device *context, Texture *texture,
     texture->sampler = VulkanUtils::createSampler(context->LogicDevice(), 0, texture->num_mipmaps);
 
 }
-
-
 
 static void selectOptimalSwapChainSettings(Device *context, SwapChain *swapchain)
 {
@@ -598,6 +594,34 @@ static void destroySwapchainObjects(Device *context, SwapChain *swapchain)
     }
     vkDestroySwapchainKHR(context->LogicDevice(), swapchain->swap_chain, nullptr);
     swapchain->swap_chain = VK_NULL_HANDLE;
+}
+
+static void updateBindSetLayout(const Device *device, BindSet *bind_set, VkDescriptorSetLayout new_layout)
+{
+    if (new_layout == bind_set->set_layout)
+        return;
+
+    bind_set->set_layout = new_layout;
+
+    if (bind_set->set != VK_NULL_HANDLE)
+        vkFreeDescriptorSets(device->LogicDevice(), device->DescriptorPool(), 1, &bind_set->set);
+
+    VkDescriptorSetAllocateInfo info = {};
+    info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    info.descriptorPool = device->DescriptorPool();
+    info.descriptorSetCount = 1;
+    info.pSetLayouts = &new_layout;
+
+    vkAllocateDescriptorSets(device->LogicDevice(), &info, &bind_set->set);
+    assert(bind_set->set);
+
+    for (uint8_t i = 0; i < vulkan::BindSet::MAX_BINDINGS; ++i)
+    {
+        if (!bind_set->binding_used[i])
+            continue;
+
+        bind_set->binding_dirty[i] = true;
+    }
 }
 
 }

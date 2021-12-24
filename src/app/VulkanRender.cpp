@@ -5,14 +5,8 @@
 #include "VulkanRender.h"
 #include "RenderState.h"
 #include "../backend/Vulkan/VulkanSwapChain.h"
-#include "../backend/Vulkan/VulkanGraphicsPipelineBuilder.h"
-#include "../backend/Vulkan/VulkanDescriptorSetLayoutBuilder.h"
-#include "../backend/Vulkan/VulkanPipelineLayoutBuilder.h"
-#include "../backend/Vulkan/VulkanMesh.h"
 #include "VulkanRenderScene.h"
-#include "../backend/Vulkan/Macro.h"
 #include "../backend/Vulkan/VulkanUtils.h"
-#include "../backend/Vulkan/VulkanTexture.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -44,33 +38,11 @@ void VulkanRender::init(VulkanRenderScene *scene)
     environmentCubemap.createCube(render::backend::Format::R32G32B32A32_SFLOAT, 256, 256, 1);
     diffuseIrradianceCubemap.createCube(render::backend::Format::R32G32B32A32_SFLOAT, 256, 256, 1);
 
-    brdfRender.init(*scene->getBakedVertexShader(),
-                    *scene->getBakedFragmentShader(),
-                    brdfBaked);
-
-    {
-        VulkanUtils::transitionImageLayout(
-            context,
-            brdfBaked.getImage(),
-            brdfBaked.getImageFormat(),
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            0, brdfBaked.getNumMiplevels(),
-            0, brdfBaked.getNumLayers()
-        );
-
-        brdfRender.render();
-
-        VulkanUtils::transitionImageLayout(
-            context,
-            brdfBaked.getImage(),
-            brdfBaked.getImageFormat(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            0, brdfBaked.getNumMiplevels(),
-            0, brdfBaked.getNumLayers()
-        );
-    }
+    brdfRender.init(&brdfBaked);
+    brdfRender.render(
+        scene->getBakedVertexShader(),
+        scene->getBakedFragmentShader()
+    );
 
     hdriToCubeRenderer.init(
         *scene->getCubeVertexShader(),
@@ -195,81 +167,17 @@ void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &fra
 void VulkanRender::setEnvironment(VulkanTexture *texture)
 {
 
-    {
-        VulkanUtils::transitionImageLayout(
-            context,
-            environmentCubemap.getImage(),
-            environmentCubemap.getImageFormat(),
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            0, 1,
-            0, environmentCubemap.getNumLayers()
-        );
-
-        hdriToCubeRenderer.render(*texture);
-
-        VulkanUtils::transitionImageLayout(
-            context,
-            environmentCubemap.getImage(),
-            environmentCubemap.getImageFormat(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            0, 1,
-            0, environmentCubemap.getNumLayers()
-        );
-    }
-
+    hdriToCubeRenderer.render(*texture);
     //mip
     for (size_t i = 0; i < cubeToPrefilteredRenderers.size(); ++i) {
-        VulkanUtils::transitionImageLayout(
-            context,
-            environmentCubemap.getImage(),
-            environmentCubemap.getImageFormat(),
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            i + 1, 1,
-            0, environmentCubemap.getNumLayers()
-        );
         float data[4] = {
             static_cast<float>(i) / environmentCubemap.getNumMiplevels(),
             0.0f, 0.0f, 0.0f
         };
         cubeToPrefilteredRenderers[i]->render(environmentCubemap, data, i);
-
-        VulkanUtils::transitionImageLayout(
-            context,
-            environmentCubemap.getImage(),
-            environmentCubemap.getImageFormat(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            i + 1, 1,
-            0, environmentCubemap.getNumLayers()
-        );
     }
 
-    {
-        VulkanUtils::transitionImageLayout(
-            context,
-            diffuseIrradianceCubemap.getImage(),
-            diffuseIrradianceCubemap.getImageFormat(),
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            0, diffuseIrradianceCubemap.getNumMiplevels(),
-            0, diffuseIrradianceCubemap.getNumLayers()
-        );
-
-        diffuseIrradianceRenderer.render(environmentCubemap);
-
-        VulkanUtils::transitionImageLayout(
-            context,
-            diffuseIrradianceCubemap.getImage(),
-            diffuseIrradianceCubemap.getImageFormat(),
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            0, diffuseIrradianceCubemap.getNumMiplevels(),
-            0, diffuseIrradianceCubemap.getNumLayers()
-        );
-    }
+    diffuseIrradianceRenderer.render(environmentCubemap);
 
     std::array<VulkanTexture *, 2> textures = {
         &environmentCubemap,

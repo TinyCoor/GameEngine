@@ -8,6 +8,7 @@ namespace render::backend::vulkan {
 VulkanRenderPassBuilder &
 VulkanRenderPassBuilder::addColorAttachment(VkFormat format,
                                             VkSampleCountFlagBits msaaSamples,
+                                            VkImageLayout finalLayout,
                                             VkAttachmentLoadOp loadOp,
                                             VkAttachmentStoreOp storeOp,
                                             VkAttachmentLoadOp stenciLoadOp,
@@ -21,7 +22,7 @@ VulkanRenderPassBuilder::addColorAttachment(VkFormat format,
   colorAttachment.stencilLoadOp = stenciLoadOp;
   colorAttachment.stencilStoreOp = stencilStoreOp;
   colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  colorAttachment.finalLayout = finalLayout;
 
   attachments.push_back(colorAttachment);
 
@@ -31,6 +32,7 @@ VulkanRenderPassBuilder::addColorAttachment(VkFormat format,
 VulkanRenderPassBuilder &
 VulkanRenderPassBuilder::addDepthStencilAttachment(VkFormat format,
                                                    VkSampleCountFlagBits msaaSamples,
+                                                   VkImageLayout finalLayout,
                                                    VkAttachmentLoadOp loadOp,
                                                    VkAttachmentStoreOp storeOp,
                                                    VkAttachmentLoadOp stencilOp,
@@ -43,13 +45,14 @@ VulkanRenderPassBuilder::addDepthStencilAttachment(VkFormat format,
   depthAttachment.stencilLoadOp = stencilOp;
   depthAttachment.stencilStoreOp = stencilStoreOp;
   depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+  depthAttachment.finalLayout = finalLayout;
 
   attachments.push_back(depthAttachment);
   return *this;
 }
 
 VulkanRenderPassBuilder &VulkanRenderPassBuilder::addColorResolveAttachment(VkFormat format,
+                                                                            VkImageLayout finalLayout,
                                                                             VkAttachmentLoadOp loadOp,
                                                                             VkAttachmentStoreOp storeOp,
                                                                             VkAttachmentLoadOp stencilOp,
@@ -62,7 +65,7 @@ VulkanRenderPassBuilder &VulkanRenderPassBuilder::addColorResolveAttachment(VkFo
   colorAttachmentResolve.stencilLoadOp = stencilOp;
   colorAttachmentResolve.stencilStoreOp = stencilStoreOp;
   colorAttachmentResolve.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  colorAttachmentResolve.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  colorAttachmentResolve.finalLayout = finalLayout;
 
   attachments.push_back(colorAttachmentResolve);
   return *this;
