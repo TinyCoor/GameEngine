@@ -22,6 +22,38 @@ static glm::mat4 toGlmMat(aiMatrix4x4 matrix)
     return res;
 }
 
+static render::backend::Texture* default_albedo= nullptr;
+static render::backend::Texture* default_normal= nullptr;
+static render::backend::Texture* default_metalness= nullptr;
+static render::backend::Texture* default_roughness = nullptr;
+
+static void generateDefaultTexture(Driver* driver) {
+
+    auto gen_texture= [=](uint8_t r,uint8_t g,uint8_t b) ->render::backend::Texture*{
+        uint8_t pixel[16]= {
+            r,g,b,255,
+            r,g,b,255,
+            r,g,b,255,
+            r,g,b,255,
+        };
+
+        return  driver->createTexture2D(2,2,1,
+                                        render::backend::Format::R8G8B8A8_UNORM,
+                                        Multisample::COUNT_1,pixel
+        );
+
+    };
+    if (default_albedo == nullptr)
+        default_albedo= gen_texture(127,127,127);
+
+    if(default_normal == nullptr)
+        default_normal= gen_texture(127,127,255);
+    if(default_metalness == nullptr)
+        default_metalness = gen_texture(0,0,0);
+    if (default_roughness == nullptr)
+        default_roughness = gen_texture(255,255,255);
+
+}
 
 Scene::Scene(render::backend::Driver *driver) :driver(driver)
 {
@@ -34,6 +66,7 @@ Scene::~Scene()
 
 bool Scene::import(const char *path)
 {
+    generateDefaultTexture(driver);
     Assimp::Importer importer;
     unsigned int flags = aiProcess_GenSmoothNormals |
         aiProcess_CalcTangentSpace |
@@ -106,10 +139,10 @@ bool Scene::import(const char *path)
 
         render_material.bind_set = driver->createBindSet();
 
-        const render::backend::Texture* albedo   = render_material.albedo   ? render_material.albedo->getTexture() : nullptr;
-        const render::backend::Texture* normal   = render_material.normal   ? render_material.normal->getTexture() : nullptr;
-        const render::backend::Texture* roughness= render_material.roughness? render_material.roughness->getTexture() : nullptr;
-        const render::backend::Texture* metallic = render_material.metallic ? render_material.metallic->getTexture() : nullptr;
+        const render::backend::Texture* albedo   = render_material.albedo   ? render_material.albedo->getTexture() : default_albedo;
+        const render::backend::Texture* normal   = render_material.normal   ? render_material.normal->getTexture() : default_normal;
+        const render::backend::Texture* roughness= render_material.roughness? render_material.roughness->getTexture() : default_roughness;
+        const render::backend::Texture* metallic = render_material.metallic ? render_material.metallic->getTexture() : default_metalness ;
 
         driver->bindTexture(render_material.bind_set,0,albedo);
         driver->bindTexture(render_material.bind_set,1,normal);

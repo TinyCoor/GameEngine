@@ -775,7 +775,7 @@ void VulkanDriver::bindUniformBuffer(render::backend::BindSet *bind_set,
 
     info.binding = binding;
     info.descriptorCount = 1;
-    info.stageFlags = VK_SHADER_STAGE_ALL;//todo change to
+    info.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;//todo change to
     info.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     info.pImmutableSamplers = nullptr;
 
@@ -884,11 +884,6 @@ void VulkanDriver::drawIndexedPrimitive(
 
             VkDescriptorType descriptor_type = bind_set->bindings[j].descriptorType;
             auto &data = bind_set->binding_data[j];
-
-            if (data.texture.view == VK_NULL_HANDLE
-                || data.ubo.buffer== VK_NULL_HANDLE) {
-                continue;
-            }
 
             VkWriteDescriptorSet write_set = {};
             write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1104,21 +1099,19 @@ bool VulkanDriver::submitSynced(render::backend::CommandBuffer *command_buffer,
     }
     auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer);
     VkSubmitInfo submitInfo = {};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.pCommandBuffers = &vk_command_buffer->command_buffer;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &vk_command_buffer->rendering_finished_gpu;
-
+    VkPipelineStageFlags waitStages=VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     if (wait_swap_chain != nullptr) {
         auto vk_swap_chain = static_cast<vulkan::SwapChain *>(wait_swap_chain);
         uint32_t current_iamge = vk_swap_chain->current_image;
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = &vk_swap_chain->image_available_gpu[current_iamge];
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.pWaitDstStageMask =&waitStages;
     }
     vkResetFences(device->LogicDevice(), 1, &vk_command_buffer->rendering_finished_cpu);
     if (vkQueueSubmit(device->GraphicsQueue(), 1, &submitInfo, vk_command_buffer->rendering_finished_cpu)
@@ -1139,15 +1132,17 @@ bool VulkanDriver::submitSynced(render::backend::CommandBuffer *command_buffer,
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
-
     submitInfo.pCommandBuffers = &vk_command_buffer->command_buffer;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &vk_command_buffer->rendering_finished_gpu;
 
+    std::vector<VkSemaphore> wait_semaphores;
+    std::vector<VkPipelineStageFlags> wait_stages;
     if (num_wait_command_buffers != 0 && wait_command_buffers != nullptr) {
         auto vk_command_buffer = static_cast<const vulkan::CommandBuffer *>(wait_command_buffers);
-        std::vector<VkSemaphore> wait_semaphores(num_wait_command_buffers);
-        std::vector<VkPipelineStageFlags> wait_stages(num_wait_command_buffers);
+        wait_semaphores.resize(num_wait_command_buffers);
+        wait_stages.resize(num_wait_command_buffers);
+
         for (int i = 0; i < num_wait_command_buffers; ++i) {
             wait_semaphores[i] = vk_command_buffer[i].rendering_finished_gpu;
             wait_stages[i] = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;

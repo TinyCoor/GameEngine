@@ -112,8 +112,6 @@ void VulkanCubeMapRender::render(const VulkanShader& vertShader,
         driver->bindTexture(bind_set,1,inputTexture.getTexture(),input_mip,1,0,inputTexture.getNumLayers());
     }
 
-
-
     RenderPassClearValue clear_values[6];
     RenderPassLoadOp load_ops[6] ;
     RenderPassStoreOp store_ops[6];

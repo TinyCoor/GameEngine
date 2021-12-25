@@ -13,8 +13,9 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include "../backend/Vulkan/RenderGraph.h"
 
-using namespace render::backend::vulkan;
+using namespace render::backend;
 void Application::initWindow() {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -95,34 +96,29 @@ void Application::RenderFrame(){
         return;
     }
 
-  //  render->render(scene, frame);
 
 
-    driver->clearPushConstants();
-    driver->clearBindSets();
+    render_graph->render(sponza_scene,frame);
 
-    driver->allocateBindSets(2);
-    driver->setBindSet(0,frame.bind_set);
+    RenderPassClearValue clear_values[3];
+    clear_values[0].color = {0.2f, 0.2f, 0.2f, 1.0f};
+    clear_values[1].color = {0.0f, 0.0f, 0.0f, 1.0f};
+    clear_values[2].depth_stencil = {1.0f, 0};
 
-    driver->clearShaders();
+    RenderPassLoadOp load_ops[3] = { RenderPassLoadOp::CLEAR, RenderPassLoadOp::DONT_CARE, RenderPassLoadOp::CLEAR };
+    RenderPassStoreOp store_ops[3] = { RenderPassStoreOp::STORE, RenderPassStoreOp::STORE, RenderPassStoreOp::DONT_CARE };
 
-    driver->setShader(render::backend::ShaderType::VERTEX,scene->getGbufferVertexShader()->getShader());
-    driver->setShader(render::backend::ShaderType::FRAGMENT,scene->getGbufferFragmentShader()->getShader());
+    RenderPassInfo info;
+    info.load_ops = load_ops;
+    info.store_ops = store_ops;
+    info.clear_value = clear_values;
 
-    glm::mat4 rotation = glm::rotate(glm::mat4 (1.0),glm::radians(90.f),glm::vec3(1.0,0.0,0.0));
+    driver->beginRenderPass(frame.command_buffer, frame.frame_buffer, &info);
 
-    for (int i = 0; i < sponza_scene->getNumNodes(); ++i) {
-        auto* node_mesh = sponza_scene->getNodeMesh(i);
-        const auto& transform =rotation * sponza_scene->getNodeWorldTransform(i);
-        auto* node_bind_set = sponza_scene->getNodeBindSet(i);
-
-        driver->setBindSet(1, node_bind_set);
-        driver->setPushConstant(sizeof(glm::mat4), &transform);
-
-        driver->drawIndexedPrimitive(frame.command_buffer,node_mesh->getPrimitive());
-    }
-
+   // render->render(scene, frame);
     imGuiRender->render(frame);
+
+    driver->endRenderPass(frame.command_buffer);
 
     if(!swapChain->Present(frame) || windowResized){
         windowResized = false;
@@ -166,11 +162,9 @@ void Application::update()
 
     if(ImGui::Button("Reload Shader")){
         scene->reloadShader();
-        render->reload(scene);
         render->setEnvironment(scene,scene->getHDRTexture(state.currentEnvironment));
     }
 
-   // int oldCurrentEnvironment =state.currentEnvironment;
     if(ImGui::BeginCombo("Chose your Destiny",scene->getHDRTexturePath(state.currentEnvironment))){
         for (int i = 0; i < scene->getNumHDRTextures(); ++i) {
             bool selected = (i==state.currentEnvironment);
@@ -217,7 +211,7 @@ void Application::mainLoop() {
 
 
 void Application::shutdownRenders() {
-    if(render){
+    if(render) {
         delete render;
         render = nullptr;
     }
@@ -236,6 +230,11 @@ void Application::initRenders() {
         imGuiRender = new ImGuiRender(driver,ImGui::GetCurrentContext(),
                                             swapChain->getExtent(),swapChain->getDummyRenderPass());
          imGuiRender->init(swapChain);
+    }
+
+    if (!render_graph) {
+        render_graph = new render::backend::vulkan::RenderGraph(driver);
+        render_graph->init(scene,swapChain->getExtent().width,swapChain->getExtent().height);
     }
 }
 
@@ -282,7 +281,7 @@ void Application::recreateSwapChain() {
     swapChain->reinit(width,height);
     render->resize(swapChain);
     imGuiRender->resize(swapChain);
-
+    render_graph->resize(width, height);
 }
 
 

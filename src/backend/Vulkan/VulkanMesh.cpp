@@ -19,7 +19,7 @@ VulkanMesh::~VulkanMesh() {
 VkVertexInputBindingDescription VulkanMesh::getVertexInputBindingDescription() {
   static VkVertexInputBindingDescription bindingDescription = {
       .binding =0,
-      .stride = sizeof(core::Mesh),
+      .stride = sizeof(core::Vertex),
       .inputRate =VK_VERTEX_INPUT_RATE_VERTEX
   };
   return bindingDescription;
@@ -52,7 +52,7 @@ void VulkanMesh::createVertexBuffer() {
 
   vertex_buffer = driver->createVertexBuffer(
       render::backend::BufferType::STATIC,
-      sizeof(core::Mesh), static_cast<uint32_t>(vertices.size()),
+      sizeof(core::Vertex), static_cast<uint32_t>(vertices.size()),
       6, attributes,
       vertices.data()
   );

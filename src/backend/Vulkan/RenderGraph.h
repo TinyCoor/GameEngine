@@ -29,10 +29,9 @@ class VulkanRenderScene;
 struct VulkanRenderFrame;
 class Scene;
 
-
 class RenderGraph {
 public:
-    RenderGraph(render::backend::Driver* driver);
+    RenderGraph(render::backend::Driver* driver) :driver(driver){}
     ~RenderGraph();
 
     void init(const VulkanRenderScene* scene,uint32_t width,uint32_t height);
@@ -40,6 +39,8 @@ public:
     void shutdown();
     void render(const Scene* scene,const VulkanRenderFrame& frame);
 
+    inline GBuffer& getGBuffer() {return g_buffer;}
+    inline LBuffer& getLBuffer() {return l_buffer;}
 private:
     void renderGBuffer(const Scene* scene,const VulkanRenderFrame& frame);
     void initGBuffer(uint32_t width,uint32_t height);

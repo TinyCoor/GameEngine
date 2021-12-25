@@ -20,9 +20,9 @@ layout(location = 4) in vec3 fragNormalVS;
 layout(location = 5) in vec3 fragPositionVS;
 
 layout(location = 0) out vec4 outBaseColor;
-layout(location = 0) out float outDepth;
-layout(location = 0) out vec2 outNormal;
-layout(location = 0) out vec2 outShading;
+layout(location = 1) out float outDepth;
+layout(location = 2) out vec2 outNormal;
+layout(location = 3) out vec2 outShading;
 
 vec3 DirectBRDF(Surface surface, SurfaceMaterial material)
 {
@@ -48,10 +48,9 @@ void main()
 	float roughness = texture(roughnessSampler, fragTexCoord).r;
 	float metalness = texture(metailicSampler, fragTexCoord).r;
 
-	outBaseColor =vec4( material.albedo,1.0);
-	outColor.a =1.0;
+	outBaseColor =vec4(albedo,1.0);
 	outNormal = normalVS.xy * 0.5 + vec2(0.5f);
 	outDepth =length(fragPositionVS);
-	outShading =vec2 (material.roughness, material.metailic);
+	outShading =vec2(roughness, metalness);
 }
 

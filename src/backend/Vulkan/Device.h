@@ -9,7 +9,6 @@
 #include <cassert>
 class GLFWwindow;
 
-
 //Singleton
 namespace render::backend::vulkan {
 class Device {

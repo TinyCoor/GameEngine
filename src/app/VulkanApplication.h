@@ -16,7 +16,9 @@
 #include "../backend/Vulkan/driver.h"
 
 class GLFWwindow;
-using namespace render::backend::vulkan;
+namespace render::backend::vulkan {
+class RenderGraph;
+}
 
 
 
@@ -85,9 +87,9 @@ private:
   static inline ImTextureID bakedBRDF{nullptr};
 
   VulkanRender *render{nullptr};
+  render::backend::vulkan::RenderGraph* render_graph;
   ImGuiRender *imGuiRender{nullptr};
-  VulkanSwapChain* swapChain;
-
+  VulkanSwapChain* swapChain{nullptr};
   //TODO move to anther
   CameraState camera;
   InputState input;

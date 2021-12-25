@@ -101,6 +101,8 @@ VkDevice createDevice(
   VkPhysicalDeviceFeatures deviceFeatures = {};
   deviceFeatures.samplerAnisotropy = VK_FALSE;
   deviceFeatures.sampleRateShading = VK_TRUE;
+  deviceFeatures.tessellationShader= VK_TRUE;
+  deviceFeatures.geometryShader = VK_TRUE;
 
   deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
   deviceCreateInfo.pQueueCreateInfos = &queuesInfo;

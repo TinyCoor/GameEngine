@@ -10,15 +10,16 @@
 #include <volk.h>
 #include <vector>
 
-namespace render::backend::vulkan {
 
+namespace render::backend::vulkan {
 struct RenderState;
 class Device;
 class VulkanSwapChain;
 class VulkanRenderScene;
 class VulkanRenderScene;
 struct VulkanRenderFrame;
-
+}
+using  namespace render::backend::vulkan;
 class VulkanRender {
 private:
     render::backend::Driver *driver{nullptr};
@@ -56,16 +57,11 @@ public:
 
     void resize(const VulkanSwapChain *swapChain);
 
-    void reload(VulkanRenderScene *scene);
-
-    void setEnvironment(VulkanRenderScene *scene,VulkanTexture *texture);
-
-    VulkanTexture getBakedBRDF() const
-    { return brdfBaked; }
+    void setEnvironment(const VulkanRenderScene *scene,const VulkanTexture *texture);
 
 private:
 
 };
-}
+
 
 #endif //GAMEENGINE_VULKANRENDER_H

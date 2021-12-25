@@ -8,7 +8,7 @@
 #include "VAO.h"
 #include "Buffer/GLBuffer.hpp"
 #include "GLTexture.h"
-#include "../core/Vertex.h"
+#include "../core/Mesh.h"
 
 class RenderObject{
 public:
@@ -62,7 +62,6 @@ private:
     GLBuffer<GL_ARRAY_BUFFER> vbo;
     GLBuffer<GL_ELEMENT_ARRAY_BUFFER> ebo;
     std::vector<GLTexture<GL_TEXTURE_2D>> textures;
-    //maybe need some uniform buffer
 };
 
 

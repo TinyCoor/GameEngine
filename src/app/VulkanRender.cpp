@@ -9,8 +9,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <chrono>
+using namespace render::backend;
 
-namespace render::backend::vulkan {
 VulkanRender::VulkanRender(render::backend::Driver *driver,
                            VkExtent2D size)
     : driver(driver),
@@ -52,7 +52,7 @@ void VulkanRender::init(VulkanRenderScene *scene)
 
     scene_bind_set = driver->createBindSet();
 
-    std::array<VulkanTexture *, 8> textures =
+    std::array<const VulkanTexture *, 8> textures =
         {
             scene->getAlbedoTexture(),
             scene->getNormalTexture(),
@@ -143,7 +143,7 @@ void VulkanRender::render(VulkanRenderScene *scene, const VulkanRenderFrame &fra
     driver->drawIndexedPrimitive(frame.command_buffer, scene->getMesh()->getPrimitive());
 }
 
-void VulkanRender::setEnvironment( VulkanRenderScene *scene,VulkanTexture *texture)
+void VulkanRender::setEnvironment(const VulkanRenderScene *scene,const VulkanTexture *texture)
 {
 
     hdriToCubeRenderer.render(*scene->getCubeVertexShader(),
@@ -179,10 +179,3 @@ void VulkanRender::resize(const VulkanSwapChain *swapChain)
     extent = swapChain->getExtent();
 }
 
-void VulkanRender::reload(VulkanRenderScene *scene)
-{
-    shutdown();
-    init(scene);
-}
-
-}
