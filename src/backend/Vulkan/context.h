@@ -24,8 +24,9 @@ public:
     ///
     void clearBindSets();
     void clearShaders();
-    void pushBindSet(BindSet* bind_set);
-    void setBindSet(uint8_t binding,BindSet* set);
+    void pushBindSet(const BindSet* bind_set);
+    void allocateBindSets(uint8_t size) {num_sets = size;}
+    void setBindSet(uint8_t binding, const BindSet* set);
 
     // setter
     inline void setRenderPass(VkRenderPass render_pass) {current_pass = render_pass;}
@@ -50,7 +51,7 @@ public:
     inline uint8_t getNumColorAttachment() const { return num_color_attachment;}
     inline VkRenderPass getRenderPass() const{ return current_pass;}
     inline uint8_t getNumBindSets() const { return num_sets;}
-    inline BindSet* getBindSet(uint8_t index)   { return set[index];}
+    inline BindSet* getBindSet(uint8_t index)  { return set[index];}
     inline const BindSet* getBindSet(uint8_t index) const  { return set[index];}
     inline VkShaderModule getShader(ShaderType type) const { return shaders[static_cast<uint32_t>(type)];}
     inline VkCullModeFlags getCullMode() const { return state.cull_mode;}

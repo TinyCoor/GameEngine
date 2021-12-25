@@ -24,6 +24,8 @@ namespace config{
         diffuseIrrandianceFrag,
         BakedBRDFVertex,
         BakedBRDFFrag,
+        GBufferVert,
+        GBufferFrag,
     };
 
   static std::vector<render::backend::ShaderType> shaderTypes = {
@@ -34,6 +36,8 @@ namespace config{
       render::backend::ShaderType::VERTEX,
       render::backend::ShaderType::FRAGMENT,
       render::backend::ShaderType::FRAGMENT,
+      render::backend::ShaderType::FRAGMENT,
+      render::backend::ShaderType::VERTEX,
       render::backend::ShaderType::FRAGMENT,
       render::backend::ShaderType::VERTEX,
       render::backend::ShaderType::FRAGMENT,
@@ -71,6 +75,8 @@ enum Textures{
             "../../assets/shaders/diffuseIrrandiance.frag",
             "../../assets/shaders/bakedBRDF.vert",
             "../../assets/shaders/bakedBRDF.frag",
+            "../../assets/shaders/gbuffer.vert",
+            "../../assets/shaders/gbuffer.frag",
     };
 
     static std::vector< const char*> textures={

@@ -6,6 +6,7 @@
 #define GAMEENGINE_VULKANIMGUIRENDER_H
 
 #include <volk.h>
+#include "driver.h"
 struct ImGuiContext;
 
 namespace render::backend::vulkan {
@@ -20,7 +21,7 @@ class Device;
 
 class ImGuiRender {
 public:
-  ImGuiRender(const Device *ctx,
+  ImGuiRender(render::backend::Driver *driver,
                              ImGuiContext *imgui_ctx,
                              VkExtent2D extent,
                              VkRenderPass renderPass);
@@ -36,7 +37,7 @@ public:
   void render(const VulkanRenderFrame &frame);
 
 private:
-  const Device *context{nullptr};
+  render::backend::Driver *driver{nullptr};
   ImGuiContext *imGuiContext{nullptr};
   VkRenderPass renderPass;
   VkExtent2D extent;

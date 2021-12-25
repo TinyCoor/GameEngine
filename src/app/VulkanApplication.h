@@ -11,6 +11,7 @@
 #include "../backend/driver.h"
 #include "../backend/Vulkan/VulkanSwapChain.h"
 #include "../backend/Vulkan/VulkanImGuiRender.h"
+#include "../backend/Vulkan/Scene.h"
 #include "VulkanRender.h"
 #include "../backend/Vulkan/driver.h"
 
@@ -74,9 +75,10 @@ private:
 private:
   GLFWwindow *window{nullptr};
   bool windowResized = false;
-  Device* context{nullptr};
+
   render::backend::Driver* driver{nullptr};
 
+  Scene* sponza_scene{nullptr};
   VulkanRenderScene *scene{nullptr};
   RenderState state;
   //TODO remove
@@ -84,7 +86,6 @@ private:
 
   VulkanRender *render{nullptr};
   ImGuiRender *imGuiRender{nullptr};
-
   VulkanSwapChain* swapChain;
 
   //TODO move to anther

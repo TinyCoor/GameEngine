@@ -10,9 +10,6 @@
 #include <assimp/postprocess.h>
 #include <iostream>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
-#include <assimp/cimport.h>
 namespace render::backend::vulkan {
 VulkanMesh::~VulkanMesh() {
   clearGPUData();
@@ -22,7 +19,7 @@ VulkanMesh::~VulkanMesh() {
 VkVertexInputBindingDescription VulkanMesh::getVertexInputBindingDescription() {
   static VkVertexInputBindingDescription bindingDescription = {
       .binding =0,
-      .stride = sizeof(core::Vertex),
+      .stride = sizeof(core::Mesh),
       .inputRate =VK_VERTEX_INPUT_RATE_VERTEX
   };
   return bindingDescription;
@@ -35,7 +32,7 @@ std::vector<VkVertexInputAttributeDescription> VulkanMesh::getAttributeDescripti
       {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(core::Vertex, binormal)},
       {3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(core::Vertex, normal)},
       {4, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(core::Vertex, color)},
-      {5, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(core::Vertex, uv)},
+      {5, 0, VK_FORMAT_R32G32_SFLOAT,    offsetof(core::Vertex, uv)},
   };
 
   return attributes;
@@ -50,12 +47,12 @@ void VulkanMesh::createVertexBuffer() {
           { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, binormal) },
           { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, normal) },
           { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, color) },
-          { render::backend::Format::R32G32_SFLOAT,     offsetof(core::Vertex, uv) },
+          { render::backend::Format::R32G32_SFLOAT,    offsetof(core::Vertex, uv) },
       };
 
   vertex_buffer = driver->createVertexBuffer(
       render::backend::BufferType::STATIC,
-      sizeof(core::Vertex), static_cast<uint32_t>(vertices.size()),
+      sizeof(core::Mesh), static_cast<uint32_t>(vertices.size()),
       6, attributes,
       vertices.data()
   );
@@ -85,12 +82,19 @@ void VulkanMesh::createIndexBuffer() {
   );
 }
 
-//This is a bug in load form File
-bool VulkanMesh::loadFromFile(const char *file) {
+bool VulkanMesh::import(const char *file) {
   clearGPUData();
-  core::loadMesh(file, vertices, indices);
+  core::import(file, vertices, indices);
   uploadToGPU();
   return true;
+}
+
+bool VulkanMesh::import(const aiMesh *mesh)
+{
+    clearGPUData();
+    core::import(mesh, vertices, indices);
+    uploadToGPU();
+    return true;
 }
 
 void VulkanMesh::clearGPUData() {
@@ -163,4 +167,5 @@ void VulkanMesh::createQuad(float size) {
 
   uploadToGPU();
 }
+
 }

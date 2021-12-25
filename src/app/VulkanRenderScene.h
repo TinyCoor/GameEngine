@@ -22,28 +22,31 @@ public:
 
     inline const VulkanResourceManager &getResource() const { return resources; }
 
-    inline VulkanShader *getPBRVertexShader() { return resources.getShader(config::Shaders::PBRVertex); }
-    inline VulkanShader *getPBRFragmentShader() { return resources.getShader(config::Shaders::PBRFrag); }
+    inline const VulkanShader *getPBRVertexShader() const { return resources.getShader(config::Shaders::PBRVertex); }
+    inline const VulkanShader *getPBRFragmentShader()const { return resources.getShader(config::Shaders::PBRFrag); }
 
-    inline VulkanShader *getSkyboxVertexShader() { return resources.getShader(config::Shaders::SkyboxVertex); }
-    inline VulkanShader *getSkyboxFragmentShader() { return resources.getShader(config::Shaders::SkyboxFrag); }
-    inline VulkanShader *getCubeToPrefilteredSpecularShader() const { return resources.getShader(config::Shaders::CubeToPrefilteredSpecular); }
+    inline const VulkanShader *getGbufferVertexShader() const{ return resources.getShader(config::Shaders::GBufferVert); }
+    inline const VulkanShader *getGbufferFragmentShader() const{ return resources.getShader(config::Shaders::GBufferFrag); }
 
-    inline VulkanShader *getCubeVertexShader() { return resources.getShader(config::Shaders::CubeVertex); }
-    inline VulkanShader *getHDRToCubeFragmentShader() { return resources.getShader(config::Shaders::hdriToCubeFrag); }
-    inline VulkanShader *getDiffuseToIrridanceShader() { return resources.getShader(config::Shaders::diffuseIrrandianceFrag); }
+    inline const VulkanShader *getSkyboxVertexShader()const { return resources.getShader(config::Shaders::SkyboxVertex); }
+    inline const VulkanShader *getSkyboxFragmentShader()const { return resources.getShader(config::Shaders::SkyboxFrag); }
+    inline const VulkanShader *getCubeToPrefilteredSpecularShader() const { return resources.getShader(config::Shaders::CubeToPrefilteredSpecular); }
 
-    inline VulkanShader *getBakedVertexShader() { return resources.getShader(config::Shaders::BakedBRDFVertex); }
-    inline VulkanShader *getBakedFragmentShader() { return resources.getShader(config::Shaders::BakedBRDFFrag); }
+    inline const VulkanShader *getCubeVertexShader()const { return resources.getShader(config::Shaders::CubeVertex); }
+    inline const VulkanShader *getHDRToCubeFragmentShader()const { return resources.getShader(config::Shaders::hdriToCubeFrag); }
+    inline const VulkanShader *getDiffuseToIrridanceShader()const { return resources.getShader(config::Shaders::diffuseIrrandianceFrag); }
 
-    inline VulkanTexture *getEmissionTexture() { return resources.getTexture(config::Textures::emissionTexture); }
-    inline VulkanTexture *getAlbedoTexture() { return resources.getTexture(config::Textures::albedoTexture); }
-    inline VulkanTexture *getHDRTexture(int index) const{ return resources.getHDRTexture(config::Textures::EnvironmentBase + index);}
-    inline VulkanTexture *getNormalTexture() { return resources.getTexture(config::Textures::normalTexture); }
-    inline VulkanTexture *getAOTexture() { return resources.getTexture(config::Textures::aoTexture); }
-    inline VulkanTexture *getShadingTexture() { return resources.getTexture(config::Textures::shadingTexture); }
-    inline VulkanMesh *getMesh() { return resources.getMesh(config::Meshes::SciFiHelmet); }
-    inline VulkanMesh *getSkyboxMesh() { return resources.getMesh(config::Meshes::Skybox); }
+    inline const VulkanShader *getBakedVertexShader() const{ return resources.getShader(config::Shaders::BakedBRDFVertex); }
+    inline const VulkanShader *getBakedFragmentShader()const { return resources.getShader(config::Shaders::BakedBRDFFrag); }
+
+    inline const VulkanTexture *getEmissionTexture()const { return resources.getTexture(config::Textures::emissionTexture); }
+    inline const VulkanTexture *getAlbedoTexture()const { return resources.getTexture(config::Textures::albedoTexture); }
+    inline const VulkanTexture *getHDRTexture(int index) const{ return resources.getHDRTexture(config::Textures::EnvironmentBase + index);}
+    inline const VulkanTexture *getNormalTexture()const { return resources.getTexture(config::Textures::normalTexture); }
+    inline const VulkanTexture *getAOTexture()const { return resources.getTexture(config::Textures::aoTexture); }
+    inline const VulkanTexture *getShadingTexture() const{ return resources.getTexture(config::Textures::shadingTexture); }
+    inline const VulkanMesh *getMesh()const { return resources.getMesh(config::Meshes::SciFiHelmet); }
+    inline const VulkanMesh *getSkyboxMesh()const { return resources.getMesh(config::Meshes::Skybox); }
 
     inline size_t getNumHDRTextures() const { return config::hdrTextures.size(); }
     inline const char *getHDRTexturePath(int index) const { return config::hdrTextures[index]; }

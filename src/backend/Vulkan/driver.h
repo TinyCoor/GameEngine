@@ -283,8 +283,9 @@ public:
         const void* data) override;
     void clearShaders() override;
     void clearBindSets() override;
-    void setShader(ShaderType type,const render::backend::Shader* shader) override;
-    void setBindSet( uint32_t binding,render::backend::BindSet* set) override;
+    void setShader(ShaderType type, const render::backend::Shader* shader) override;
+    void setBindSet(uint32_t binding,const render::backend::BindSet* set) override;
+    void allocateBindSets(uint8_t size) override ;
     void pushBindSet(render::backend::BindSet* set) override;
     BindSet* createBindSet() override;
 

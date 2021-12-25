@@ -760,7 +760,7 @@ void VulkanDriver::bindUniformBuffer(render::backend::BindSet *bind_set,
     }
     auto vk_bind_set = static_cast<vulkan::BindSet *>(bind_set);
     auto vk_ubo = static_cast<const vulkan::UniformBuffer *>(uniform_buffer);
-    vk_bind_set->binding_used[binding] = (uniform_buffer != nullptr);
+    vk_bind_set->binding_used[binding] = true;
     vk_bind_set->binding_dirty[binding] = true;
 
     auto &data = vk_bind_set->binding_data[binding];
@@ -792,9 +792,9 @@ void VulkanDriver::bindTexture(render::backend::BindSet *bind_set,
 
     vulkan::BindSet *vk_bind_set = static_cast<vulkan::BindSet *>(bind_set);
     const vulkan::Texture *vk_texture = static_cast<const vulkan::Texture *>(texture);
-
-    bindTexture(bind_set, binding, texture, 0, vk_texture->num_mipmaps, 0, vk_texture->num_layers);
-
+    uint32_t num_layers = (vk_texture) ? vk_texture->num_layers  : 1;
+    uint32_t num_mipmaps = (vk_texture) ? vk_texture->num_mipmaps  : 1;
+    bindTexture(bind_set, binding, texture, 0, num_mipmaps, 0, num_layers);
 }
 
 void VulkanDriver::bindTexture(render::backend::BindSet *bind_set,
@@ -806,7 +806,6 @@ void VulkanDriver::bindTexture(render::backend::BindSet *bind_set,
                                int num_layer)
 {
     assert(binding < vulkan::BindSet::MAX_BINDINGS);
-    assert(texture != nullptr);
     if (bind_set == nullptr) {
         return;
     }
@@ -839,9 +838,9 @@ void VulkanDriver::bindTexture(render::backend::BindSet *bind_set,
         sampler = vk_texture->sampler;
     }
 
-    vk_bind_set->binding_used[binding] = (texture != nullptr);
-    data.texture.sampler = sampler;
+    vk_bind_set->binding_used[binding] = true;
     vk_bind_set->binding_dirty[binding] = true;
+    data.texture.sampler = sampler;
     data.texture.view = view;
     info.binding = binding;
     info.descriptorCount = 1;
@@ -886,6 +885,11 @@ void VulkanDriver::drawIndexedPrimitive(
             VkDescriptorType descriptor_type = bind_set->bindings[j].descriptorType;
             auto &data = bind_set->binding_data[j];
 
+            if (data.texture.view == VK_NULL_HANDLE
+                || data.ubo.buffer== VK_NULL_HANDLE) {
+                continue;
+            }
+
             VkWriteDescriptorSet write_set = {};
             write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             write_set.dstSet =  bind_set->set;
@@ -927,8 +931,6 @@ void VulkanDriver::drawIndexedPrimitive(
             bind_set->binding_dirty[j] = false;
         }
     }
-
-
 
     if (writes.size() > 0)
         vkUpdateDescriptorSets(device->LogicDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
@@ -1359,9 +1361,9 @@ void VulkanDriver::pushBindSet(render::backend::BindSet *set)
     vk_context->pushBindSet(vk_bind_set);
 }
 
-void VulkanDriver::setBindSet(uint32_t binding, render::backend::BindSet *set)
+void VulkanDriver::setBindSet(uint32_t binding,const render::backend::BindSet *set)
 {
-    auto vk_bind_set = static_cast<vulkan::BindSet *>(set);
+    auto * vk_bind_set = static_cast<const vulkan::BindSet *>(set);
     vk_context->setBindSet(binding, vk_bind_set);
 }
 
@@ -1458,6 +1460,11 @@ void VulkanDriver::clearPushConstants()
 void VulkanDriver::setPushConstant(uint8_t size, const void *data)
 {
     vk_context->setPushConstant(size,data);
+}
+
+void VulkanDriver::allocateBindSets(uint8_t size)
+{
+    vk_context->allocateBindSets(size);
 }
 
 }

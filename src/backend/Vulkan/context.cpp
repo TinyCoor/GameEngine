@@ -57,19 +57,19 @@ void context::clearShaders()
     }
 }
 
-void context::pushBindSet(BindSet *bind_set)
+void context::pushBindSet(const BindSet *bind_set)
 {
     //todo log
     assert(num_sets < MAX_SET);
     assert(bind_set);
-    set[num_sets++] = bind_set;
+    set[num_sets++] = const_cast<BindSet*>(bind_set);
 }
 
-void context::setBindSet(uint8_t binding, BindSet *bind_set)
+void context::setBindSet(uint8_t binding, const  BindSet *bind_set)
 {
     assert(binding < MAX_SET);
-    assert(bind_set);
-    set[binding] = bind_set;
+    assert(bind_set != nullptr);
+    set[binding] = const_cast<BindSet*>(bind_set);
 }
 void context::setFrameBuffer(const FrameBuffer *frame_buffer)
 {

@@ -28,7 +28,7 @@ public:
   inline size_t getNumLayers() const { return layers; }
   inline size_t getNumMiplevels() const { return mip_levels; }
 
-  bool loadFromFile(const std::string &file);
+  bool import(const char* file);
   void clearGPUData();
   void clearCPUData();
 

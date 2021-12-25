@@ -8,7 +8,6 @@ if (Vulkan_FOUND)
 endif ()
 
 
-
 add_executable(niagara
         backend/Vulkan/VulkanTexture.cpp
         backend/Vulkan/VulkanUtils.cpp
@@ -51,8 +50,8 @@ add_executable(niagara
         backend/driver.cpp
         backend/core/file.cpp
         backend/core/file.h
-        backend/core/Vertex.h
-        backend/core/Vertex.cpp
+        backend/core/Mesh.h
+        backend/core/Mesh.cpp
         backend/Vulkan/driver.cpp
         backend/Vulkan/driver.h
         backend/Vulkan/platform.cpp
@@ -64,7 +63,15 @@ add_executable(niagara
         backend/Vulkan/PipelineLayoutCache.cpp
         backend/Vulkan/PipelineLayoutCache.h
         backend/Vulkan/DescriptorSetLayoutCache.cpp
-        backend/Vulkan/context.cpp backend/Vulkan/context.h backend/Vulkan/auxiliary.h backend/Vulkan/VulkanResourceCache.cpp backend/Vulkan/VulkanResourceCache.h backend/Vulkan/PipelineCache.cpp backend/Vulkan/PipelineCache.h)
+        backend/Vulkan/context.cpp
+        backend/Vulkan/context.h
+        backend/Vulkan/auxiliary.h
+        backend/Vulkan/VulkanResourceCache.cpp
+        backend/Vulkan/VulkanResourceCache.h
+        backend/Vulkan/PipelineCache.cpp
+        backend/Vulkan/PipelineCache.h
+        backend/Vulkan/Scene.cpp
+        backend/Vulkan/Scene.h backend/Vulkan/RenderGraph.cpp backend/Vulkan/RenderGraph.h)
 
 
 message(STATUS ${ShaderC_LIBRARIES})

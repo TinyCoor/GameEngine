@@ -15,11 +15,11 @@
 #include <imgui_impl_glfw.h>
 using namespace render::backend::vulkan;
 
-ImGuiRender::ImGuiRender(const Device *ctx,
-                                     ImGuiContext* imgui_ctx,
-                                     VkExtent2D size,
-                                     VkRenderPass pass)
-    : context(ctx),
+ImGuiRender::ImGuiRender(render::backend::Driver *driver,
+                         ImGuiContext* imgui_ctx,
+                         VkExtent2D size,
+                         VkRenderPass pass)
+    : driver(driver),
       imGuiContext(imgui_ctx),
       extent(size),
       renderPass(pass)
@@ -35,6 +35,7 @@ ImGuiRender::~ImGuiRender()
 void ImGuiRender::init(VulkanSwapChain* swapChain)
 {
 
+    auto context = static_cast<VulkanDriver*>(driver)->GetDevice();
     // Init ImGui bindings for Vulkan
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = context->Instance();

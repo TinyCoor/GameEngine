@@ -149,7 +149,7 @@ void VulkanRender::setEnvironment( VulkanRenderScene *scene,VulkanTexture *textu
     hdriToCubeRenderer.render(*scene->getCubeVertexShader(),
                               *scene->getHDRToCubeFragmentShader(),
                               *texture);
-    //mip
+
     for (size_t i = 0; i < cubeToPrefilteredRenderers.size(); ++i) {
         float data[4] = {
             static_cast<float>(i) / environmentCubemap.getNumMiplevels(),
@@ -169,6 +169,7 @@ void VulkanRender::setEnvironment( VulkanRenderScene *scene,VulkanTexture *textu
         &environmentCubemap,
         &diffuseIrradianceCubemap,
     };
+
     driver->bindTexture(scene_bind_set, 5, environmentCubemap.getTexture());
     driver->bindTexture(scene_bind_set, 6, diffuseIrradianceCubemap.getTexture());
 }

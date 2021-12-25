@@ -54,8 +54,8 @@ void VulkanTexture::clearCPUData() {
   }
 }
 
-bool VulkanTexture::loadFromFile(const std::string &path) {
-  if (stbi_info(path.c_str(), nullptr, nullptr, nullptr) == 0) {
+bool VulkanTexture::import(const char* path) {
+  if (stbi_info(path, nullptr, nullptr, nullptr) == 0) {
     std::cerr << "VulkanTexture::loadFromFile(): unsupported image format for \"" << path << "\" file" << std::endl;
     return false;
   }
@@ -64,11 +64,11 @@ bool VulkanTexture::loadFromFile(const std::string &path) {
   size_t pixel_size = 0;
   int channels = 0;
 
-  if (stbi_is_hdr(path.c_str())) {
-    stb_pixels = stbi_loadf(path.c_str(), &width, &height, &channels, STBI_default);
+  if (stbi_is_hdr(path)) {
+    stb_pixels = stbi_loadf(path, &width, &height, &channels, STBI_default);
     pixel_size = sizeof(float);
   } else {
-    stb_pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_default);
+    stb_pixels = stbi_load(path, &width, &height, &channels, STBI_default);
     pixel_size = sizeof(stbi_uc);
   }
 

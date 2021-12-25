@@ -34,7 +34,7 @@ void Application::initWindow() {
     glfwSetScrollCallback(window, &Application::onScroll);
 }
 
-void Application::run(){
+void Application::run() {
     initWindow();
     initImGui();
     initVulkan();
@@ -59,7 +59,6 @@ Application::~Application(){
 }
 void Application::initVulkan() {
     auto vk_driver = dynamic_cast<render::backend::vulkan::VulkanDriver*>(render::backend::createDriver("","",render::backend::Api::VULKAN));
-    context = vk_driver->GetDevice();
     driver = vk_driver;
 }
 
@@ -96,29 +95,32 @@ void Application::RenderFrame(){
         return;
     }
 
-    render->render(scene, frame);
-//    todo
-//   opaque geometry -> node1 -> gbuffer -> node2 ->accumulation buffer
-//                                  --    light ---
-//                                              --- node3->scene ->frame-> node4 -> postprocess
-//    VulkanRenderPass mainRenderPass;
-//    VulkanGraphicsProgram skyboxProgram;
-//    VulkanGraphicsProgram pbrProgram;
+  //  render->render(scene, frame);
 
-//
-//   VulkanTexture ao;
-//   VulkanTexture normal
-//   VulkanTexture roughnessandMetalness
-//
-//
-//    VulkanMesh skybox;
-//    VulkanMesh model;
-//
-//    render->BindGraphicsProgram(skyboxProgram);
-//    render->drawIndexedPrimitive(skybox);
-//
-//    render->BindGraphicsProgram(pbrProgram);
-//    render->drawIndexedPrimitive(model);
+
+    driver->clearPushConstants();
+    driver->clearBindSets();
+
+    driver->allocateBindSets(2);
+    driver->setBindSet(0,frame.bind_set);
+
+    driver->clearShaders();
+
+    driver->setShader(render::backend::ShaderType::VERTEX,scene->getGbufferVertexShader()->getShader());
+    driver->setShader(render::backend::ShaderType::FRAGMENT,scene->getGbufferFragmentShader()->getShader());
+
+    glm::mat4 rotation = glm::rotate(glm::mat4 (1.0),glm::radians(90.f),glm::vec3(1.0,0.0,0.0));
+
+    for (int i = 0; i < sponza_scene->getNumNodes(); ++i) {
+        auto* node_mesh = sponza_scene->getNodeMesh(i);
+        const auto& transform =rotation * sponza_scene->getNodeWorldTransform(i);
+        auto* node_bind_set = sponza_scene->getNodeBindSet(i);
+
+        driver->setBindSet(1, node_bind_set);
+        driver->setPushConstant(sizeof(glm::mat4), &transform);
+
+        driver->drawIndexedPrimitive(frame.command_buffer,node_mesh->getPrimitive());
+    }
 
     imGuiRender->render(frame);
 
@@ -132,9 +134,6 @@ void Application::update()
 {
     static auto startTime = std::chrono::high_resolution_clock::now();
     auto currentTime = std::chrono::high_resolution_clock::now();
-
-    const float rotationSpeed = 0.1f;
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     const glm::vec3 &up = {0.0f, 0.0f, 1.0f};
     const glm::vec3 &zero = {0.0f, 0.0f, 0.0f};
@@ -234,7 +233,7 @@ void Application::initRenders() {
     render->setEnvironment(scene,scene->getHDRTexture( state.currentEnvironment));
 
     if (!imGuiRender){
-        imGuiRender = new ImGuiRender(context,ImGui::GetCurrentContext(),
+        imGuiRender = new ImGuiRender(driver,ImGui::GetCurrentContext(),
                                             swapChain->getExtent(),swapChain->getDummyRenderPass());
          imGuiRender->init(swapChain);
     }
@@ -257,6 +256,9 @@ void Application::shutdownSwapChain() {
 void Application::initScene() {
     scene = new VulkanRenderScene(driver);
     scene->init();
+
+    sponza_scene = new Scene(driver);
+    sponza_scene->import("../../assets/models/pbr_sponza/Sponza.gltf");
 }
 
 void Application::shutdownScene() {
@@ -275,8 +277,7 @@ void Application::recreateSwapChain() {
         glfwGetFramebufferSize(window,&width,&height);
         glfwPollEvents();
     }
-    vkDeviceWaitIdle(context->LogicDevice());
-
+    driver->wait();
     glfwGetWindowSize(window,&width,&height);
     swapChain->reinit(width,height);
     render->resize(swapChain);

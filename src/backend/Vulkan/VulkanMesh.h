@@ -6,9 +6,10 @@
 #define GAMEENGINE_VULKANRENDERMODEL_H
 #include <vector>
 #include "Device.h"
-#include "../core/Vertex.h"
+#include "../core/Mesh.h"
 #include "driver.h"
 
+class aiMesh;
 
 ///GPU顶点数据
 namespace render::backend::vulkan {
@@ -36,7 +37,8 @@ public:
   static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
   inline render::backend::RenderPrimitive* getPrimitive() const {return primitive;}
 
-  bool loadFromFile(const char *file);
+  bool import(const char *file);
+  bool import(const aiMesh* mesh);
 
   void createSkybox(float size);
   void createQuad(float size);

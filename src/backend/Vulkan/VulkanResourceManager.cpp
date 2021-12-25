@@ -34,7 +34,7 @@ VulkanMesh* VulkanResourceManager::loadMesh(int id, const char *path) {
         return nullptr;
     }
     auto mesh = new VulkanMesh(driver);
-    mesh->loadFromFile(path);
+    mesh->import(path);
     meshes.insert(std::make_pair( id,mesh));
     return mesh;
 }
@@ -46,7 +46,7 @@ VulkanTexture* VulkanResourceManager::loadTexture(int id, const char *path) {
         return nullptr;
     }
     auto texture = new VulkanTexture(driver);
-    texture->loadFromFile(path);
+    texture->import(path);
     textures.insert(std::make_pair( id,texture));
     return texture;
 }

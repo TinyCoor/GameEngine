@@ -411,7 +411,10 @@ public:
     virtual void clearShaders() = 0;
     virtual void clearBindSets() = 0;
     virtual void setShader(ShaderType type,const Shader* shader) = 0;
-    virtual void setBindSet( uint32_t binding,BindSet* set) = 0;
+    virtual void setBindSet( uint32_t binding,const BindSet* set) = 0;
+    virtual void allocateBindSets(
+        uint8_t size
+        ) = 0;
     virtual void pushBindSet(BindSet* set) = 0;
     virtual BindSet* createBindSet() = 0;
 
