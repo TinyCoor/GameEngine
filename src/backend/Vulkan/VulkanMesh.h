@@ -21,7 +21,6 @@ private:
 
   render::backend::VertexBuffer *vertex_buffer {nullptr};
   render::backend::IndexBuffer *index_buffer {nullptr};
-
   render::backend::RenderPrimitive* primitive{nullptr};
 
 public:

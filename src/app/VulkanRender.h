@@ -16,7 +16,7 @@ struct RenderState;
 class Device;
 class VulkanSwapChain;
 class VulkanRenderScene;
-class VulkanRenderScene;
+class ApplicationResource;
 struct VulkanRenderFrame;
 }
 using  namespace render::backend::vulkan;
@@ -24,16 +24,6 @@ class VulkanRender {
 private:
     render::backend::Driver *driver{nullptr};
     VkExtent2D extent;
-
-    VulkanCubeMapRender hdriToCubeRenderer;
-    VulkanCubeMapRender diffuseIrradianceRenderer;
-    std::vector<VulkanCubeMapRender *> cubeToPrefilteredRenderers;
-    VulkanTexture2DRender brdfRender;
-
-    VulkanTexture brdfBaked;
-    VulkanTexture environmentCubemap;
-    VulkanTexture diffuseIrradianceCubemap;
-
     render::backend::BindSet *scene_bind_set{nullptr};
 
 public:
@@ -47,17 +37,18 @@ public:
         extent.height = height;
     }
 
-    void init(VulkanRenderScene *scene);
+    void init(ApplicationResource *scene);
 
-    void update(RenderState &state, VulkanRenderScene *scene);
+    void update(RenderState &state, ApplicationResource *scene);
 
-    void render(VulkanRenderScene *scene, const VulkanRenderFrame &frame);
+    void render(ApplicationResource *scene, const VulkanRenderFrame &frame);
 
     void shutdown();
 
     void resize(const VulkanSwapChain *swapChain);
 
-    void setEnvironment(const VulkanRenderScene *scene,const VulkanTexture *texture);
+    void setEnvironment(const ApplicationResource *resource,uint8_t index);
+
 
 private:
 

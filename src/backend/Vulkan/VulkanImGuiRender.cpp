@@ -3,12 +3,12 @@
 //
 
 #include "VulkanImGuiRender.h"
-#include "../../app/VulkanRenderScene.h"
-#include "VulkanUtils.h"
+#include "../../app/ApplicationResource.h"
 #include "../../app/RenderState.h"
+#include "Macro.h"
+#include "Utils.h"
 #include "VulkanSwapChain.h"
 #include "VulkanTexture.h"
-#include "Macro.h"
 
 #include <imgui.h>
 #include <imgui_impl_vulkan.h>
@@ -50,9 +50,9 @@ void ImGuiRender::init(VulkanSwapChain* swapChain)
 
     ImGui_ImplVulkan_Init(&init_info,swapChain->getDummyRenderPass());
 
-    VkCommandBuffer imGuiCommandBuffer = VulkanUtils::beginSingleTimeCommands(context);
+    VkCommandBuffer imGuiCommandBuffer = Utils::beginSingleTimeCommands(context);
     ImGui_ImplVulkan_CreateFontsTexture(imGuiCommandBuffer);
-    VulkanUtils::endSingleTimeCommands(context, imGuiCommandBuffer);
+    Utils::endSingleTimeCommands(context, imGuiCommandBuffer);
 
 }
 

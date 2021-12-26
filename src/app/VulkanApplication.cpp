@@ -2,18 +2,18 @@
 // Created by y123456 on 2021/10/11.
 //
 #include "VulkanApplication.h"
-#include "VulkanRenderScene.h"
-#include "VulkanRender.h"
 #include "../backend/Vulkan/VulkanImGuiRender.h"
-#include <chrono>
+#include "ApplicationResource.h"
+#include "RenderGraph.h"
+#include "VulkanRender.h"
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <chrono>
 #include <functional>
-#include <volk.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include "../backend/Vulkan/RenderGraph.h"
+#include <volk.h>
 
 using namespace render::backend;
 void Application::initWindow() {
@@ -96,9 +96,7 @@ void Application::RenderFrame(){
         return;
     }
 
-
-
-    render_graph->render(sponza_scene,frame);
+    //render_graph->render(sponza_scene,frame);
 
     RenderPassClearValue clear_values[3];
     clear_values[0].color = {0.2f, 0.2f, 0.2f, 1.0f};
@@ -115,7 +113,7 @@ void Application::RenderFrame(){
 
     driver->beginRenderPass(frame.command_buffer, frame.frame_buffer, &info);
 
-   // render->render(scene, frame);
+    render->render(resource, frame);
     imGuiRender->render(frame);
 
     driver->endRenderPass(frame.command_buffer);
@@ -161,16 +159,16 @@ void Application::update()
     ImGui::Begin("Material Parameters");
 
     if(ImGui::Button("Reload Shader")){
-        scene->reloadShader();
-        render->setEnvironment(scene,scene->getHDRTexture(state.currentEnvironment));
+        resource->reloadShader();
+        render->setEnvironment(resource,state.currentEnvironment);
     }
 
-    if(ImGui::BeginCombo("Chose your Destiny",scene->getHDRTexturePath(state.currentEnvironment))){
-        for (int i = 0; i < scene->getNumHDRTextures(); ++i) {
+    if(ImGui::BeginCombo("Chose your Destiny",resource->getHDRTexturePath(state.currentEnvironment))){
+        for (int i = 0; i < resource->getNumHDRTextures(); ++i) {
             bool selected = (i==state.currentEnvironment);
-            if (ImGui::Selectable(scene->getHDRTexturePath(i),&selected)){
+            if (ImGui::Selectable(resource->getHDRTexturePath(i),&selected)){
                 state.currentEnvironment = i;
-                render->setEnvironment(scene, scene->getHDRTexture(state.currentEnvironment));
+                render->setEnvironment(resource, i);
             }
 
             if (selected)
@@ -221,10 +219,10 @@ void Application::shutdownRenders() {
 void Application::initRenders() {
     if(!render){
         render = new VulkanRender(driver,swapChain->getExtent());
-        render->init(scene);
+        render->init(resource);
     }
 
-    render->setEnvironment(scene,scene->getHDRTexture( state.currentEnvironment));
+    render->setEnvironment(resource, state.currentEnvironment);
 
     if (!imGuiRender){
         imGuiRender = new ImGuiRender(driver,ImGui::GetCurrentContext(),
@@ -234,7 +232,7 @@ void Application::initRenders() {
 
     if (!render_graph) {
         render_graph = new render::backend::vulkan::RenderGraph(driver);
-        render_graph->init(scene,swapChain->getExtent().width,swapChain->getExtent().height);
+        render_graph->init(resource,swapChain->getExtent().width,swapChain->getExtent().height);
     }
 }
 
@@ -253,20 +251,18 @@ void Application::shutdownSwapChain() {
 }
 
 void Application::initScene() {
-    scene = new VulkanRenderScene(driver);
-    scene->init();
+    resource = new ApplicationResource(driver);
+    resource->init();
 
     sponza_scene = new Scene(driver);
     sponza_scene->import("../../assets/models/pbr_sponza/Sponza.gltf");
 }
 
 void Application::shutdownScene() {
-    scene->shutdown();
-    if(scene){
-        delete scene;
-        scene = nullptr;
+    if(resource){
+        delete resource;
+        resource = nullptr;
     }
-
 }
 
 void Application::recreateSwapChain() {

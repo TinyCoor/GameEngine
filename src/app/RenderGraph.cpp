@@ -2,20 +2,17 @@
 // Created by 12132 on 2021/12/25.
 //
 
-#include <glm/gtc/matrix_transform.hpp>
 #include "RenderGraph.h"
-#include "VulkanSwapChain.h"
-#include "Scene.h"
-#include "../../app/VulkanRenderScene.h"
+#include "../backend/Vulkan/Scene.h"
+#include "../backend/Vulkan/VulkanSwapChain.h"
+#include "ApplicationResource.h"
+#include <glm/gtc/matrix_transform.hpp>
 namespace render::backend::vulkan {
-
-
 
 RenderGraph::~RenderGraph()
 {
-
 }
-void RenderGraph::init(const VulkanRenderScene *scene, uint32_t width, uint32_t height)
+void RenderGraph::init(const ApplicationResource *scene, uint32_t width, uint32_t height)
 {
     initGBuffer(width, height);
     initLBuffer(width, height);

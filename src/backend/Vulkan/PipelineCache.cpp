@@ -4,6 +4,7 @@
 
 #include "PipelineCache.h"
 #include "VulkanGraphicsPipelineBuilder.h"
+#include "Utils.h"
 #include "auxiliary.h"
 #include "PipelineLayoutCache.h"
 #include "context.h"

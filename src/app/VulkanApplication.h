@@ -81,7 +81,7 @@ private:
   render::backend::Driver* driver{nullptr};
 
   Scene* sponza_scene{nullptr};
-  VulkanRenderScene *scene{nullptr};
+  ApplicationResource *resource{nullptr};
   RenderState state;
   //TODO remove
   static inline ImTextureID bakedBRDF{nullptr};

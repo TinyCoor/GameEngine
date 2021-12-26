@@ -22,14 +22,15 @@ private:
 
 public:
   VulkanCubeMapRender(render::backend::Driver *driver);
+  ~VulkanCubeMapRender();
 
-  void init(VulkanTexture& target_texture,int target_mip);
+  void init(VulkanTexture* target_texture,int target_mip);
 
   void shutdown();
 
-  void render(const VulkanShader& vertShader,
-              const VulkanShader& fragShader,
-              const VulkanTexture& inputTexture,
+  void render(const VulkanShader* vertShader,
+              const VulkanShader* fragShader,
+              const VulkanTexture* inputTexture,
               int input_mip = -1,
               uint8_t size =0,
               const void* data = nullptr);

@@ -15,7 +15,7 @@ file(GLOB HEADERS
 
 set(HEADERS
         VulkanTexture.h
-        VulkanUtils.h
+        Utils.h
         VulkanMesh.h
         Device.h
         VulkanShader.h
@@ -34,7 +34,7 @@ set(HEADERS
 
 set(SOURCES
         VulkanTexture.cpp
-        VulkanUtils.cpp
+        Utils.cpp
         VulkanMesh.cpp
         Device.cpp
         VulkanShader.cpp

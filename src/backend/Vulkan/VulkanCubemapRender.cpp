@@ -16,7 +16,11 @@ VulkanCubeMapRender::VulkanCubeMapRender(render::backend::Driver *driver)
 {
 }
 
-void VulkanCubeMapRender::init(VulkanTexture& target_texture,int target_mip)
+VulkanCubeMapRender::~VulkanCubeMapRender(){
+    shutdown();
+}
+
+void VulkanCubeMapRender::init(VulkanTexture* target_texture,int target_mip)
 {
     quad.createQuad(2.0f);
 
@@ -28,12 +32,12 @@ void VulkanCubeMapRender::init(VulkanTexture& target_texture,int target_mip)
     //create frameBuffer
     render::backend::FrameBufferAttachment attachments[6] =
     {
-        {FrameBufferAttachmentType::COLOR, target_texture.getTexture(), target_mip, 1, 0, 1},
-        {FrameBufferAttachmentType::COLOR, target_texture.getTexture(), target_mip, 1, 1, 1},
-        {FrameBufferAttachmentType::COLOR, target_texture.getTexture(), target_mip, 1, 2, 1},
-        {FrameBufferAttachmentType::COLOR, target_texture.getTexture(), target_mip, 1, 3, 1},
-        {FrameBufferAttachmentType::COLOR, target_texture.getTexture(), target_mip, 1, 4, 1},
-        {FrameBufferAttachmentType::COLOR, target_texture.getTexture(), target_mip, 1, 5, 1},
+        {FrameBufferAttachmentType::COLOR, target_texture->getTexture(), target_mip, 1, 0, 1},
+        {FrameBufferAttachmentType::COLOR, target_texture->getTexture(), target_mip, 1, 1, 1},
+        {FrameBufferAttachmentType::COLOR, target_texture->getTexture(), target_mip, 1, 2, 1},
+        {FrameBufferAttachmentType::COLOR, target_texture->getTexture(), target_mip, 1, 3, 1},
+        {FrameBufferAttachmentType::COLOR, target_texture->getTexture(), target_mip, 1, 4, 1},
+        {FrameBufferAttachmentType::COLOR, target_texture->getTexture(), target_mip, 1, 5, 1},
     };
     framebuffer = driver->createFrameBuffer(6, attachments);
 
@@ -98,18 +102,18 @@ void VulkanCubeMapRender::shutdown()
 
 }
 
-void VulkanCubeMapRender::render(const VulkanShader& vertShader,
-                                 const VulkanShader& fragShader,
-                                 const VulkanTexture& inputTexture,
+void VulkanCubeMapRender::render(const VulkanShader* vertShader,
+                                 const VulkanShader* fragShader,
+                                 const VulkanTexture* inputTexture,
                                  int input_mip,
                                  uint8_t push_constant_size,
                                  const void* data)
 {
-    if(input_mip== -1 )
+    if(input_mip == -1 )
     {
-        driver->bindTexture(bind_set,1,inputTexture.getTexture());
+        driver->bindTexture(bind_set,1,inputTexture->getTexture());
     } else {
-        driver->bindTexture(bind_set,1,inputTexture.getTexture(),input_mip,1,0,inputTexture.getNumLayers());
+        driver->bindTexture(bind_set,1,inputTexture->getTexture(),input_mip,1,0,inputTexture->getNumLayers());
     }
 
     RenderPassClearValue clear_values[6];
@@ -131,14 +135,14 @@ void VulkanCubeMapRender::render(const VulkanShader& vertShader,
         driver->setPushConstant(push_constant_size,data);
     driver->clearShaders();
     driver->clearBindSets();
-
+    driver->pushBindSet(bind_set);
     // Record command buffers
     driver->resetCommandBuffer(command_buffer);
     driver->beginCommandBuffer(command_buffer);
 
-    driver->setShader(ShaderType::VERTEX,vertShader.getShader());
-    driver->setShader(ShaderType::FRAGMENT,fragShader.getShader());
-    driver->pushBindSet(bind_set);
+    driver->setShader(ShaderType::VERTEX,vertShader->getShader());
+    driver->setShader(ShaderType::FRAGMENT,fragShader->getShader());
+
     driver->beginRenderPass(command_buffer,framebuffer,&info);
 
     //todo draw after clear state

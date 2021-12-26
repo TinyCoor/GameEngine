@@ -3,7 +3,7 @@
 //
 
 #include "VulkanMesh.h"
-#include "VulkanUtils.h"
+#include "Utils.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>

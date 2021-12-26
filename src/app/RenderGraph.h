@@ -5,7 +5,7 @@
 #ifndef GAMEENGINE_SRC_BACKEND_VULKAN_RENDERGRAPH_H
 #define GAMEENGINE_SRC_BACKEND_VULKAN_RENDERGRAPH_H
 
-#include "driver.h"
+#include "../backend/Vulkan/driver.h"
 
 namespace render::backend::vulkan{
 
@@ -25,8 +25,9 @@ struct LBuffer{
     render::backend::FrameBuffer* lbuffer{nullptr};
 };
 
-class VulkanRenderScene;
+
 struct VulkanRenderFrame;
+class ApplicationResource;
 class Scene;
 
 class RenderGraph {
@@ -34,7 +35,7 @@ public:
     RenderGraph(render::backend::Driver* driver) :driver(driver){}
     ~RenderGraph();
 
-    void init(const VulkanRenderScene* scene,uint32_t width,uint32_t height);
+    void init(const ApplicationResource* scene,uint32_t width,uint32_t height);
     void resize(uint32_t width,uint32_t height);
     void shutdown();
     void render(const Scene* scene,const VulkanRenderFrame& frame);

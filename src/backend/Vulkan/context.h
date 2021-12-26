@@ -25,7 +25,7 @@ public:
     void clearBindSets();
     void clearShaders();
     void pushBindSet(const BindSet* bind_set);
-    void allocateBindSets(uint8_t size) {num_sets = size;}
+    void allocateBindSets(uint8_t size) {num_sets = size;memset(set, 0, sizeof(set));}
     void setBindSet(uint8_t binding, const BindSet* set);
 
     // setter

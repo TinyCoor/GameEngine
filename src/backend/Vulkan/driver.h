@@ -6,6 +6,7 @@
 #define GAMEENGINE_DRIVER_H
 #include "../driver.h"
 #include <volk.h>
+#include <vk_mem_alloc.h>
 
 
 namespace render::backend::vulkan {
@@ -13,7 +14,7 @@ namespace render::backend::vulkan {
 struct VertexBuffer : public render::backend::VertexBuffer {
     static constexpr int MAX_ATTRIBUTES = 10;
     VkBuffer buffer{VK_NULL_HANDLE};
-    VkDeviceMemory memory{VK_NULL_HANDLE};
+    VmaAllocation memory {VK_NULL_HANDLE};
     uint16_t vertex_size{0};
     uint32_t num_vertices{0};
     uint8_t num_attributes{0};
@@ -23,7 +24,7 @@ struct VertexBuffer : public render::backend::VertexBuffer {
 
 struct IndexBuffer : public render::backend::IndexBuffer {
     VkBuffer buffer{VK_NULL_HANDLE};
-    VkDeviceMemory memory{VK_NULL_HANDLE};
+    VmaAllocation memory {VK_NULL_HANDLE};
     VkIndexType type{VK_INDEX_TYPE_UINT16};
     uint32_t num_indices;
 };
@@ -66,7 +67,7 @@ struct Texture : public render::backend::Texture {
     VkImage image{VK_NULL_HANDLE};
     VkImageView view{VK_NULL_HANDLE};
     VkSampler sampler{VK_NULL_HANDLE};
-    VkDeviceMemory imageMemory{VK_NULL_HANDLE};
+    VmaAllocation memory {VK_NULL_HANDLE};
     VkImageType type{VK_IMAGE_TYPE_2D};
     VkFormat format{VK_FORMAT_R8G8B8A8_UNORM};
     size_t width{0};
@@ -110,7 +111,7 @@ struct FrameBuffer : public render::backend::FrameBuffer {
 
 struct UniformBuffer : public render::backend::UniformBuffer {
     VkBuffer buffer{VK_NULL_HANDLE};
-    VkDeviceMemory memory{VK_NULL_HANDLE};
+    VmaAllocation memory {VK_NULL_HANDLE};
     uint32_t size{0};
     void *pointer{nullptr};
 };
@@ -146,11 +147,12 @@ struct SwapChain : public render::backend::SwapChain {
 
     VkImage msaa_color_image{VK_NULL_HANDLE};
     VkImageView msaa_color_view{VK_NULL_HANDLE};
-    VkDeviceMemory msaa_color_memory{VK_NULL_HANDLE};
+    VmaAllocation msaa_color_memory{VK_NULL_HANDLE};
+
 
     VkImage depth_image{VK_NULL_HANDLE};
     VkImageView depth_view{VK_NULL_HANDLE};
-    VkDeviceMemory depth_memory{VK_NULL_HANDLE};
+    VmaAllocation depth_memory{VK_NULL_HANDLE};
 
     VkRenderPass dummy_render_pass{VK_NULL_HANDLE}; // TODO: move to render pass cache
 

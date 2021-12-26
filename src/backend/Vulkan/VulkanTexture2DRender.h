@@ -20,6 +20,8 @@ public:
 
   VulkanTexture2DRender(render::backend::Driver *driver);
 
+  ~VulkanTexture2DRender();
+
   void init(const VulkanTexture* target_texture);
 
   void shutdown();

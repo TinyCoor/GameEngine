@@ -7,6 +7,9 @@
 #include <volk.h>
 #include <vector>
 #include <cassert>
+
+
+#include <vk_mem_alloc.h>
 class GLFWwindow;
 
 //Singleton
@@ -29,6 +32,8 @@ public:
   inline const VkQueue &GraphicsQueue() const { return graphicsQueue; }
   inline const VkDescriptorPool &DescriptorPool() const { return descriptorPool; }
   inline const VkSampleCountFlagBits getMaxSampleCount() const { return maxMSAASamples; }
+  inline VmaAllocator getVRAMAllocator() const { return vram_allocator; }
+
 private:
 
   int checkPhysicalDevice(VkPhysicalDevice physical_device);
@@ -45,7 +50,7 @@ private:
   VkQueue graphicsQueue = VK_NULL_HANDLE;
   VkSampleCountFlagBits maxMSAASamples{VK_SAMPLE_COUNT_1_BIT};
   VkDebugUtilsMessengerEXT debugMessenger{VK_NULL_HANDLE};
-
+  VmaAllocator vram_allocator {VK_NULL_HANDLE};
   /// 同一物理设备下有多个队列，每个队列可能支持的功能不一致
 
   /// 图形 和 呈现 需要找到支持这两个设备的队列索引(族)和队列

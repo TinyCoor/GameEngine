@@ -11,9 +11,14 @@ VulkanTexture2DRender::VulkanTexture2DRender(render::backend::Driver *driver)
     : driver(driver), quad(driver)
 {
 }
+
+VulkanTexture2DRender::~VulkanTexture2DRender()
+{
+    shutdown();
+}
+
 void VulkanTexture2DRender::init(const VulkanTexture* target_texture)
 {
-
     quad.createQuad(2.0f);
     // Create framebuffer
     render::backend::FrameBufferAttachment attachments={

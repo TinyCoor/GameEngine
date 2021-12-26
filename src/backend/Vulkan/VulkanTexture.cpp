@@ -3,12 +3,12 @@
 //
 
 #include "VulkanTexture.h"
-#include "VulkanUtils.h"
+#include "Utils.h"
 #include <cassert>
-#include <stb_image.h>
-#include <iostream>
 #include <cmath>
 #include <cstring>
+#include <iostream>
+#include <stb_image.h>
 
 namespace render::backend::vulkan {
 

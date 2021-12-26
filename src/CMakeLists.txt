@@ -10,11 +10,12 @@ endif ()
 
 add_executable(niagara
         backend/Vulkan/VulkanTexture.cpp
-        backend/Vulkan/VulkanUtils.cpp
+        backend/Vulkan/SkyLight.cpp
+        backend/Vulkan/Utils.cpp
         backend/Vulkan/VulkanMesh.cpp
         backend/Vulkan/VulkanGraphicsPipelineBuilder.cpp
         app/VulkanRender.cpp
-        app/VulkanRenderScene.cpp
+        app/ApplicationResource.cpp
         backend/Vulkan/Device.cpp
         backend/Vulkan/VulkanShader.cpp
         backend/Vulkan/VulkanTexture.cpp
@@ -71,7 +72,9 @@ add_executable(niagara
         backend/Vulkan/PipelineCache.cpp
         backend/Vulkan/PipelineCache.h
         backend/Vulkan/Scene.cpp
-        backend/Vulkan/Scene.h backend/Vulkan/RenderGraph.cpp backend/Vulkan/RenderGraph.h)
+        backend/Vulkan/Scene.h
+        app/RenderGraph.cpp
+        app/RenderGraph.h backend/Vulkan/RenderUtils.cpp backend/Vulkan/RenderUtils.h backend/Vulkan/auxiliary.cpp)
 
 
 message(STATUS ${ShaderC_LIBRARIES})
@@ -86,6 +89,8 @@ target_include_directories(niagara PRIVATE ../cmake-build-debug/extern/assimp/in
 target_include_directories(niagara PRIVATE ../extern/assimp/contrib/stb)
 target_include_directories(niagara PRIVATE ../extern/tinyobjloader)
 target_include_directories(niagara PRIVATE ../extern/shaderc/include)
+target_include_directories(niagara PRIVATE ../extern/vma)
+
 target_include_directories(niagara PRIVATE ../extern/volk)
 target_link_directories(niagara PRIVATE ${ShaderC_LIBRARIES})
 target_link_libraries(niagara PRIVATE glfw)

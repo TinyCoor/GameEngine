@@ -8,18 +8,22 @@
 #include "../backend/Vulkan/VulkanResourceManager.h"
 #include "config.h"
 namespace render::backend::vulkan {
-class VulkanRenderScene {
+class ApplicationResource {
 private:
+    render::backend::Driver* driver{nullptr};
     VulkanResourceManager resources;
+    VulkanTexture* baked_brdf{nullptr};
+    std::vector<VulkanTexture*> environment_cubemaps;
+    std::vector<VulkanTexture*> irrandance_cubemaps;
 public:
-    VulkanRenderScene(render::backend::Driver *driver)
-        : resources(driver)
+    ApplicationResource(render::backend::Driver *driver) :driver(driver),resources(driver)
     {}
-    ~VulkanRenderScene();
+    ~ApplicationResource();
 
     void init();
     void shutdown();
 
+    ///todo backend type
     inline const VulkanResourceManager &getResource() const { return resources; }
 
     inline const VulkanShader *getPBRVertexShader() const { return resources.getShader(config::Shaders::PBRVertex); }
@@ -45,8 +49,14 @@ public:
     inline const VulkanTexture *getNormalTexture()const { return resources.getTexture(config::Textures::normalTexture); }
     inline const VulkanTexture *getAOTexture()const { return resources.getTexture(config::Textures::aoTexture); }
     inline const VulkanTexture *getShadingTexture() const{ return resources.getTexture(config::Textures::shadingTexture); }
+    inline const VulkanTexture *getHDRIEnvironmentubeMap(int index) const{ return environment_cubemaps[index];}
+    inline const VulkanTexture *getIrridanceCubeMap(int index) const{ return irrandance_cubemaps[index];}
+    inline const VulkanTexture *getBakedBRDF() const{ return baked_brdf;}
+
+
     inline const VulkanMesh *getMesh()const { return resources.getMesh(config::Meshes::SciFiHelmet); }
     inline const VulkanMesh *getSkyboxMesh()const { return resources.getMesh(config::Meshes::Skybox); }
+
 
     inline size_t getNumHDRTextures() const { return config::hdrTextures.size(); }
     inline const char *getHDRTexturePath(int index) const { return config::hdrTextures[index]; }
