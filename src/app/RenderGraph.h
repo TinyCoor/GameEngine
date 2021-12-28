@@ -14,15 +14,16 @@ struct GBuffer{
     render::backend::Texture* depth{nullptr};            ///
     render::backend::Texture* shading{nullptr};          ///
     render::backend::Texture* normal{nullptr};           ///
-
-    render::backend::FrameBuffer* gbuffer{nullptr}; ///
+    render::backend::FrameBuffer* frame_buffer{nullptr}; ///
+    render::backend::BindSet* bindings{nullptr};
 
 };
 
 struct LBuffer{
     render::backend::Texture* diffuse{nullptr};
     render::backend::Texture* specular{nullptr};
-    render::backend::FrameBuffer* lbuffer{nullptr};
+    render::backend::FrameBuffer* frame_buffer{nullptr};
+    render::backend::BindSet* bindings{nullptr};
 };
 
 
@@ -44,6 +45,7 @@ public:
     inline LBuffer& getLBuffer() {return l_buffer;}
 private:
     void renderGBuffer(const Scene* scene,const VulkanRenderFrame& frame);
+    void renderLBuffer(const Scene* scene,const VulkanRenderFrame& frame);
     void initGBuffer(uint32_t width,uint32_t height);
     void shutdownGBuffer();
 

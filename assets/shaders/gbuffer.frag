@@ -3,7 +3,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #include "RenderState.inc"
-#include "brdf.inc"
+#include "common/brdf.inc"
 
 
 

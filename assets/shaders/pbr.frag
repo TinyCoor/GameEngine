@@ -4,7 +4,7 @@
 
 #include "RenderState.inc"
 #include "SceneTextures.inc"
-#include "brdf.inc"
+#include "common/brdf.inc"
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;

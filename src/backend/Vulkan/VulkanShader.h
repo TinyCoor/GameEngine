@@ -20,6 +20,11 @@ enum class ShaderKind {
     tessellation_evaluation,
 };
 
+struct Shader : public render::backend::Shader {
+    ShaderType type{ShaderType::FRAGMENT};
+    VkShaderModule shaderModule{VK_NULL_HANDLE};
+};
+
 class VulkanShader {
 public:
     explicit VulkanShader(render::backend::Driver *driver) : driver(driver)

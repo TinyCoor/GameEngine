@@ -10,24 +10,35 @@
 #include "VulkanCubemapRender.h"
 #include "VulkanTexture2DRender.h"
 #include <vector>
-namespace render::backend::vulkan {
+namespace render::backend::vulkan{
 
-class SkyLight {
+
+class Light {
 public:
-    SkyLight(render::backend::Driver* driver);
+    Light(Driver* driver, const VulkanShader* vert, const VulkanShader* frag);
+    virtual ~Light();
+    inline  const VulkanMesh* getMesh() const {return mesh;};
+    inline  const VulkanShader* getVertexShader() const {return vertex; } ;
+    inline  const VulkanShader* getFragShader() const {return fragment; };
+    inline  const render::backend::BindSet* getBindSet() const {return bind_set;} ;
+
+protected:
+    Driver* driver{nullptr};
+    const  VulkanShader* vertex{nullptr};
+    const  VulkanShader* fragment{nullptr};
+    VulkanMesh* mesh{nullptr};
+    render::backend::BindSet* bind_set{nullptr};
+};
+
+class SkyLight : Light {
+public:
+    SkyLight(Driver* driver,const VulkanShader* vert,const  VulkanShader* frag);
     virtual ~SkyLight();
 
-    void setBRDF(const render::backend::Texture *bedf_texture);
-    void setEnvironment(const render::backend::Texture *env_texture);
-    inline render::backend::BindSet* getBindSet() const {return light_bind_set;}
+    void setBakedBRDFTexture(const Texture *brdf_texture);
+    void setEnvironmentCubeMap(const Texture *env_texture);
+    void setIrradianceCubeMap(const Texture *env_texture);
 
-private:
-    Driver* driver{nullptr};
-    render::backend::BindSet* light_bind_set{nullptr};
-
-    VulkanTexture* baked_brdf;
-    VulkanTexture* environment_cubemap;
-    VulkanTexture* diffuse_irradiance_cubemap;
 };
 
 }

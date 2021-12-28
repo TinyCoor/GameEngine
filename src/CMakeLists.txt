@@ -14,13 +14,13 @@ add_executable(niagara
         backend/Vulkan/Utils.cpp
         backend/Vulkan/VulkanMesh.cpp
         backend/Vulkan/VulkanGraphicsPipelineBuilder.cpp
-        app/VulkanRender.cpp
+        app/Render.cpp
         app/ApplicationResource.cpp
         backend/Vulkan/Device.cpp
         backend/Vulkan/VulkanShader.cpp
         backend/Vulkan/VulkanTexture.cpp
         app/pbrRender.cpp
-        app/VulkanApplication.cpp
+        app/Application.cpp
         backend/Vulkan/VulkanDescriptorSetLayoutBuilder.cpp
         backend/Vulkan/VulkanRenderPassBuilder.cpp
         backend/Vulkan/VulkanPipelineLayoutBuilder.cpp

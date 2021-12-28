@@ -22,7 +22,7 @@ set(TINYOBJLOADEREXAMPLES_DIR examples)
 set(tinyobjloader-Source
         tiny_obj_loader.h
         tiny_obj_loader.cc
-  )
+        ../vma/vk_mem_alloc.h)
 
 set(tinyobjloader-Example-Source
         loader_example.cc

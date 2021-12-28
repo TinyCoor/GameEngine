@@ -156,12 +156,14 @@ VkFormat VulkanTexture::getImageFormat() const {
 
   return static_cast<render::backend::vulkan::Texture *>(texture)->format;
 }
+
 VkImageView VulkanTexture::getImageView() const {
   if (texture == nullptr)
     return VK_NULL_HANDLE;
 
   return static_cast<render::backend::vulkan::Texture *>(texture)->view;
 }
+
 VkSampler VulkanTexture::getSampler() const {
   if (texture == nullptr)
     return VK_NULL_HANDLE;

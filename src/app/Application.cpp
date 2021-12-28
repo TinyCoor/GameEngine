@@ -1,11 +1,11 @@
 //
 // Created by y123456 on 2021/10/11.
 //
-#include "VulkanApplication.h"
 #include "../backend/Vulkan/VulkanImGuiRender.h"
+#include "Application.h"
 #include "ApplicationResource.h"
+#include "Render.h"
 #include "RenderGraph.h"
-#include "VulkanRender.h"
 #include <GLFW/glfw3.h>
 #include <algorithm>
 #include <chrono>
@@ -218,7 +218,7 @@ void Application::shutdownRenders() {
 
 void Application::initRenders() {
     if(!render){
-        render = new VulkanRender(driver,swapChain->getExtent());
+        render = new Render(driver);
         render->init(resource);
     }
 
@@ -275,7 +275,6 @@ void Application::recreateSwapChain() {
     driver->wait();
     glfwGetWindowSize(window,&width,&height);
     swapChain->reinit(width,height);
-    render->resize(swapChain);
     imGuiRender->resize(swapChain);
     render_graph->resize(width, height);
 }

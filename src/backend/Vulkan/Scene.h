@@ -8,12 +8,14 @@
 #include "VulkanMesh.h"
 #include <memory>
 #include <map>
+#include <vector>
 
 struct aiScene;
 
 namespace render::backend::vulkan {
 class VulkanMesh;
 class VulkanTexture;
+class Light;
 class Scene {
 public:
     Scene(render::backend::Driver* driver);
@@ -30,6 +32,11 @@ public:
         uint32_t material_index = nodes[index].render_material_index;
         return materials[material_index].bind_set;
     }
+
+    inline void addLight(Light* light) { lights.push_back(light);}
+    inline size_t getNumLights() const{ return lights.size();}
+    inline const Light* getLight(int index)  const { return lights[index];}
+
 
 
 private:
@@ -57,6 +64,9 @@ private:
     std::map<std::string,VulkanTexture*> textures;
     std::vector<RenderMaterial> materials;
     std::vector<RenderNode> nodes;
+
+    /// does not own
+    std::vector<Light*> lights;
 };
 }
 

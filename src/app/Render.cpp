@@ -2,27 +2,26 @@
 // Created by y123456 on 2021/10/10.
 //
 
-#include "VulkanRender.h"
-#include "RenderState.h"
 #include "../backend/Vulkan/VulkanSwapChain.h"
 #include "ApplicationResource.h"
+#include "Render.h"
+#include "RenderState.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <chrono>
 using namespace render::backend;
 
-VulkanRender::VulkanRender(render::backend::Driver *driver,
-                           VkExtent2D size)
+Render::Render(render::backend::Driver *driver)
     : driver(driver)
 {
 }
 
-VulkanRender::~VulkanRender()
+Render::~Render()
 {
     shutdown();
 }
 
-void VulkanRender::init(ApplicationResource *resource)
+void Render::init(ApplicationResource *resource)
 {
     scene_bind_set = driver->createBindSet();
 
@@ -42,40 +41,13 @@ void VulkanRender::init(ApplicationResource *resource)
         driver->bindTexture(scene_bind_set, k, textures[k]->getTexture());
 }
 
-void VulkanRender::shutdown()
+void Render::shutdown()
 {
     driver->destroyBindSet(scene_bind_set);
     scene_bind_set = nullptr;
 }
 
-void VulkanRender::update(RenderState &state, ApplicationResource *scene)
-{
-    // Render state
-    static auto startTime = std::chrono::high_resolution_clock::now();
-    auto currentTime = std::chrono::high_resolution_clock::now();
-
-    const float rotationSpeed = 0.1f;
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-    const glm::vec3 &up = {0.0f, 0.0f, 1.0f};
-    const glm::vec3 &zero = {0.0f, 0.0f, 0.0f};
-
-    const float aspect = (float) extent.width / (float) extent.height;
-    const float zNear = 0.1f;
-    const float zFar = 1000.0f;
-
-    const glm::vec3 &cameraPos = glm::vec3(2.0f, 2.0f, 2.0f);
-    const glm::mat4 &rotation = glm::rotate(glm::mat4(1.0f), time * rotationSpeed * glm::radians(90.0f), up);
-
-    state.world = glm::mat4(1.0f);
-    state.view = glm::lookAt(cameraPos, zero, up) * rotation;
-    state.proj = glm::perspective(glm::radians(60.0f), aspect, zNear, zFar);
-    state.proj[1][1] *= -1;
-    state.cameraPosWS = glm::vec3(glm::vec4(cameraPos, 1.0f) * rotation);
-
-}
-
-void VulkanRender::render(ApplicationResource *scene, const VulkanRenderFrame &frame)
+void Render::render(ApplicationResource *scene, const VulkanRenderFrame &frame)
 {
     const VulkanShader *vertShader = scene->getPBRVertexShader();
     const VulkanShader *fragShader = scene->getPBRFragmentShader();
@@ -96,13 +68,8 @@ void VulkanRender::render(ApplicationResource *scene, const VulkanRenderFrame &f
     driver->drawIndexedPrimitive(frame.command_buffer, scene->getMesh()->getPrimitive());
 }
 
-void VulkanRender::resize(const VulkanSwapChain *swapChain)
-{
-    extent = swapChain->getExtent();
-}
 
-
-void VulkanRender::setEnvironment(const ApplicationResource *resource, uint8_t index)
+void Render::setEnvironment(const ApplicationResource *resource, uint8_t index)
 {
     const VulkanTexture* environment_texture= resource->getHDRIEnvironmentubeMap(index);
     const VulkanTexture* irrandance_texture= resource->getIrridanceCubeMap(index);

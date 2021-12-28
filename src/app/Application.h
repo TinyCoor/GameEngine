@@ -4,16 +4,16 @@
 
 #ifndef GAMEENGINE_VULKANAPPLICATION_H
 #define GAMEENGINE_VULKANAPPLICATION_H
-#include "RenderState.h"
-#include <volk.h>
-#include <memory>
-#include <imgui.h>
-#include "../backend/driver.h"
-#include "../backend/Vulkan/VulkanSwapChain.h"
-#include "../backend/Vulkan/VulkanImGuiRender.h"
 #include "../backend/Vulkan/Scene.h"
-#include "VulkanRender.h"
+#include "../backend/Vulkan/VulkanImGuiRender.h"
+#include "../backend/Vulkan/VulkanSwapChain.h"
 #include "../backend/Vulkan/driver.h"
+#include "../backend/driver.h"
+#include "Render.h"
+#include "RenderState.h"
+#include <imgui.h>
+#include <memory>
+#include <volk.h>
 
 class GLFWwindow;
 namespace render::backend::vulkan {
@@ -83,10 +83,11 @@ private:
   Scene* sponza_scene{nullptr};
   ApplicationResource *resource{nullptr};
   RenderState state;
+
   //TODO remove
   static inline ImTextureID bakedBRDF{nullptr};
 
-  VulkanRender *render{nullptr};
+  Render *render{nullptr};
   render::backend::vulkan::RenderGraph* render_graph;
   ImGuiRender *imGuiRender{nullptr};
   VulkanSwapChain* swapChain{nullptr};

@@ -4,6 +4,7 @@
 
 #include "RenderGraph.h"
 #include "../backend/Vulkan/Scene.h"
+#include "../backend/Vulkan/SkyLight.h"
 #include "../backend/Vulkan/VulkanSwapChain.h"
 #include "ApplicationResource.h"
 #include <glm/gtc/matrix_transform.hpp>
@@ -31,6 +32,7 @@ void RenderGraph::shutdown()
 void RenderGraph::render(const Scene *scene, const VulkanRenderFrame &frame)
 {
     renderGBuffer(scene, frame);
+    renderLBuffer(scene,frame);
 }
 
 void RenderGraph::renderGBuffer(const Scene *scene, const VulkanRenderFrame &frame)
@@ -46,7 +48,7 @@ void RenderGraph::renderGBuffer(const Scene *scene, const VulkanRenderFrame &fra
     info.load_ops = load_ops;
     info.store_ops = store_ops;
 
-    driver->beginRenderPass(frame.command_buffer, frame.frame_buffer, &info);
+    driver->beginRenderPass(frame.command_buffer, g_buffer.frame_buffer, &info);
     driver->clearPushConstants();
     driver->clearBindSets();
     driver->allocateBindSets(2);
@@ -68,6 +70,48 @@ void RenderGraph::renderGBuffer(const Scene *scene, const VulkanRenderFrame &fra
 
     driver->endRenderPass(frame.command_buffer);
 }
+
+void RenderGraph::renderLBuffer(const Scene *scene, const VulkanRenderFrame &frame)
+{
+    RenderPassClearValue clear_values[2];
+    memset(clear_values, 0, sizeof(RenderPassClearValue) * 2);
+
+    RenderPassLoadOp load_ops[4] = { RenderPassLoadOp::DONT_CARE, RenderPassLoadOp::DONT_CARE, RenderPassLoadOp::DONT_CARE, RenderPassLoadOp::DONT_CARE };
+    RenderPassStoreOp store_ops[4] = { RenderPassStoreOp::STORE, RenderPassStoreOp::STORE, RenderPassStoreOp::STORE, RenderPassStoreOp::STORE };
+
+    RenderPassInfo info;
+    info.clear_value = clear_values;
+    info.load_ops = load_ops;
+    info.store_ops = store_ops;
+
+    driver->beginRenderPass(frame.command_buffer, l_buffer.frame_buffer, &info);
+    driver->clearPushConstants();
+    driver->clearBindSets();
+    driver->allocateBindSets(3);
+
+    driver->setBindSet(0, frame.bind_set);
+    driver->setBindSet(1,g_buffer.bindings);
+
+
+    for (int i = 0; i < scene->getNumLights(); ++i) {
+        const Light* light = scene->getLight(i);
+        auto *node_mesh = scene->getNodeMesh(i);
+        auto vert_shader = light->getVertexShader();
+        auto frag_shader = light->getFragShader();
+        auto bind_set= light->getBindSet();
+
+        driver->clearShaders();
+        driver->setShader(ShaderType::VERTEX, vert_shader->getShader());
+        driver->setShader(ShaderType::FRAGMENT, frag_shader->getShader());
+
+        driver->setBindSet(2, bind_set);
+        driver->drawIndexedPrimitive(frame.command_buffer, node_mesh->getPrimitive());
+    }
+
+    driver->endRenderPass(frame.command_buffer);
+}
+
+
 void RenderGraph::resize(uint32_t width, uint32_t height)
 {
     shutdownGBuffer();
@@ -88,19 +132,15 @@ void RenderGraph::initGBuffer(uint32_t width, uint32_t height)
         {FrameBufferAttachmentType::COLOR, g_buffer.shading},
         {FrameBufferAttachmentType::COLOR, g_buffer.normal},
     };
-    g_buffer.gbuffer = driver->createFrameBuffer(4, g_attachment);
-}
 
-void RenderGraph::shutdownGBuffer()
-{
-    driver->destroyTexture(g_buffer.base_color);
-    driver->destroyTexture(g_buffer.depth);
-    driver->destroyTexture(g_buffer.shading);
-    driver->destroyTexture(g_buffer.normal);
-    driver->destroyFrameBuffer(g_buffer.gbuffer);
-    g_buffer = {};
-}
+    g_buffer.frame_buffer = driver->createFrameBuffer(4, g_attachment);
+    g_buffer.bindings = driver->createBindSet();
+    driver->bindTexture(g_buffer.bindings,0,g_buffer.base_color);
+    driver->bindTexture(g_buffer.bindings,1,g_buffer.depth);
+    driver->bindTexture(g_buffer.bindings,2,g_buffer.normal);
+    driver->bindTexture(g_buffer.bindings,3,g_buffer.shading);
 
+}
 void RenderGraph::initLBuffer(uint32_t width, uint32_t height)
 {
     l_buffer.diffuse = driver->createTexture2D(width, height, 1, Format::R16G16B16A16_SFLOAT);
@@ -110,14 +150,30 @@ void RenderGraph::initLBuffer(uint32_t width, uint32_t height)
         {FrameBufferAttachmentType::COLOR, l_buffer.specular},
     };
 
-    l_buffer.lbuffer = driver->createFrameBuffer(2, l_attachment);
+    l_buffer.frame_buffer = driver->createFrameBuffer(2, l_attachment);
+    l_buffer.bindings= driver->createBindSet();
+    driver->bindTexture(l_buffer.bindings,0,l_buffer.diffuse);
+    driver->bindTexture(l_buffer.bindings,1,l_buffer.specular);
+
 }
+void RenderGraph::shutdownGBuffer()
+{
+    driver->destroyTexture(g_buffer.base_color);
+    driver->destroyTexture(g_buffer.depth);
+    driver->destroyTexture(g_buffer.shading);
+    driver->destroyTexture(g_buffer.normal);
+    driver->destroyFrameBuffer(g_buffer.frame_buffer);
+    driver->destroyBindSet(g_buffer.bindings);
+    memset(&g_buffer,0, sizeof(GBuffer));
+}
+
+
 
 void RenderGraph::shutdownLBuffer()
 {
     driver->destroyTexture(l_buffer.diffuse);
     driver->destroyTexture(l_buffer.specular);
-    driver->destroyFrameBuffer(l_buffer.lbuffer);
-    l_buffer = {};
+    driver->destroyFrameBuffer(l_buffer.frame_buffer);
+    memset(&l_buffer,0, sizeof(GBuffer));
 }
 }
