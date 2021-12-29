@@ -2,6 +2,7 @@
 // Created by y123456 on 2021/10/11.
 //
 #include "../backend/Vulkan/VulkanImGuiRender.h"
+#include "../backend/Vulkan/SkyLight.h"
 #include "Application.h"
 #include "ApplicationResource.h"
 #include "Render.h"
@@ -96,7 +97,7 @@ void Application::RenderFrame(){
         return;
     }
 
-    //render_graph->render(sponza_scene,frame);
+   //  render_graph->render(sponza_scene,frame);
 
     RenderPassClearValue clear_values[3];
     clear_values[0].color = {0.2f, 0.2f, 0.2f, 1.0f};
@@ -113,7 +114,7 @@ void Application::RenderFrame(){
 
     driver->beginRenderPass(frame.command_buffer, frame.frame_buffer, &info);
 
-    render->render(resource, frame);
+    render->render(resource, light, frame);
     imGuiRender->render(frame);
 
     driver->endRenderPass(frame.command_buffer);
@@ -143,11 +144,19 @@ void Application::update()
     cameraPos.y = static_cast<float>(glm::sin(camera.phi) * glm::cos(camera.theta) * camera.radius);
     cameraPos.z = static_cast<float>(glm::sin(camera.theta) * camera.radius);
 
+    glm::vec4 cameraParams;
+    cameraParams.x = zNear;
+    cameraParams.y = zFar;
+    cameraParams.z = 1.0/zNear;
+    cameraParams.w = 1.0/zFar;
+
+
     state.world = glm::mat4(1.0f);
     state.view = glm::lookAt(cameraPos, zero, up);
     state.proj = glm::perspective(glm::radians(60.0f), aspect, zNear, zFar);
     state.proj[1][1] *= -1;
     state.cameraPosWS = cameraPos;
+    state.invProj = glm::inverse(state.proj);
 
     static float f = 0.0f;
     static int counter = 0;
@@ -256,13 +265,24 @@ void Application::initScene() {
 
     sponza_scene = new Scene(driver);
     sponza_scene->import("../../assets/models/pbr_sponza/Sponza.gltf");
+    light = new SkyLight(driver,resource->getSkylightVertexShader(),resource->getSkylightFragmentShader());
+    light->setBakedBRDFTexture(resource->getBakedBRDF());
+    light->setEnvironmentCubeMap(resource->getHDRIEnvironmentubeMap(0));
+    light->setIrradianceCubeMap(resource->getIrridanceCubeMap(0));
+    sponza_scene->addLight(light);
 }
 
 void Application::shutdownScene() {
-    if(resource){
-        delete resource;
-        resource = nullptr;
-    }
+    delete light;
+    light = nullptr;
+
+    delete resource;
+    resource = nullptr;
+
+    delete sponza_scene;
+    sponza_scene = nullptr;
+
+
 }
 
 void Application::recreateSwapChain() {

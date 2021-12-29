@@ -1,5 +1,6 @@
 
 #include "VulkanSwapChain.h"
+#include "VulkanTexture.h"
 #include <functional>
 #include <cstring>
 

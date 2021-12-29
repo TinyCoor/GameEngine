@@ -2,8 +2,8 @@
 #pragma shader_stage(fragment)
 #extension GL_ARB_separate_shader_objects : enable
 
-#include "RenderState.inc"
-#include "SceneTextures.inc"
+#include "common/RenderState.inc"
+#include "common/SceneTextures.inc"
 #include "common/brdf.inc"
 
 layout(location = 0) in vec3 fragColor;

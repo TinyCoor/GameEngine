@@ -68,7 +68,7 @@ void ApplicationResource::shutdown()
     }
 
     for (int i = 0; i <irrandance_cubemaps.size() ; ++i) {
-//        driver->destroyTexture(environment_cubemaps[i]);
+//        driver->destroyTexture(const_cast<backend::Texture *>(environment_cubemaps[i]->getTexture()));
         delete irrandance_cubemaps[i];
     }
     environment_cubemaps.clear();

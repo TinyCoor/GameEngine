@@ -85,20 +85,21 @@ void RenderGraph::renderLBuffer(const Scene *scene, const VulkanRenderFrame &fra
     info.store_ops = store_ops;
 
     driver->beginRenderPass(frame.command_buffer, l_buffer.frame_buffer, &info);
-    driver->clearPushConstants();
+
     driver->clearBindSets();
+    driver->clearShaders();
+    driver->clearPushConstants();
     driver->allocateBindSets(3);
 
     driver->setBindSet(0, frame.bind_set);
-    driver->setBindSet(1,g_buffer.bindings);
-
+    driver->setBindSet(1, g_buffer.bindings);
 
     for (int i = 0; i < scene->getNumLights(); ++i) {
         const Light* light = scene->getLight(i);
         auto *node_mesh = scene->getNodeMesh(i);
         auto vert_shader = light->getVertexShader();
         auto frag_shader = light->getFragShader();
-        auto bind_set= light->getBindSet();
+        auto bind_set = light->getBindSet();
 
         driver->clearShaders();
         driver->setShader(ShaderType::VERTEX, vert_shader->getShader());

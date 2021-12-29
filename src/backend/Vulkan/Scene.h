@@ -37,8 +37,6 @@ public:
     inline size_t getNumLights() const{ return lights.size();}
     inline const Light* getLight(int index)  const { return lights[index];}
 
-
-
 private:
     struct RenderMaterial{
         VulkanTexture* albedo{nullptr};

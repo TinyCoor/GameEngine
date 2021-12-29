@@ -5,6 +5,7 @@
 #include "../backend/Vulkan/VulkanSwapChain.h"
 #include "ApplicationResource.h"
 #include "Render.h"
+#include "../backend/Vulkan/SkyLight.h"
 #include "RenderState.h"
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -25,16 +26,13 @@ void Render::init(ApplicationResource *resource)
 {
     scene_bind_set = driver->createBindSet();
 
-    std::array<const VulkanTexture *, 8> textures =
+    std::array<const VulkanTexture *, 5> textures =
     {
         resource->getAlbedoTexture(),
         resource->getNormalTexture(),
         resource->getAOTexture(),
         resource->getShadingTexture(),
         resource->getEmissionTexture(),
-        resource->getHDRIEnvironmentubeMap(0),
-        resource->getIrridanceCubeMap(0),
-        resource->getBakedBRDF(),
     };
 
     for (int k = 0; k < textures.size(); k++)
@@ -47,24 +45,25 @@ void Render::shutdown()
     scene_bind_set = nullptr;
 }
 
-void Render::render(ApplicationResource *scene, const VulkanRenderFrame &frame)
+void Render::render(const ApplicationResource *scene,const SkyLight *light, const VulkanRenderFrame &frame)
 {
-    const VulkanShader *vertShader = scene->getPBRVertexShader();
-    const VulkanShader *fragShader = scene->getPBRFragmentShader();
-    const VulkanShader *skyboxVertexShader = scene->getSkyboxVertexShader();
-    const VulkanShader *skyboxFragmentShader = scene->getSkyboxFragmentShader();
+    const VulkanShader *pbr_vert_shader = scene->getPBRVertexShader();
+    const VulkanShader *pbr_frag_shader = scene->getPBRFragmentShader();
+    const VulkanShader *skybox_vertex_shader = scene->getSkyboxVertexShader();
+    const VulkanShader *skybox_fragment_shader = scene->getSkyboxFragmentShader();
 
     driver->clearBindSets();
     driver->clearShaders();
     driver->pushBindSet(frame.bind_set);
     driver->pushBindSet(scene_bind_set);
+    driver->pushBindSet(const_cast<render::backend::BindSet *>(light->getBindSet()));
 
-    driver->setShader(ShaderType::VERTEX, skyboxVertexShader->getShader());
-    driver->setShader(ShaderType::FRAGMENT, skyboxFragmentShader->getShader());
+    driver->setShader(ShaderType::VERTEX, skybox_vertex_shader->getShader());
+    driver->setShader(ShaderType::FRAGMENT, skybox_fragment_shader->getShader());
     driver->drawIndexedPrimitive(frame.command_buffer, scene->getSkyboxMesh()->getPrimitive());
 
-    driver->setShader(ShaderType::VERTEX, vertShader->getShader());
-    driver->setShader(ShaderType::FRAGMENT, fragShader->getShader());
+    driver->setShader(ShaderType::VERTEX, pbr_vert_shader->getShader());
+    driver->setShader(ShaderType::FRAGMENT, pbr_frag_shader->getShader());
     driver->drawIndexedPrimitive(frame.command_buffer, scene->getMesh()->getPrimitive());
 }
 

@@ -6,7 +6,6 @@
 #define GAMEENGINE_FILE_H
 
 typedef unsigned char uint8_t;
-
 namespace core {
     struct ImageInfo{
         int width = 0;
@@ -18,6 +17,5 @@ namespace core {
 
     bool loadHDR(const char* file,ImageInfo& imageInfo);
 }
-
 
 #endif //GAMEENGINE_FILE_H

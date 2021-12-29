@@ -18,6 +18,7 @@
 class GLFWwindow;
 namespace render::backend::vulkan {
 class RenderGraph;
+class SkyLight;
 }
 
 
@@ -79,7 +80,7 @@ private:
   bool windowResized = false;
 
   render::backend::Driver* driver{nullptr};
-
+  SkyLight* light{nullptr};
   Scene* sponza_scene{nullptr};
   ApplicationResource *resource{nullptr};
   RenderState state;

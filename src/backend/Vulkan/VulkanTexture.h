@@ -8,22 +8,7 @@
 #include "driver.h"
 namespace render::backend::vulkan {
 
-struct Texture : public render::backend::Texture {
-    VkImage image{VK_NULL_HANDLE};
-    VkImageView view{VK_NULL_HANDLE};
-    VkSampler sampler{VK_NULL_HANDLE};
-    VmaAllocation memory {VK_NULL_HANDLE};
-    VkImageType type{VK_IMAGE_TYPE_2D};
-    VkFormat format{VK_FORMAT_R8G8B8A8_UNORM};
-    size_t width{0};
-    size_t height{0};
-    size_t depth{0};
-    uint8_t num_layers{0};
-    uint8_t num_mipmaps{0};
-    VkImageTiling tiling{VK_IMAGE_TILING_OPTIMAL};
-    VkSampleCountFlagBits samples{VK_SAMPLE_COUNT_1_BIT};
-    VkImageCreateFlags flags{0};
-};
+
 
 class VulkanTexture {
 public:

@@ -31,6 +31,8 @@ public:
 
     inline const VulkanShader *getGbufferVertexShader() const{ return resources.getShader(config::Shaders::GBufferVert); }
     inline const VulkanShader *getGbufferFragmentShader() const{ return resources.getShader(config::Shaders::GBufferFrag); }
+    inline const VulkanShader *getSkylightVertexShader() const{ return resources.getShader(config::Shaders::SkylightVert); }
+    inline const VulkanShader *getSkylightFragmentShader() const{ return resources.getShader(config::Shaders::SkylightFrag); }
 
     inline const VulkanShader *getSkyboxVertexShader()const { return resources.getShader(config::Shaders::SkyboxVertex); }
     inline const VulkanShader *getSkyboxFragmentShader()const { return resources.getShader(config::Shaders::SkyboxFrag); }
@@ -53,10 +55,8 @@ public:
     inline const VulkanTexture *getIrridanceCubeMap(int index) const{ return irrandance_cubemaps[index];}
     inline const VulkanTexture *getBakedBRDF() const{ return baked_brdf;}
 
-
     inline const VulkanMesh *getMesh()const { return resources.getMesh(config::Meshes::SciFiHelmet); }
     inline const VulkanMesh *getSkyboxMesh()const { return resources.getMesh(config::Meshes::Skybox); }
-
 
     inline size_t getNumHDRTextures() const { return config::hdrTextures.size(); }
     inline const char *getHDRTexturePath(int index) const { return config::hdrTextures[index]; }

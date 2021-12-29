@@ -11,7 +11,9 @@ struct RenderState {
   glm::mat4 world;
   glm::mat4 view;
   glm::mat4 proj;
+  glm::mat4 invProj;
   glm::vec3 cameraPosWS;
+  glm::vec4 cameraParams;
 
   float lerpUserValues{0.0f};
   float userMetalness{0.0f};

@@ -2,7 +2,7 @@
 #pragma shader_stage(vertex)
 #extension GL_ARB_separate_shader_objects : enable
 
-#include "RenderState.inc"
+#include "../common/RenderState.inc"
 
 layout(push_constant) uniform RenderNodeState {
 	mat4 transform;

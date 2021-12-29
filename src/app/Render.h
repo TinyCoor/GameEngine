@@ -15,7 +15,7 @@ namespace render::backend::vulkan {
 struct RenderState;
 class Device;
 class VulkanSwapChain;
-class VulkanRenderScene;
+class SkyLight;
 class ApplicationResource;
 struct VulkanRenderFrame;
 }
@@ -31,7 +31,7 @@ public:
 
     void init(ApplicationResource *scene);
 
-    void render(ApplicationResource *scene, const VulkanRenderFrame &frame);
+    void render(const ApplicationResource *scene,const SkyLight *light, const VulkanRenderFrame &frame);
 
     void shutdown();
 

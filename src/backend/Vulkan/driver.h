@@ -26,7 +26,7 @@ struct IndexBuffer : public render::backend::IndexBuffer {
     VkBuffer buffer{VK_NULL_HANDLE};
     VmaAllocation memory {VK_NULL_HANDLE};
     VkIndexType type{VK_INDEX_TYPE_UINT16};
-    uint32_t num_indices;
+    uint32_t num_indices{0};
 };
 
 struct RenderPrimitive : public render::backend::RenderPrimitive {
@@ -109,6 +109,28 @@ struct GraphicsProgram : public render::backend::GraphicsProgram {
     const Shader *tessellation_evaulation;
     const Shader *geometry;
     const Shader *fragment;
+};
+
+struct Shader : public render::backend::Shader {
+    ShaderType type{ShaderType::FRAGMENT};
+    VkShaderModule shaderModule{VK_NULL_HANDLE};
+};
+
+struct Texture : public render::backend::Texture {
+    VkImage image{VK_NULL_HANDLE};
+    VkImageView view{VK_NULL_HANDLE};
+    VkSampler sampler{VK_NULL_HANDLE};
+    VmaAllocation memory {VK_NULL_HANDLE};
+    VkImageType type{VK_IMAGE_TYPE_2D};
+    VkFormat format{VK_FORMAT_R8G8B8A8_UNORM};
+    size_t width{0};
+    size_t height{0};
+    size_t depth{0};
+    uint8_t num_layers{0};
+    uint8_t num_mipmaps{0};
+    VkImageTiling tiling{VK_IMAGE_TILING_OPTIMAL};
+    VkSampleCountFlagBits samples{VK_SAMPLE_COUNT_1_BIT};
+    VkImageCreateFlags flags{0};
 };
 
 struct SwapChain : public render::backend::SwapChain {

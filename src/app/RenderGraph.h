@@ -10,13 +10,12 @@
 namespace render::backend::vulkan{
 
 struct GBuffer{
-    render::backend::Texture* base_color{nullptr};       ///
-    render::backend::Texture* depth{nullptr};            ///
-    render::backend::Texture* shading{nullptr};          ///
-    render::backend::Texture* normal{nullptr};           ///
-    render::backend::FrameBuffer* frame_buffer{nullptr}; ///
+    render::backend::Texture* base_color{nullptr};                  ///
+    render::backend::Texture* depth{nullptr};                       ///
+    render::backend::Texture* shading{nullptr};                     ///
+    render::backend::Texture* normal{nullptr};                      ///
+    render::backend::FrameBuffer* frame_buffer{nullptr};            ///
     render::backend::BindSet* bindings{nullptr};
-
 };
 
 struct LBuffer{
@@ -26,14 +25,13 @@ struct LBuffer{
     render::backend::BindSet* bindings{nullptr};
 };
 
-
+class Scene;
 struct VulkanRenderFrame;
 class ApplicationResource;
-class Scene;
 
 class RenderGraph {
 public:
-    RenderGraph(render::backend::Driver* driver) :driver(driver){}
+    RenderGraph(render::backend::Driver* driver) : driver(driver){}
     ~RenderGraph();
 
     void init(const ApplicationResource* scene,uint32_t width,uint32_t height);

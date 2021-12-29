@@ -10,5 +10,4 @@ layout(set=1,binding = 5) uniform samplerCube environmentSampler;
 layout(set=1,binding = 6) uniform samplerCube diffuseIrradianceSampler;
 layout(set = 1, binding = 7) uniform sampler2D bakedBRDFSampler;
 
-
 #endif

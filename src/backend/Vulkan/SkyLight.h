@@ -30,14 +30,14 @@ protected:
     render::backend::BindSet* bind_set{nullptr};
 };
 
-class SkyLight : Light {
+class SkyLight : public Light {
 public:
     SkyLight(Driver* driver,const VulkanShader* vert,const  VulkanShader* frag);
     virtual ~SkyLight();
 
-    void setBakedBRDFTexture(const Texture *brdf_texture);
-    void setEnvironmentCubeMap(const Texture *env_texture);
-    void setIrradianceCubeMap(const Texture *env_texture);
+    void setBakedBRDFTexture(const VulkanTexture *brdf_texture);
+    void setEnvironmentCubeMap(const VulkanTexture *env_texture);
+    void setIrradianceCubeMap(const VulkanTexture *ir_texture);
 
 };
 

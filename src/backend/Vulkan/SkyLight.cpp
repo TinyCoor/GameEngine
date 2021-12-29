@@ -32,19 +32,19 @@ SkyLight::~SkyLight()
 {
 
 }
-void SkyLight::setBakedBRDFTexture(const Texture *brdf_texture)
+void SkyLight::setBakedBRDFTexture(const VulkanTexture *brdf_texture)
 {
-    driver->bindTexture(bind_set,0,brdf_texture);
+    driver->bindTexture(bind_set,0,brdf_texture->getTexture());
 }
 
-void SkyLight::setEnvironmentCubeMap(const Texture *env_texture)
+void SkyLight::setEnvironmentCubeMap(const VulkanTexture *env_texture)
 {
-    driver->bindTexture(bind_set,0,env_texture);
+    driver->bindTexture(bind_set,1,env_texture->getTexture());
 }
 
-void SkyLight::setIrradianceCubeMap(const Texture *ir_texture)
+void SkyLight::setIrradianceCubeMap(const VulkanTexture *ir_texture)
 {
-    driver->bindTexture(bind_set,0,ir_texture);
+    driver->bindTexture(bind_set,2,ir_texture->getTexture());
 }
 
 }

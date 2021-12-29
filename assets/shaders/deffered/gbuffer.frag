@@ -2,10 +2,8 @@
 #pragma shader_stage(fragment)
 #extension GL_ARB_separate_shader_objects : enable
 
-#include "RenderState.inc"
-#include "common/brdf.inc"
-
-
+#include "../common/RenderState.inc"
+#include "../common/brdf.inc"
 
 layout(set=1,binding = 0) uniform sampler2D albedoSampler;
 layout(set=1,binding = 1) uniform sampler2D normalSampler;
@@ -35,7 +33,6 @@ vec3 DirectBRDF(Surface surface, SurfaceMaterial material)
 
 void main()
 {
-
 	vec3 normalVS = texture(normalSampler, fragTexCoord).xyz * 2.0f - vec3(1.0f);
 
 	mat3 tangentToVs;
