@@ -89,7 +89,7 @@ private:
   static inline ImTextureID bakedBRDF{nullptr};
 
   Render *render{nullptr};
-  render::backend::vulkan::RenderGraph* render_graph;
+  render::backend::vulkan::RenderGraph* render_graph{nullptr};
   ImGuiRender *imGuiRender{nullptr};
   VulkanSwapChain* swapChain{nullptr};
   //TODO move to anther

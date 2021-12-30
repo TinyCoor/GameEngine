@@ -30,13 +30,8 @@ public:
     virtual ~Render();
 
     void init(ApplicationResource *scene);
-
-    void render(const ApplicationResource *scene,const SkyLight *light, const VulkanRenderFrame &frame);
-
     void shutdown();
-
-    void setEnvironment(const ApplicationResource *resource,uint8_t index);
-
+    void render(const ApplicationResource *scene,const SkyLight *light, const VulkanRenderFrame &frame);
 
 private:
 

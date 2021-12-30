@@ -2,6 +2,10 @@
 #pragma shader_stage(fragment)
 #extension GL_ARB_separate_shader_objects : enable
 
+#define SKY_LIGHT_SET 2
+#include "light/sky_light.inc"
+
+
 layout(set =0,binding = 0) uniform RenderState {
 	mat4 world;
 	mat4 view;
@@ -18,11 +22,8 @@ layout(location = 2) in vec3 fragPositionOS;
 
 layout(location = 0) out vec4 outColor;
 
-const float PI = 3.141592653589798979f;
-const float iPI = 0.31830988618379f;
-
 void main() {
-	vec3 color = texture(environmentSampler, normalize(fragPositionOS)).rgb;
+	vec3 color = texture(skylightEnvironmentSampler, normalize(fragPositionOS)).rgb;
 
 	// TODO: move to separate pass
 	// Tonemapping + gamma correction

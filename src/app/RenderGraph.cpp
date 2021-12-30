@@ -112,7 +112,6 @@ void RenderGraph::renderLBuffer(const Scene *scene, const VulkanRenderFrame &fra
     driver->endRenderPass(frame.command_buffer);
 }
 
-
 void RenderGraph::resize(uint32_t width, uint32_t height)
 {
     shutdownGBuffer();
@@ -168,13 +167,11 @@ void RenderGraph::shutdownGBuffer()
     memset(&g_buffer,0, sizeof(GBuffer));
 }
 
-
-
 void RenderGraph::shutdownLBuffer()
 {
     driver->destroyTexture(l_buffer.diffuse);
     driver->destroyTexture(l_buffer.specular);
     driver->destroyFrameBuffer(l_buffer.frame_buffer);
-    memset(&l_buffer,0, sizeof(GBuffer));
+    memset(&l_buffer,0, sizeof(LBuffer));
 }
 }

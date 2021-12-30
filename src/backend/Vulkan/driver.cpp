@@ -1402,8 +1402,11 @@ void VulkanDriver::destroyBindSet(render::backend::BindSet *set)
             vkDestroyImageView(device->LogicDevice(), data.texture.view, nullptr);
         }
 
-        if (vk_bind_set->set != VK_NULL_HANDLE)
+        if (vk_bind_set->set != VK_NULL_HANDLE){
             vkFreeDescriptorSets(device->LogicDevice(), device->DescriptorPool(), 1, &vk_bind_set->set);
+            vk_bind_set->set =VK_NULL_HANDLE;
+        }
+
 
         delete vk_bind_set;
         set = nullptr;

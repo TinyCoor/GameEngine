@@ -18,7 +18,7 @@ vec3 SkyLight_Diffuse(vec3 normal,vec3 view,SurfaceMaterial material)
     return res;
 }
 
-vec3 Specular_Specular(vec3 normal,vec3 view,SurfaceMaterial material)
+vec3 SkyLight_Specular(vec3 normal,vec3 view,SurfaceMaterial material)
 {
     float dotNV = max(0.0f, dot(normal, view));
     float mip = material.roughness * 8.0f;

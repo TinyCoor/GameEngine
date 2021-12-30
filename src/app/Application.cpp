@@ -97,7 +97,7 @@ void Application::RenderFrame(){
         return;
     }
 
-   //  render_graph->render(sponza_scene,frame);
+    render_graph->render(sponza_scene,frame);
 
     RenderPassClearValue clear_values[3];
     clear_values[0].color = {0.2f, 0.2f, 0.2f, 1.0f};
@@ -169,7 +169,8 @@ void Application::update()
 
     if(ImGui::Button("Reload Shader")){
         resource->reloadShader();
-        render->setEnvironment(resource,state.currentEnvironment);
+        light->setEnvironmentCubeMap(resource->getHDRIEnvironmentubeMap(state.currentEnvironment));
+      //  light->setIrradianceCubeMap(resource->getIrridanceCubeMap(state.currentEnvironment));
     }
 
     if(ImGui::BeginCombo("Chose your Destiny",resource->getHDRTexturePath(state.currentEnvironment))){
@@ -177,7 +178,8 @@ void Application::update()
             bool selected = (i==state.currentEnvironment);
             if (ImGui::Selectable(resource->getHDRTexturePath(i),&selected)){
                 state.currentEnvironment = i;
-                render->setEnvironment(resource, i);
+                light->setEnvironmentCubeMap(resource->getHDRIEnvironmentubeMap(state.currentEnvironment));
+              //  light->setIrradianceCubeMap(resource->getIrridanceCubeMap(state.currentEnvironment));
             }
 
             if (selected)
@@ -203,10 +205,10 @@ void Application::mainLoop() {
         return;
 
     while (!glfwWindowShouldClose(window)){
-         ImGui_ImplGlfw_NewFrame();
-         ImGui::NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
 
-         update();
+        update();
         ImGui::Render();
         RenderFrame();
 
@@ -230,8 +232,7 @@ void Application::initRenders() {
         render = new Render(driver);
         render->init(resource);
     }
-
-    render->setEnvironment(resource, state.currentEnvironment);
+    light->setEnvironmentCubeMap(resource->getHDRIEnvironmentubeMap(state.currentEnvironment));
 
     if (!imGuiRender){
         imGuiRender = new ImGuiRender(driver,ImGui::GetCurrentContext(),
@@ -281,8 +282,6 @@ void Application::shutdownScene() {
 
     delete sponza_scene;
     sponza_scene = nullptr;
-
-
 }
 
 void Application::recreateSwapChain() {

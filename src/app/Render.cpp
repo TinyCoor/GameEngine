@@ -66,12 +66,3 @@ void Render::render(const ApplicationResource *scene,const SkyLight *light, cons
     driver->setShader(ShaderType::FRAGMENT, pbr_frag_shader->getShader());
     driver->drawIndexedPrimitive(frame.command_buffer, scene->getMesh()->getPrimitive());
 }
-
-
-void Render::setEnvironment(const ApplicationResource *resource, uint8_t index)
-{
-    const VulkanTexture* environment_texture= resource->getHDRIEnvironmentubeMap(index);
-    const VulkanTexture* irrandance_texture= resource->getIrridanceCubeMap(index);
-    driver->bindTexture(scene_bind_set,5,environment_texture->getTexture());
-    driver->bindTexture(scene_bind_set,6,irrandance_texture->getTexture());
-}

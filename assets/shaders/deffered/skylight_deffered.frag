@@ -37,5 +37,5 @@ void main()
     material.f0 = lerp(vec3(0.004),material.albedo,material.metalness);
 
     outDiffuse =vec4(SkyLight_Diffuse(normalVS,viewVS,material),1.0);
-    outSpecular =vec4(Specular_Specular(normalVS,viewVS,material),1.0);
+    outSpecular =vec4(SkyLight_Specular(normalVS,viewVS,material),1.0);
 }

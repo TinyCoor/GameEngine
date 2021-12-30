@@ -20,9 +20,9 @@ std::vector<const char *> requiredPhysicalDeviceExtensions = {
 std::vector<const char *> requiredValidationLayers = {
     "VK_LAYER_KHRONOS_validation"};
 
-static int maxCombinedImageSamplers = 64;
-static int maxUniformBuffers = 64;
-static int maxDescriptorSet = 512;
+static int maxCombinedImageSamplers = 256;
+static int maxUniformBuffers = 256;
+static int maxDescriptorSet = 1024;
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
