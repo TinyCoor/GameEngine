@@ -221,7 +221,7 @@ struct RenderPrimitive  {
     IndexBuffer *index_buffer{nullptr};
     uint32_t num_indices{0};
     uint32_t base_index{0};
-    int32_t vertex_base_offset{0};
+    int32_t vertex_index_offset{0};
 };
 
 enum FrameBufferAttachmentType : unsigned char {
@@ -246,7 +246,7 @@ struct FrameBufferAttachment {
 
     struct SwapChainColor {
         const SwapChain *swap_chain{nullptr};
-        int base_image{0};
+        uint32_t base_image{0};
         bool resolve_attachment{false};
     };
 
@@ -394,7 +394,7 @@ public:
         ShaderType type,
         uint32_t length,
         const char *data,
-        const char *path
+        const char *path = nullptr
     ) = 0;
 
     virtual Shader *createShaderFromBytecode(

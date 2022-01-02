@@ -10,6 +10,7 @@ endif ()
 
 add_executable(niagara
         backend/Vulkan/VulkanTexture.cpp
+        backend/Vulkan/ImageViewCache.cpp
         backend/Vulkan/SkyLight.cpp
         backend/Vulkan/Utils.cpp
         backend/Vulkan/VulkanMesh.cpp

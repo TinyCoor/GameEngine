@@ -170,7 +170,7 @@ void Application::update()
     if(ImGui::Button("Reload Shader")){
         resource->reloadShader();
         light->setEnvironmentCubeMap(resource->getHDRIEnvironmentubeMap(state.currentEnvironment));
-      //  light->setIrradianceCubeMap(resource->getIrridanceCubeMap(state.currentEnvironment));
+        light->setIrradianceCubeMap(resource->getIrridanceCubeMap(state.currentEnvironment));
     }
 
     if(ImGui::BeginCombo("Chose your Destiny",resource->getHDRTexturePath(state.currentEnvironment))){
@@ -179,7 +179,7 @@ void Application::update()
             if (ImGui::Selectable(resource->getHDRTexturePath(i),&selected)){
                 state.currentEnvironment = i;
                 light->setEnvironmentCubeMap(resource->getHDRIEnvironmentubeMap(state.currentEnvironment));
-              //  light->setIrradianceCubeMap(resource->getIrridanceCubeMap(state.currentEnvironment));
+                light->setIrradianceCubeMap(resource->getIrridanceCubeMap(state.currentEnvironment));
             }
 
             if (selected)
@@ -187,8 +187,6 @@ void Application::update()
         }
         ImGui::EndCombo();
     }
-    ImGui::Image(bakedBRDF,ImVec2(256.f,256.f));
-
 
     ImGui::Checkbox("Demo Window", &show_demo_window);
 
@@ -197,6 +195,37 @@ void Application::update()
     ImGui::SliderFloat("Roughness", &state.userRoughness, 0.0f, 1.0f);
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+    ImGui::End();
+
+    ImGui::Begin("GBuffer");
+
+    ImTextureID base_color_id = imGuiRender->fetchTextureID(render_graph->getGBuffer().base_color);
+    ImTextureID normal_id = imGuiRender->fetchTextureID(render_graph->getGBuffer().normal);
+    ImTextureID depth_id = imGuiRender->fetchTextureID(render_graph->getGBuffer().depth);
+    ImTextureID shading_id = imGuiRender->fetchTextureID(render_graph->getGBuffer().shading);
+
+    ImGui::BeginGroup();
+    ImGui::Image(base_color_id, ImVec2(256, 256));
+    ImGui::SameLine();
+    ImGui::Image(normal_id, ImVec2(256, 256));
+    ImGui::Image(depth_id, ImVec2(256, 256));
+    ImGui::SameLine();
+    ImGui::Image(shading_id, ImVec2(256, 256));
+    ImGui::EndGroup();
+
+    ImGui::End();
+
+    ImGui::Begin("LBuffer");
+
+    ImTextureID diffuse_id = imGuiRender->fetchTextureID(render_graph->getLBuffer().diffuse);
+    ImTextureID specular_id = imGuiRender->fetchTextureID(render_graph->getLBuffer().specular);
+
+    ImGui::BeginGroup();
+    ImGui::Image(diffuse_id, ImVec2(256, 256));
+    ImGui::SameLine();
+    ImGui::Image(specular_id, ImVec2(256, 256));
+    ImGui::EndGroup();
+
     ImGui::End();
 }
 
@@ -228,22 +257,17 @@ void Application::shutdownRenders() {
 }
 
 void Application::initRenders() {
-    if(!render){
-        render = new Render(driver);
-        render->init(resource);
-    }
+
+    render = new Render(driver);
+    render->init(resource);
     light->setEnvironmentCubeMap(resource->getHDRIEnvironmentubeMap(state.currentEnvironment));
 
-    if (!imGuiRender){
-        imGuiRender = new ImGuiRender(driver,ImGui::GetCurrentContext(),
-                                            swapChain->getExtent(),swapChain->getDummyRenderPass());
-         imGuiRender->init(swapChain);
-    }
+    imGuiRender = new ImGuiRender(driver);
+    imGuiRender->init(ImGui::GetCurrentContext());
 
-    if (!render_graph) {
-        render_graph = new render::backend::vulkan::RenderGraph(driver);
-        render_graph->init(resource,swapChain->getExtent().width,swapChain->getExtent().height);
-    }
+    render_graph = new render::backend::vulkan::RenderGraph(driver);
+    render_graph->init(resource,swapChain->getExtent().width,swapChain->getExtent().height);
+
 }
 
 
@@ -294,8 +318,8 @@ void Application::recreateSwapChain() {
     driver->wait();
     glfwGetWindowSize(window,&width,&height);
     swapChain->reinit(width,height);
-    imGuiRender->resize(swapChain);
     render_graph->resize(width, height);
+    imGuiRender->invalidateTextureIDs();
 }
 
 

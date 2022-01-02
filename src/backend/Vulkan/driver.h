@@ -175,6 +175,7 @@ class DescriptorSetCache;
 class context;
 class PipelineLayoutCache;
 class PipelineCache;
+class ImageViewCache;
 
 class VulkanDriver : public render::backend::Driver {
     Device *device{nullptr};
@@ -183,6 +184,7 @@ class VulkanDriver : public render::backend::Driver {
     DescriptorSetLayoutCache* descriptor_set_layout_cache{nullptr};
     PipelineLayoutCache* pipeline_layout_cache{nullptr};
     PipelineCache* pipeline_cache{nullptr};
+    ImageViewCache *image_view_cache {nullptr};
 
 public:
     VulkanDriver(const char *app_name, const char *engine_name);
@@ -266,7 +268,7 @@ public:
         ShaderType type,
         uint32_t length,
         const char *data,
-        const char *path
+        const char *path = nullptr
     ) override;
 
     Shader *createShaderFromBytecode(

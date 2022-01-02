@@ -52,6 +52,11 @@ void Render::render(const ApplicationResource *scene,const SkyLight *light, cons
     const VulkanShader *skybox_vertex_shader = scene->getSkyboxVertexShader();
     const VulkanShader *skybox_fragment_shader = scene->getSkyboxFragmentShader();
 
+    driver->setBlending(false);
+    driver->setCullMode(CullMode::BACK);
+    driver->setDepthWrite(true);
+    driver->setDepthTest(true);
+
     driver->clearBindSets();
     driver->clearShaders();
     driver->pushBindSet(frame.bind_set);

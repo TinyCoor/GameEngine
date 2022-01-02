@@ -228,8 +228,6 @@ bool createSwapchainObjects(Device *context,
 void destroySwapchainObjects(Device *context, SwapChain *swapchain)
 {
     for (size_t i = 0; i < swapchain->num_images; ++i) {
-        vkDestroyImageView(context->LogicDevice(), swapchain->views[i], nullptr);
-        swapchain->views[i] = VK_NULL_HANDLE;
         swapchain->images[i] = VK_NULL_HANDLE;
         vkDestroySemaphore(context->LogicDevice(),swapchain->image_available_gpu[i], nullptr);
         swapchain->image_available_gpu[i] =VK_NULL_HANDLE;

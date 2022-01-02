@@ -6,41 +6,55 @@
 #define GAMEENGINE_VULKANIMGUIRENDER_H
 
 #include <volk.h>
+#include <map>
 #include "driver.h"
 struct ImGuiContext;
-
+struct ImDrawData;
+typedef void* ImTextureID;
 namespace render::backend::vulkan {
 
 struct RenderState;
 
-class VulkanRenderScene;
 struct VulkanRenderFrame;
 class VulkanSwapChain;
 class VulkanTexture;
 class Device;
 
+
 class ImGuiRender {
 public:
-  ImGuiRender(render::backend::Driver *driver,
-                             ImGuiContext *imgui_ctx,
-                             VkExtent2D extent,
-                             VkRenderPass renderPass);
+  ImGuiRender(render::backend::Driver *driver);
 
   virtual ~ImGuiRender();
 
-  void init(VulkanSwapChain* swapChain);
+  void init(ImGuiContext *imguiContext);
 
   void shutdown();
 
-  void resize(VulkanSwapChain* swapChain);
-
   void render(const VulkanRenderFrame &frame);
+
+  ImTextureID fetchTextureID(const render::backend::Texture *texture);
+  void invalidateTextureIDs();
+
+private:
+    void updateBuffers(const ImDrawData *draw_data);
+    void setupRenderState(const vulkan::VulkanRenderFrame &frame, const ImDrawData *draw_data);
 
 private:
   render::backend::Driver *driver{nullptr};
-  ImGuiContext *imGuiContext{nullptr};
-  VkRenderPass renderPass;
-  VkExtent2D extent;
+  render::backend::Texture* font_texture{nullptr};
+  render::backend::Shader* vertex_shader{nullptr};
+  render::backend::Shader* fragment_shader{nullptr};
+
+  render::backend::VertexBuffer* vertices{nullptr};
+  render::backend::IndexBuffer* indices{nullptr};
+  size_t index_buffer_size{0};
+  size_t vertex_buffer_size{0};
+
+  render::backend::BindSet *font_bind_set {nullptr};
+  std::map<const render::backend::Texture *, render::backend::BindSet *> registered_textures;
+
+
 };
 
 }

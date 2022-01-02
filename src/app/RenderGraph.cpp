@@ -56,11 +56,15 @@ void RenderGraph::renderGBuffer(const Scene *scene, const VulkanRenderFrame &fra
     driver->setBindSet(0, frame.bind_set);
     driver->setShader(ShaderType::VERTEX, g_buffer_pass_vertex);
     driver->setShader(ShaderType::FRAGMENT, g_buffer_pass_fragment);
-    glm::mat4 rotation = glm::rotate(glm::mat4(1.0), glm::radians(90.f), glm::vec3(1.0, 0.0, 0.0));
+
+    driver->setBlending(false);
+    driver->setCullMode(render::backend::CullMode::BACK);
+    driver->setDepthWrite(true);
+    driver->setDepthTest(true);
 
     for (int i = 0; i < scene->getNumNodes(); ++i) {
         auto *node_mesh = scene->getNodeMesh(i);
-        const auto &transform = rotation * scene->getNodeWorldTransform(i);
+        const auto &transform = scene->getNodeWorldTransform(i);
         auto *node_bind_set = scene->getNodeBindSet(i);
 
         driver->setBindSet(1, node_bind_set);

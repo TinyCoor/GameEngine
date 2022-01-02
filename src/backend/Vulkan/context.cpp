@@ -68,7 +68,7 @@ void context::pushBindSet(const BindSet *bind_set)
 void context::setBindSet(uint8_t binding, const  BindSet *bind_set)
 {
     assert(binding < MAX_SET);
-    assert(bind_set != nullptr);
+    assert(bind_set);
     set[binding] = const_cast<BindSet*>(bind_set);
 }
 void context::setFrameBuffer(const FrameBuffer *frame_buffer)
