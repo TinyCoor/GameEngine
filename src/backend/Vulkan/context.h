@@ -20,6 +20,8 @@ public:
     void clearPushConstants() { push_constants_size =0;}
     inline const uint8_t * getPushConstants() const {return push_constants;}
     inline uint8_t getPushConstantsSize() const {return push_constants_size;}
+    inline void setViewport(VkViewport viewport) { this->viewport = viewport;}
+    inline void setScissor(VkRect2D scissor) { this->scissor = scissor;}
 
     ///
     void clearBindSets();

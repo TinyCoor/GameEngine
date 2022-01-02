@@ -121,8 +121,6 @@ static void includeResultReleaser(void *userData, shaderc_include_result *result
 }
 }
 
-
-
 namespace render::backend::vulkan {
 VulkanDriver::VulkanDriver(const char *app_name, const char *engine_name) : device(new Device)
 {
@@ -164,6 +162,7 @@ VertexBuffer *VulkanDriver::createVertexBuffer(BufferType type,
     auto *result = new vulkan::VertexBuffer;
     result->vertex_size = vertex_size;
     result->num_vertices = num_vertices;
+    result->type = type;
     result->num_attributes = num_attributes;
 
     for (uint32_t i = 0; i < num_attributes; ++i) {
@@ -171,72 +170,73 @@ VertexBuffer *VulkanDriver::createVertexBuffer(BufferType type,
         result->attribute_offsets[i] = attributes[i].offset;
     }
 
-    vulkan::Utils::createBuffer(
-        device,
-        buffer_size,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        result->buffer,
-        result->memory
-    );
+    VkBufferUsageFlags usage_flags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    VkMemoryPropertyFlags memory_flags = 0;
 
-    // fill vertex buffer
-    vulkan::Utils::fillBuffer(
-        device,
-        result->buffer,
-        buffer_size,
-        data
-    );
+    if (type == BufferType::STATIC)
+    {
+        usage_flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    }
+    else if (type == BufferType::DYNAMIC)
+    {
+        memory_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    }
+
+    Utils::createBuffer(device,buffer_size,usage_flags,memory_flags,result->buffer,result->memory);
+
+    ///
+    if (data)
+    {
+        if (type == BufferType::STATIC)
+            Utils::fillDeviceLocalBuffer(device, result->buffer, buffer_size, data);
+        else if (type == BufferType::DYNAMIC)
+            Utils::fillHostVisibleBuffer(device, result->memory, buffer_size, data);
+    }
     return result;
 }
 
 IndexBuffer *VulkanDriver::createIndexBuffer(BufferType type,
-                                             IndexSize index_size,
+                                             IndexFormat index_size,
                                              uint32_t num_indices,
                                              const void *data)
 {
-    assert(type == BufferType::STATIC && "Dynamic are not impl");
     assert(num_indices != 0 && data != nullptr && "Invalid data");
     assert(static_cast<uint32_t>(index_size) != 0 && data != nullptr && "Invalid VertexSize");
     IndexBuffer *result = new IndexBuffer();
     result->num_indices = num_indices;
-    result->type = Utils::getIndexType(index_size);
+    result->type = type;
+    result->index_type = Utils::getIndexType(index_size);
 
     VkDeviceSize buffer_size = Utils::getIndexSize(index_size) * num_indices;
 
-    vulkan::Utils::createBuffer(
-        device,
-        buffer_size,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        result->buffer,
-        result->memory
-    );
+    VkBufferUsageFlags usage_flags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    VkMemoryPropertyFlags memory_flags = 0;
 
-    ///
-    vulkan::Utils::fillBuffer(
-        device,
-        result->buffer,
-        buffer_size,
-        data
-    );
+    if (type == BufferType::STATIC)
+    {
+        usage_flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        memory_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    }
+    else if (type == BufferType::DYNAMIC)
+    {
+        memory_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    }
+
+    // create index buffer
+    Utils::createBuffer(device, buffer_size, usage_flags, memory_flags, result->buffer, result->memory);
+
+    if (data)
+    {
+        if (type == BufferType::STATIC)
+            Utils::fillDeviceLocalBuffer(device, result->buffer, buffer_size, data);
+        else if (type == BufferType::DYNAMIC)
+            Utils::fillHostVisibleBuffer(device, result->memory, buffer_size, data);
+    }
 
     return result;
 }
 
-RenderPrimitive *VulkanDriver::createRenderPrimitive(RenderPrimitiveType type,
-                                                     const render::backend::VertexBuffer *vertex_buffer,
-                                                     const render::backend::IndexBuffer *index_buffer)
-{
-    const vulkan::VertexBuffer *v_buffer = static_cast<const vulkan::VertexBuffer *>(vertex_buffer);
-    const vulkan::IndexBuffer *i_buffer = static_cast<const vulkan::IndexBuffer *>(index_buffer);
-
-    vulkan::RenderPrimitive *primitive = new vulkan::RenderPrimitive;
-    primitive->vertex_buffer = v_buffer;
-    primitive->index_buffer = i_buffer;
-    primitive->topology = Utils::getPrimitiveTopology(type);
-    return primitive;
-}
 
 Texture *VulkanDriver::createTexture2D(uint32_t width,
                                        uint32_t height,
@@ -498,6 +498,7 @@ UniformBuffer *VulkanDriver::createUniformBuffer(BufferType type, uint32_t size,
 
     vulkan::UniformBuffer *result = new vulkan::UniformBuffer();
     result->size = size;
+    result->type = type;
 
     Utils::createBuffer(
         device,
@@ -508,21 +509,15 @@ UniformBuffer *VulkanDriver::createUniformBuffer(BufferType type, uint32_t size,
         result->memory
     );
 
-    if (vmaMapMemory(device->getVRAMAllocator(), result->memory,&result->pointer) != VK_SUCCESS) {
-        // TODO: log error
-        delete result;
-        return nullptr;
-    }
-
     if (data != nullptr)
-        memcpy(result->pointer, data, static_cast<size_t>(size));
+        Utils::fillHostVisibleBuffer(device,result->memory,size,data);
 
     return result;
 }
 Shader *VulkanDriver::createShaderFromSource(ShaderType type, uint32_t size, const char *data,
                                              const char *path)
 {
-// convert GLSL/HLSL code to SPIR-V bytecode
+    // convert GLSL/HLSL code to SPIR-V bytecode
     shaderc_compiler_t compiler = shaderc_compiler_initialize();
     shaderc_compile_options_t options = shaderc_compile_options_initialize();
 
@@ -608,19 +603,86 @@ void VulkanDriver::destroyIndexBuffer(render::backend::IndexBuffer *index_buffer
     delete index_buffer;
     index_buffer = nullptr;
 }
-void VulkanDriver::destroyRenderPrimitive(render::backend::RenderPrimitive *render_primitive)
+
+void *VulkanDriver::map(backend::VertexBuffer *vertex_buffer)
 {
-    if (render_primitive == nullptr)
-        return;
+    assert(vertex_buffer != nullptr && "Invalid buffer");
 
-    vulkan::RenderPrimitive *vk_render_primitive = static_cast<vulkan::RenderPrimitive *>(render_primitive);
+    VertexBuffer *vk_vertex_buffer = static_cast<VertexBuffer *>(vertex_buffer);
+    assert(vk_vertex_buffer->type == BufferType::DYNAMIC && "Mapped buffer must have BufferType::DYNAMIC type");
 
-    vk_render_primitive->vertex_buffer = nullptr;
-    vk_render_primitive->index_buffer = nullptr;
+    void *result = nullptr;
+    if (vmaMapMemory(device->getVRAMAllocator(), vk_vertex_buffer->memory, &result) != VK_SUCCESS)
+    {
+        // TODO: log error
+    }
 
-    delete render_primitive;
-    render_primitive = nullptr;
+    return result;
 }
+
+void VulkanDriver::unmap(backend::VertexBuffer *vertex_buffer)
+{
+    assert(vertex_buffer != nullptr && "Invalid buffer");
+
+    VertexBuffer *vk_vertex_buffer = static_cast<VertexBuffer *>(vertex_buffer);
+    assert(vk_vertex_buffer->type == BufferType::DYNAMIC && "Mapped buffer must have BufferType::DYNAMIC type");
+
+    vmaUnmapMemory(device->getVRAMAllocator(), vk_vertex_buffer->memory);
+}
+
+void *VulkanDriver::map(backend::IndexBuffer *index_buffer)
+{
+    assert(index_buffer != nullptr && "Invalid uniform buffer");
+
+    IndexBuffer *vk_index_buffer = static_cast<IndexBuffer *>(index_buffer);
+    assert(vk_index_buffer->type == BufferType::DYNAMIC && "Mapped buffer must have BufferType::DYNAMIC type");
+
+    void *result = nullptr;
+    if (vmaMapMemory(device->getVRAMAllocator(), vk_index_buffer->memory, &result) != VK_SUCCESS)
+    {
+        // TODO: log error
+    }
+
+    return result;
+}
+
+void VulkanDriver::unmap(backend::IndexBuffer *index_buffer)
+{
+    assert(index_buffer != nullptr && "Invalid buffer");
+
+    IndexBuffer *vk_index_buffer = static_cast<IndexBuffer *>(index_buffer);
+    assert(vk_index_buffer->type == BufferType::DYNAMIC && "Mapped buffer must have BufferType::DYNAMIC type");
+
+    vmaUnmapMemory(device->getVRAMAllocator(), vk_index_buffer->memory);
+}
+
+void *VulkanDriver::map(render::backend::UniformBuffer *uniform_buffer)
+{
+    assert(uniform_buffer != nullptr && "Invalid uniform buffer");
+    // TODO: check DYNAMIC buffer type
+
+    vulkan::UniformBuffer *vk_uniform_buffer = static_cast<vulkan::UniformBuffer *>(uniform_buffer);
+
+    void *result = nullptr;
+    if (vmaMapMemory(device->getVRAMAllocator(), vk_uniform_buffer->memory, &result) != VK_SUCCESS)
+    {
+        // TODO: log error
+    }
+    return result;
+}
+
+void VulkanDriver::unmap(render::backend::UniformBuffer *uniform_buffer)
+{
+    assert(uniform_buffer != nullptr && "Invalid buffer");
+
+    UniformBuffer *vk_uniform_buffer = static_cast<UniformBuffer *>(uniform_buffer);
+    assert(vk_uniform_buffer->type == BufferType::DYNAMIC && "Mapped buffer must have BufferType::DYNAMIC type");
+
+    vmaUnmapMemory(device->getVRAMAllocator(), vk_uniform_buffer->memory);
+
+}
+
+
 void VulkanDriver::destroyTexture(render::backend::Texture *texture)
 {
     if (texture == nullptr)
@@ -665,7 +727,6 @@ void VulkanDriver::destroyUniformBuffer(render::backend::UniformBuffer *uniform_
 
     vulkan::UniformBuffer *vk_uniform_buffer = static_cast<vulkan::UniformBuffer *>(uniform_buffer);
 
-    vmaUnmapMemory(device->getVRAMAllocator(), vk_uniform_buffer->memory);
     vmaDestroyBuffer(device->getVRAMAllocator(),vk_uniform_buffer->buffer,vk_uniform_buffer->memory);
 
     vk_uniform_buffer->buffer = VK_NULL_HANDLE;
@@ -866,14 +927,16 @@ void VulkanDriver::bindTexture(render::backend::BindSet *bind_set,
 }
 
 void VulkanDriver::drawIndexedPrimitive(
-    render::backend::CommandBuffer *command_buffer,
+    render::backend::CommandBuffer* command_buffer,
     const render::backend::RenderPrimitive *render_primitive)
 {
     if (command_buffer == nullptr) {
         return;
     }
     auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer);
-    auto vk_render_primitive = static_cast<const vulkan::RenderPrimitive *>(render_primitive);
+    auto vk_vertex_buffer = static_cast<const vulkan::VertexBuffer *>(render_primitive->vertex_buffer);
+    auto vk_index_buffer = static_cast<const vulkan::IndexBuffer*>(render_primitive->index_buffer);
+
 
     std::vector<VkDescriptorSet> sets(vk_context->getNumBindSets());
     std::vector<VkWriteDescriptorSet> writes;
@@ -947,7 +1010,7 @@ void VulkanDriver::drawIndexedPrimitive(
         vkUpdateDescriptorSets(device->LogicDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
     VkPipelineLayout pipeline_layout = pipeline_layout_cache->fetch(vk_context);
-    VkPipeline pipeline = pipeline_cache->fetch(vk_context, vk_render_primitive);
+    VkPipeline pipeline = pipeline_cache->fetch(vk_context, render_primitive);
     vkCmdBindPipeline(vk_command_buffer->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
     if (vk_context->getPushConstantsSize() > 0) {
@@ -972,16 +1035,20 @@ void VulkanDriver::drawIndexedPrimitive(
     vkCmdSetViewport(vk_command_buffer->command_buffer, 0, 1, &viewport);
     vkCmdSetScissor(vk_command_buffer->command_buffer, 0, 1, &scissor);
 
-    VkBuffer vertex_buffers[] = {vk_render_primitive->vertex_buffer->buffer};
+    VkBuffer vertex_buffers[] = {vk_vertex_buffer->buffer};
     VkDeviceSize offsets[] = {0};
 
     vkCmdBindVertexBuffers(vk_command_buffer->command_buffer, 0, 1, vertex_buffers, offsets);
     vkCmdBindIndexBuffer(vk_command_buffer->command_buffer,
-                         vk_render_primitive->index_buffer->buffer,
+                         vk_index_buffer->buffer,
                          0,
-                         VK_INDEX_TYPE_UINT32);
+                         vk_index_buffer->index_type);
 
-    vkCmdDrawIndexed(vk_command_buffer->command_buffer, vk_render_primitive->index_buffer->num_indices, 1, 0, 0, 0);
+    uint32_t num_instance = 1;
+    uint32_t base_instance = 0;
+
+    vkCmdDrawIndexed(vk_command_buffer->command_buffer, render_primitive->num_indices,
+                     num_instance, render_primitive->base_index, render_primitive->vertex_base_offset, base_instance);
 
 }
 void VulkanDriver::drawIndexedPrimitiveInstanced(render::backend::CommandBuffer *command_buffer,
@@ -994,7 +1061,6 @@ void VulkanDriver::drawIndexedPrimitiveInstanced(render::backend::CommandBuffer 
         return;
     }
     auto vk_command_buffer = static_cast<vulkan::CommandBuffer *>(command_buffer)->command_buffer;
-    auto vk_render_primitive = static_cast<const vulkan::RenderPrimitive *>(primitive);
 
 }
 
@@ -1081,9 +1147,6 @@ bool VulkanDriver::acquire(render::backend::SwapChain *swap_chain, uint32_t *ima
     return true;
 }
 
-/**
- *
- */
 bool VulkanDriver::submit(render::backend::CommandBuffer *command_buffer)
 {
     if (command_buffer == nullptr) {
@@ -1241,22 +1304,6 @@ void VulkanDriver::wait()
     device->wait();
 }
 
-void *VulkanDriver::map(render::backend::UniformBuffer *uniform_buffer)
-{
-    assert(uniform_buffer != nullptr && "Invalid uniform buffer");
-    // TODO: check DYNAMIC buffer type
-
-    vulkan::UniformBuffer *vk_uniform_buffer = static_cast<vulkan::UniformBuffer *>(uniform_buffer);
-
-    // NOTE: here we should call vkMapMemory but since it was called during UBO creation, we do nothing here.
-    //       It's important to do a proper stress test to see if we can map all previously created UBOs.
-    return vk_uniform_buffer->pointer;
-}
-
-void VulkanDriver::unmap(render::backend::UniformBuffer *uniform_buffer)
-{
-
-}
 
 void VulkanDriver::generateTexture2DMipmaps(render::backend::Texture *texture)
 {
@@ -1482,6 +1529,24 @@ void VulkanDriver::setPushConstant(uint8_t size, const void *data)
 void VulkanDriver::allocateBindSets(uint8_t size)
 {
     vk_context->allocateBindSets(size);
+}
+
+void VulkanDriver::setViewport(float x, float y, float width, float height)
+{
+    VkViewport viewport{};
+    viewport.x = x;
+    viewport.y = y;
+    viewport.width = width;
+    viewport.height = height;
+    vk_context->setViewport(viewport);
+}
+
+void VulkanDriver::setScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
+{
+    VkRect2D scissor;
+    scissor.offset={x,y};
+    scissor.extent={width,height};
+    vk_context->setScissor(scissor);
 }
 
 }

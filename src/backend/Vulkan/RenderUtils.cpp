@@ -59,13 +59,13 @@ VulkanTexture *RenderUtils::hdriToCube( render::backend::Driver *driver,
     renderer.render(vertex_shader, hdri_frag_shader, hdri);
 
     for (uint32_t mip = 1; mip < mips ; ++mip) {
-        float roughness = static_cast<float>(mip) /mips;
+        float roughness = static_cast<float>(mip) /(float )mips;
         VulkanCubeMapRender mip_render(driver);
         mip_render.init(res,mip);
         mip_render.render(vertex_shader,
                           prefilter_frag_shader,
                           res,
-                          mip-1,
+                          mip - 1,
                           sizeof(float),
                           &roughness);
     }

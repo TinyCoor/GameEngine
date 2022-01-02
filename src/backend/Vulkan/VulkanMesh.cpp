@@ -16,41 +16,20 @@ VulkanMesh::~VulkanMesh() {
   clearCPUData();
 }
 
-VkVertexInputBindingDescription VulkanMesh::getVertexInputBindingDescription() {
-  static VkVertexInputBindingDescription bindingDescription = {
-      .binding =0,
-      .stride = sizeof(core::Vertex),
-      .inputRate =VK_VERTEX_INPUT_RATE_VERTEX
-  };
-  return bindingDescription;
-}
-
-std::vector<VkVertexInputAttributeDescription> VulkanMesh::getAttributeDescriptions() {
-  static std::vector<VkVertexInputAttributeDescription> attributes{
-      {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(core::Vertex, position)},
-      {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(core::Vertex, tangent)},
-      {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(core::Vertex, binormal)},
-      {3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(core::Vertex, normal)},
-      {4, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(core::Vertex, color)},
-      {5, 0, VK_FORMAT_R32G32_SFLOAT,    offsetof(core::Vertex, uv)},
-  };
-
-  return attributes;
-}
 
 void VulkanMesh::createVertexBuffer() {
 
   static render::backend::VertexAttribute attributes[] =
-      {
-          { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, position) },
-          { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, tangent) },
-          { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, binormal) },
-          { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, normal) },
-          { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, color) },
-          { render::backend::Format::R32G32_SFLOAT,    offsetof(core::Vertex, uv) },
-      };
+  {
+      { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, position) },
+      { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, tangent) },
+      { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, binormal) },
+      { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, normal) },
+      { render::backend::Format::R32G32B32_SFLOAT, offsetof(core::Vertex, color) },
+      { render::backend::Format::R32G32_SFLOAT,    offsetof(core::Vertex, uv) },
+  };
 
-  vertex_buffer = driver->createVertexBuffer(
+  primitive->vertex_buffer = driver->createVertexBuffer(
       render::backend::BufferType::STATIC,
       sizeof(core::Vertex), static_cast<uint32_t>(vertices.size()),
       6, attributes,
@@ -58,25 +37,12 @@ void VulkanMesh::createVertexBuffer() {
   );
 }
 
-VkBuffer VulkanMesh::getVertexBuffer() const {
-  if (vertex_buffer == nullptr)
-    return VK_NULL_HANDLE;
-
-  return static_cast<const render::backend::vulkan::VertexBuffer *>(vertex_buffer)->buffer;
-
-}
-VkBuffer VulkanMesh::getIndexBuffer() const {
-  if (index_buffer == nullptr)
-    return VK_NULL_HANDLE;
-
-  return static_cast<const render::backend::vulkan::IndexBuffer *>(index_buffer)->buffer;
-
-}
 
 void VulkanMesh::createIndexBuffer() {
-  index_buffer = driver->createIndexBuffer(
+  primitive->num_indices = indices.size();
+  primitive->index_buffer = driver->createIndexBuffer(
       render::backend::BufferType::STATIC,
-      render::backend::IndexSize::UINT32,
+      render::backend::IndexFormat::UINT32,
       static_cast<uint32_t>(indices.size()),
       indices.data()
   );
@@ -98,25 +64,26 @@ bool VulkanMesh::import(const aiMesh *mesh)
 }
 
 void VulkanMesh::clearGPUData() {
-  driver->destroyVertexBuffer(vertex_buffer);
-  vertex_buffer = nullptr;
-  driver->destroyIndexBuffer(index_buffer);
-  index_buffer = nullptr;
+    if(primitive) {
+        driver->destroyVertexBuffer(primitive->vertex_buffer);
+        driver->destroyIndexBuffer(primitive->index_buffer);
+    }
+    delete primitive;
+    primitive = nullptr;
 }
 
 void VulkanMesh::uploadToGPU() {
+    clearGPUData();
+    primitive = new backend::RenderPrimitive();
+    primitive->topology = backend::RenderPrimitiveType::TRIANGLE_LIST;
+
     createVertexBuffer();
     createIndexBuffer();
-    primitive = driver->createRenderPrimitive(render::backend::RenderPrimitiveType::TRIANGLE_LIST,
-                                              vertex_buffer,index_buffer);
-
 }
 
 void VulkanMesh::clearCPUData() {
   vertices.clear();
   indices.clear();
-  driver->destroyRenderPrimitive(primitive);
-  primitive = nullptr;
 }
 
 void VulkanMesh::createSkybox(float size) {

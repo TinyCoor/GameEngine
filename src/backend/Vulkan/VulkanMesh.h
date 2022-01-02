@@ -19,8 +19,6 @@ private:
   std::vector<core::Vertex> vertices;
   std::vector<uint32_t> indices;
 
-  render::backend::VertexBuffer *vertex_buffer {nullptr};
-  render::backend::IndexBuffer *index_buffer {nullptr};
   render::backend::RenderPrimitive* primitive{nullptr};
 
 public:
@@ -29,11 +27,6 @@ public:
   ~VulkanMesh();
 
   inline uint32_t getNumIndices() const { return indices.size(); }
-  VkBuffer getVertexBuffer() const ;
-  VkBuffer getIndexBuffer() const ;
-
-  static VkVertexInputBindingDescription getVertexInputBindingDescription();
-  static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions();
   inline render::backend::RenderPrimitive* getPrimitive() const {return primitive;}
 
   bool import(const char *file);

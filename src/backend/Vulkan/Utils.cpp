@@ -236,9 +236,9 @@ uint8_t Utils::getPixelSize(Format format)
 
 /*
 	 */
-VkIndexType Utils::getIndexType(IndexSize size)
+VkIndexType Utils::getIndexType(IndexFormat size)
 {
-    static VkIndexType supported_sizes[static_cast<int>(IndexSize::MAX)] =
+    static VkIndexType supported_sizes[static_cast<int>(IndexFormat::MAX)] =
         {
             VK_INDEX_TYPE_UINT16, VK_INDEX_TYPE_UINT32,
         };
@@ -246,9 +246,9 @@ VkIndexType Utils::getIndexType(IndexSize size)
     return supported_sizes[static_cast<int>(size)];
 }
 
-uint8_t Utils::getIndexSize(IndexSize size)
+uint8_t Utils::getIndexSize(IndexFormat size)
 {
-    static uint8_t supported_sizes[static_cast<int>(IndexSize::MAX)] =
+    static uint8_t supported_sizes[static_cast<int>(IndexFormat::MAX)] =
         {
             2, 4
         };
@@ -607,7 +607,7 @@ void Utils::createBuffer(
     }
 }
 
-void Utils::fillBuffer(
+void Utils::fillDeviceLocalBuffer(
     const render::backend::vulkan::Device *device,
     VkBuffer buffer,
     VkDeviceSize size,
@@ -651,6 +651,15 @@ void Utils::fillBuffer(
     vmaDestroyBuffer(device->getVRAMAllocator(), staging_buffer, staging_memory);
 }
 
+void Utils::fillHostVisibleBuffer(const Device *device, VmaAllocation memory, VkDeviceSize size, const void *data)
+{
+    // Fill buffer
+    void *buffer_data = nullptr;
+    vmaMapMemory(device->getVRAMAllocator(), memory, &buffer_data);
+    memcpy(buffer_data, data, static_cast<size_t>(size));
+    vmaUnmapMemory(device->getVRAMAllocator(), memory);
+}
+
 /*
 	 */
 VkShaderModule Utils::createShaderModule(
@@ -672,7 +681,7 @@ VkShaderModule Utils::createShaderModule(
 }
 
 /*
-	 */
+*/
 void Utils::createImage(
     const render::backend::vulkan::Device *device,
     VkImageType type,

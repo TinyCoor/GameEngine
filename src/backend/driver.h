@@ -23,7 +23,7 @@ enum BufferType : uint8_t {
 };
 
 //图元类型
-enum class RenderPrimitiveType :uint8_t {
+enum class RenderPrimitiveType : uint8_t {
     POINT_LIST = 0,
     LINE_LIST,
     LINE_PATCH,
@@ -36,7 +36,7 @@ enum class RenderPrimitiveType :uint8_t {
     MAX,
 };
 
-enum class IndexSize :uint8_t {
+enum class IndexFormat :uint8_t {
     UINT16 = 0,
     UINT32,
     MAX,
@@ -205,7 +205,6 @@ enum class BlendFactor : uint8_t {
 
 struct VertexBuffer {};
 struct IndexBuffer {};
-struct RenderPrimitive {};
 struct Texture {};
 struct SwapChain {};
 struct FrameBuffer {};
@@ -215,6 +214,15 @@ struct Shader {};
 struct BindSet{};
 //todo shader storage buffer?
 
+
+struct RenderPrimitive  {
+    RenderPrimitiveType topology{RenderPrimitiveType::TRIANGLE_LIST};
+    VertexBuffer *vertex_buffer{nullptr};
+    IndexBuffer *index_buffer{nullptr};
+    uint32_t num_indices{0};
+    uint32_t base_index{0};
+    int32_t vertex_base_offset{0};
+};
 
 enum FrameBufferAttachmentType : unsigned char {
     COLOR = 0,
@@ -322,15 +330,9 @@ public:
 
     virtual IndexBuffer *createIndexBuffer(
         BufferType type,
-        IndexSize index_size,
+        IndexFormat index_size,
         uint32_t num_indices,
         const void *data
-    ) = 0;
-
-    virtual RenderPrimitive *createRenderPrimitive(
-        RenderPrimitiveType type,
-        const VertexBuffer *vertex_buffer,
-        const IndexBuffer *index_buffer
     ) = 0;
 
     virtual Texture *createTexture2D(
@@ -419,6 +421,20 @@ public:
     virtual BindSet* createBindSet() = 0;
 
     /// Render State
+    virtual void setViewport(
+        float x,
+        float y,
+        float width,
+        float height
+        ) = 0;
+
+    virtual void setScissor(
+        int32_t x,
+        int32_t y,
+        uint32_t width,
+        uint32_t height
+        ) = 0;
+
     virtual void setCullMode(CullMode cull_mode) = 0;
     virtual void setDepthTest(bool enable) =0;
     virtual void setDepthWrite(bool enable) =0 ;
@@ -429,7 +445,6 @@ public:
     virtual SwapChain *createSwapChain(void *native_window, uint32_t width, uint32_t height) = 0;
     virtual void destroyVertexBuffer(VertexBuffer *vertex_buffer) = 0;
     virtual void destroyIndexBuffer(IndexBuffer *index_buffer) = 0;
-    virtual void destroyRenderPrimitive(RenderPrimitive *render_primitive) = 0;
     virtual void destroyTexture(Texture *texture) = 0;
     virtual void destroyFrameBuffer(FrameBuffer *frame_buffer) = 0;
     virtual void destroyCommandBuffer(CommandBuffer *command_buffer) = 0;
@@ -444,8 +459,15 @@ public:
 
 public:
     virtual void generateTexture2DMipmaps(Texture *texture) = 0;
-    virtual void *map(render::backend::UniformBuffer *uniform_buffer) = 0;
-    virtual void unmap(render::backend::UniformBuffer *uniform_buffer) = 0;
+
+    virtual void *map(VertexBuffer *vertex_buffer) = 0;
+    virtual void unmap(VertexBuffer *vertex_buffer) = 0;
+
+    virtual void *map(IndexBuffer *index_buffer) = 0;
+    virtual void unmap(IndexBuffer *index_buffer) = 0;
+
+    virtual void *map(UniformBuffer *uniform_buffer) = 0;
+    virtual void unmap(UniformBuffer *uniform_buffer) = 0;
     virtual void wait() = 0;
     virtual bool wait(
         uint32_t num_wait_command_buffers,

@@ -12,7 +12,8 @@
 namespace render::backend::vulkan {
 
 struct VertexBuffer : public render::backend::VertexBuffer {
-    static constexpr int MAX_ATTRIBUTES = 10;
+    static constexpr int MAX_ATTRIBUTES = 16;
+    BufferType type{BufferType::STATIC};
     VkBuffer buffer{VK_NULL_HANDLE};
     VmaAllocation memory {VK_NULL_HANDLE};
     uint16_t vertex_size{0};
@@ -23,17 +24,20 @@ struct VertexBuffer : public render::backend::VertexBuffer {
 };
 
 struct IndexBuffer : public render::backend::IndexBuffer {
+    BufferType type{BufferType::STATIC};
     VkBuffer buffer{VK_NULL_HANDLE};
     VmaAllocation memory {VK_NULL_HANDLE};
-    VkIndexType type{VK_INDEX_TYPE_UINT16};
+    VkIndexType index_type{VK_INDEX_TYPE_UINT16};
     uint32_t num_indices{0};
 };
 
-struct RenderPrimitive : public render::backend::RenderPrimitive {
-    VkPrimitiveTopology topology{VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
-    const VertexBuffer *vertex_buffer{nullptr};
-    const IndexBuffer *index_buffer{nullptr};
+struct UniformBuffer : public render::backend::UniformBuffer {
+    BufferType type {BufferType::STATIC};
+    VkBuffer buffer{VK_NULL_HANDLE};
+    VmaAllocation memory {VK_NULL_HANDLE};
+    uint32_t size{0};
 };
+
 
 struct BindSet: public render::backend::BindSet
 {
@@ -94,12 +98,7 @@ struct FrameBuffer : public render::backend::FrameBuffer {
     // TODO: add info about attachment type (color, color resolve, depth)
 };
 
-struct UniformBuffer : public render::backend::UniformBuffer {
-    VkBuffer buffer{VK_NULL_HANDLE};
-    VmaAllocation memory {VK_NULL_HANDLE};
-    uint32_t size{0};
-    void *pointer{nullptr};
-};
+
 
 
 
@@ -202,16 +201,11 @@ public:
 
     IndexBuffer *createIndexBuffer(
         BufferType type,
-        IndexSize index_size,
+        IndexFormat index_size,
         uint32_t num_indices,
         const void *data
     ) override;
 
-    RenderPrimitive *createRenderPrimitive(
-        RenderPrimitiveType type,
-        const render::backend::VertexBuffer *vertex_buffer,
-        const render::backend::IndexBuffer *index_buffer
-    ) override;
 
     Texture *createTexture2D(
         uint32_t width,
@@ -297,6 +291,20 @@ public:
 
 
     /// todo Render State
+    void setViewport(
+        float x,
+        float y,
+        float width,
+        float height
+        ) override;
+
+    void setScissor(
+        int32_t x,
+        int32_t y,
+        uint32_t width,
+        uint32_t height
+        ) override;
+
     void setCullMode(CullMode cull_mode) override;
     void setDepthTest(bool enable) override;
     void setDepthWrite(bool enable) override ;
@@ -306,7 +314,6 @@ public:
 
     void destroyVertexBuffer(render::backend::VertexBuffer *vertex_buffer) override;
     void destroyIndexBuffer(render::backend::IndexBuffer *index_buffer) override;
-    void destroyRenderPrimitive(render::backend::RenderPrimitive *render_primitive) override;
     void destroyTexture(render::backend::Texture *texture) override;
     void destroyFrameBuffer(render::backend::FrameBuffer *frame_buffer) override;
     void destroyCommandBuffer(render::backend::CommandBuffer *command_buffer) override;
@@ -327,8 +334,15 @@ public:
 
 public:
     void generateTexture2DMipmaps(render::backend::Texture *texture) override;
-    void *map(render::backend::UniformBuffer *uniform_buffer) override;
-    void unmap(render::backend::UniformBuffer *uniform_buffer) override;
+    void *map(backend::VertexBuffer *vertex_buffer) override;
+    void unmap(backend::VertexBuffer *vertex_buffer) override;
+
+    void *map(backend::IndexBuffer *index_buffer) override;
+    void unmap(backend::IndexBuffer *index_buffer) override;
+
+    void *map(backend::UniformBuffer *uniform_buffer) override;
+    void unmap(backend::UniformBuffer *uniform_buffer) override;
+
     void wait() override;
     bool wait(
         uint32_t num_wait_command_buffers,
@@ -400,7 +414,7 @@ public:
         const render::backend::RenderPrimitive *primitive,
         const render::backend::VertexBuffer *instance_buffer,
         uint32_t num_instances,
-        uint32_t offset
+        uint32_t base_instance
     ) override;
 
     SwapChain *createSwapChain(void *native_window, uint32_t width, uint32_t height) override;

@@ -45,7 +45,7 @@ void VulkanCubeMapRender::init(VulkanTexture* target_texture,int target_mip)
     command_buffer = driver->createCommandBuffer(CommandBufferType::PRIMARY);
 
     //fill uniform buffer
-    CubemapFaceOrientationData *ubo = reinterpret_cast<CubemapFaceOrientationData *>(driver->map(uniform_buffer));
+    auto *ubo = reinterpret_cast<CubemapFaceOrientationData *>(driver->map(uniform_buffer));
 
     const glm::mat4 &translateZ = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
@@ -77,6 +77,7 @@ void VulkanCubeMapRender::init(VulkanTexture* target_texture,int target_mip)
     };
     for (int i = 0; i < 6; i++)
         ubo->faces[i] = faceRotations[i] * glm::lookAtRH(glm::vec3(0.0f), faceDirs[i], faceUps[i]) * translateZ;
+
     driver->unmap(uniform_buffer);
 
     driver->bindUniformBuffer(bind_set,0,uniform_buffer);

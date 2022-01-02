@@ -88,6 +88,7 @@ bool Scene::import(const char *path)
     if(pos != std::string::npos) {
         dir = dir.substr(0,pos);
     }
+
     ///  import mesh
     meshes.resize(scene->mNumMeshes);
     for (uint32_t i = 0; i < scene->mNumMeshes ; ++i) {

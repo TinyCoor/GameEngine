@@ -60,15 +60,13 @@ void ApplicationResource::init()
 void ApplicationResource::shutdown()
 {
     resources.shutdown();
-    //driver->destroyTexture(const_cast<backend::Texture *>(baked_brdf->getTexture()));
-    delete baked_brdf;
     for (int i = 0; i <environment_cubemaps.size() ; ++i) {
-//        driver->destroyTexture(environment_cubemaps[i]);
+        driver->destroyTexture(const_cast<backend::Texture *>(environment_cubemaps[i]->getTexture()));
         delete environment_cubemaps[i];
     }
 
     for (int i = 0; i <irrandance_cubemaps.size() ; ++i) {
-//        driver->destroyTexture(const_cast<backend::Texture *>(environment_cubemaps[i]->getTexture()));
+        driver->destroyTexture(const_cast<backend::Texture *>(environment_cubemaps[i]->getTexture()));
         delete irrandance_cubemaps[i];
     }
     environment_cubemaps.clear();

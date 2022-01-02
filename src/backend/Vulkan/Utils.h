@@ -43,11 +43,11 @@ public:
     );
 
     static VkIndexType getIndexType(
-        IndexSize size
+        IndexFormat size
     );
 
     static uint8_t getIndexSize(
-        IndexSize size
+        IndexFormat size
     );
 
     static VkPrimitiveTopology getPrimitiveTopology(
@@ -120,9 +120,16 @@ public:
         VmaAllocation &memory
     );
 
-    static void fillBuffer(
+    static void fillDeviceLocalBuffer(
         const render::backend::vulkan::Device *device,
         VkBuffer buffer,
+        VkDeviceSize size,
+        const void *data
+    );
+
+    static void fillHostVisibleBuffer(
+        const Device *device,
+        VmaAllocation memory,
         VkDeviceSize size,
         const void *data
     );
